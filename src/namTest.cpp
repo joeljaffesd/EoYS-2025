@@ -8,12 +8,13 @@ struct State {
 
 class NamTest : public al::DistributedAppWithState<State> {
 private:
-  const char* mPath = "../../resources/MarshallModel.nam";
-  std::unique_ptr<nam::DSP> mModel = nam::get_dsp(mPath);
+  std::unique_ptr<nam::DSP> mModel; 
 
 public:
   void onInit() override {
-    if (isPrimary()) {
+    if (isPrimary()) { // load NAM model on primary
+      const char* mPath = "../../resources/MarshallModel.nam";
+      mModel = nam::get_dsp(mPath);
       mModel->ResetAndPrewarm(this->audioIO().framesPerSecond(), 1);
     }
   }
