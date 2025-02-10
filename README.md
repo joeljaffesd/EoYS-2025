@@ -1,2 +1,2 @@
-# AlloLib-kickstart
-Plug-n-Play Build Env for AlloLib Projects
+# EoYS-2025
+Collaborative AlloSphere Project for UCSB MAT EoYS-2025
