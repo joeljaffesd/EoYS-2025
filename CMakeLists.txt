@@ -65,19 +65,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     link_directories("/usr/local/lib")
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
-# Find Eigen package
-find_package(Eigen3 3.3 REQUIRED NO_MODULE)
-
-# Add nlohmann/json include directory
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/NeuralAmpModelerCore/Dependencies/nlohmann)
-
-# Add NAM include directories
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/NeuralAmpModelerCore/NAM/Dependencies)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/NeuralAmpModelerCore/NAM)
-
-# Add NAM source files
-file(GLOB NAM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/NeuralAmpModelerCore/NAM/*.cpp)
-
 get_filename_component(app_name ${file_full_path} NAME_WE)
 get_filename_component(app_path ${file_full_path} DIRECTORY)
 set(app_files_list ${file_full_path})
@@ -127,8 +114,6 @@ macro(BUILD_FILE  this_app_name this_app_path this_app_files_list)
     else ()
       target_compile_options(${this_app_name} PRIVATE "-Wall")
     endif (AL_WINDOWS)
-
-    target_link_libraries(${this_app_name} PUBLIC al ${al_libs} Eigen3::Eigen)
 
     foreach(include_dir IN LISTS app_include_dirs)
         if (IS_ABSOLUTE ${include_dir})

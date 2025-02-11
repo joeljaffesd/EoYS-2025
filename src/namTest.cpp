@@ -1,6 +1,6 @@
 #define NAM_SAMPLE_FLOAT
 #include "al/app/al_DistributedApp.hpp"
-#include "../NeuralAmpModelerCore/NAM/dsp.h"
+#include "../NeuralAmpModelerCore/NAM/all.h"
 
 struct State {
   int ignore = 0;
@@ -38,6 +38,9 @@ public:
 
 int main() {
   NamTest mNamTest;
+  if (mNamTest.isPrimary()) {
+    mNamTest.configureAudio(48000, 128, 1, 2);
+  }
   mNamTest.start();
   return 0;
 }
