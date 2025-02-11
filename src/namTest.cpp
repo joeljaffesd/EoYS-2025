@@ -39,7 +39,7 @@ public:
 int main() {
   NamTest mNamTest;
   if (mNamTest.isPrimary()) {
-    mNamTest.configureAudio(48000, 128, 1, 2);
+    mNamTest.configureAudio(48000, 128, 2, 1);
   }
   mNamTest.start();
   return 0;
