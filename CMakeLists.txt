@@ -97,14 +97,14 @@ macro(BUILD_FILE  this_app_name this_app_path this_app_files_list)
       message("linker flags: ${app_linker_flags}")
     endif()
 
-    add_executable(${this_app_name} ${this_app_files_list})
+    add_executable(${this_app_name} ${this_app_files_list} ${NAM_SOURCES})
 
     set_target_properties(${this_app_name} PROPERTIES
       DEBUG_POSTFIX d
       RUNTIME_OUTPUT_DIRECTORY ${this_app_path}/bin
       RUNTIME_OUTPUT_DIRECTORY_DEBUG ${this_app_path}/bin
       RUNTIME_OUTPUT_DIRECTORY_RELEASE ${this_app_path}/bin
-      CXX_STANDARD 14
+      CXX_STANDARD 20
       CXX_STANDARD_REQUIRED ON
     )
 
@@ -114,8 +114,6 @@ macro(BUILD_FILE  this_app_name this_app_path this_app_files_list)
     else ()
       target_compile_options(${this_app_name} PRIVATE "-Wall")
     endif (AL_WINDOWS)
-
-    target_link_libraries(${this_app_name} PUBLIC al ${al_libs})
 
     foreach(include_dir IN LISTS app_include_dirs)
         if (IS_ABSOLUTE ${include_dir})
