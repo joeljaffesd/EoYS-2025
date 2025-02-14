@@ -2,10 +2,13 @@
 #include "al/app/al_DistributedApp.hpp"
 #include "al_ext/statedistribution/al_CuttleboneStateSimulationDomain.hpp"
 #include "../NeuralAmpModelerCore/NAM/all.h"
+#include "../Gimmel/include/gimmel.hpp"
 #include "sphereScope.hpp"
 
+#define SAMPLE_RATE 48000
+
 struct State {
-  static const int dataSize = 48000;
+  static const int dataSize = SAMPLE_RATE;
   al::Vec3f data[dataSize]; // assuming sample rate 48000
 
   void pushMesh(al::Mesh& m) {
@@ -31,6 +34,12 @@ private:
   std::unique_ptr<nam::DSP> mModel; 
   SphereScope mScope;
 
+  // declare fx
+  giml::Detune<float> detuneL{ SAMPLE_RATE };  
+  giml::Detune<float> detuneR{ SAMPLE_RATE };
+  giml::Delay<float> longDelay{ SAMPLE_RATE, 1000 }; 
+  giml::Delay<float> shortDelay{ SAMPLE_RATE, 1000 };
+
 public:
   void onInit() override {
     auto cuttleboneDomain = al::CuttleboneStateSimulationDomain<State>::enableCuttlebone(this);
@@ -46,6 +55,22 @@ public:
     } else {
       mScope.init(state().dataSize);
     }
+
+    // init giml fx
+    detuneL.enable();
+    detuneR.enable();
+    longDelay.enable();
+    shortDelay.enable();
+    detuneL.setPitchRatio(0.993);
+    detuneR.setPitchRatio(1.007);
+    longDelay.setDelayTime(798);
+    longDelay.setFeedback(0.20);
+    longDelay.setBlend(1.0);
+    longDelay.setDamping(0.7);
+    shortDelay.setDelayTime(398);
+    shortDelay.setFeedback(0.30);
+    shortDelay.setBlend(1.0);
+    shortDelay.setDamping(0.7);
   }
 
   void onSound(al::AudioIOData& io) override {
@@ -53,15 +78,23 @@ public:
       for (int sample = 0; sample < io.framesPerBuffer(); sample++) {
         // calculate output from input
         float input = io.in(0, sample);
-        float output = 0.f;
-        mModel->process(&input, &output, 1);
+        float dry = 0.f;
+        mModel->process(&input, &dry, 1);
+
+        // add fx
+        float outL = dry + (0.31 * longDelay.processSample(detuneL.processSample(dry)));
+        float outR = dry + (0.31 * shortDelay.processSample(detuneR.processSample(dry)));
 
         // write output to scope
-        mScope.writeSample(output);
+        mScope.writeSample(outL);
 
         // write output to all output channels
         for (int channel = 0; channel < io.channelsOut(); channel++) {
-          io.out(channel, sample) = output;
+          if (channel % 2 == 0) {
+            io.out(channel, sample) = outL;
+          } else {
+            io.out(channel, sample) = outR;
+          }
         }
       }
     }  
@@ -88,7 +121,7 @@ int main() {
   MainApp mMainApp;
 
   if (mMainApp.isPrimary()) {
-    mMainApp.configureAudio(48000, 128, 2, 1);
+    mMainApp.configureAudio(SAMPLE_RATE, 128, 2, 1);
   }
 
   mMainApp.start();
