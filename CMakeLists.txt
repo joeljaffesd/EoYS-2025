@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 
-project(allolib_playground)
+project(EoYS-2025)
 
 # This cmake file is for single cpp file projects that does not have
 # CMakeLists.txt file in the project folder.
