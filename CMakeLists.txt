@@ -104,7 +104,7 @@ macro(BUILD_FILE  this_app_name this_app_path this_app_files_list)
       RUNTIME_OUTPUT_DIRECTORY ${this_app_path}/bin
       RUNTIME_OUTPUT_DIRECTORY_DEBUG ${this_app_path}/bin
       RUNTIME_OUTPUT_DIRECTORY_RELEASE ${this_app_path}/bin
-      CXX_STANDARD 20
+      CXX_STANDARD 17
       CXX_STANDARD_REQUIRED ON
     )
 
