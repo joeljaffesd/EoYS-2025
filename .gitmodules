@@ -4,9 +4,9 @@
 [submodule "al_ext"]
 	path = al_ext
 	url = https://github.com/AlloSphere-Research-Group/al_ext
-[submodule "NeuralAmpModelerCore"]
-	path = NeuralAmpModelerCore
-	url = https://github.com/joeljaffesd/NeuralAmpModelerCore
 [submodule "Gimmel"]
 	path = Gimmel
 	url = https://github.com/jaffco/Gimmel
+[submodule "microNam"]
+	path = microNam
+	url = https://github.com/jaffco/microNam

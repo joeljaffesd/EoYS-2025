@@ -4,7 +4,7 @@
 #include "../Gimmel/include/gimmel.hpp"
 
 #define NAM_SAMPLE_FLOAT
-#include "../NeuralAmpModelerCore/NAM/all.h"
+#include "../microNam/NAM/all.h"
 #include "../resources/MarshallModel.h"
 
 #include "sphereScope.hpp"

@@ -2,8 +2,8 @@
 #define DSPDATA_H
 #include <string>
 #include <vector>
-#include "../../NeuralAmpModelerCore/Dependencies/nlohmann/json.hpp"
-#include "../../NeuralAmpModelerCore/NAM/dsp.h"
+#include "../../microNam/Dependencies/nlohmann/json.hpp"
+#include "../../microNam/NAM/dsp.h"
 
 // Automatically generated header file
 
