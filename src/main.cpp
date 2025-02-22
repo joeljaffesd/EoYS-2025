@@ -1,8 +1,12 @@
-#define NAM_SAMPLE_FLOAT
 #include "al/app/al_DistributedApp.hpp"
 #include "al_ext/statedistribution/al_CuttleboneStateSimulationDomain.hpp"
-#include "../NeuralAmpModelerCore/NAM/all.h"
+
 #include "../Gimmel/include/gimmel.hpp"
+
+#define NAM_SAMPLE_FLOAT
+#include "../NeuralAmpModelerCore/NAM/all.h"
+#include "../resources/MarshallModel.h"
+
 #include "sphereScope.hpp"
 
 #define SAMPLE_RATE 48000
@@ -48,9 +52,7 @@ public:
       quit();
     }
     if (isPrimary()) { // load NAM model on primary
-      const char* mPath = "../../resources/MarshallModel.nam";
-      mModel = nam::get_dsp(mPath);
-      mModel->ResetAndPrewarm(this->audioIO().framesPerSecond(), 1);
+      mModel = nam::get_dsp(MarshallModel);
       mScope.init(audioIO().framesPerSecond()); // init scope
     } else {
       mScope.init(state().dataSize);
@@ -80,6 +82,7 @@ public:
         float input = io.in(0, sample);
         float dry = 0.f;
         mModel->process(&input, &dry, 1);
+        mModel->finalize_(1);
 
         // add fx
         float outL = dry + (0.31 * longDelay.processSample(detuneL.processSample(dry)));
