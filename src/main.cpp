@@ -77,12 +77,11 @@ public:
 
   void onSound(al::AudioIOData& io) override {
     if (isPrimary()) { // only do audio for primary
+      mModel->process(const_cast<float*>(io.inBuffer()), io.outBuffer(), io.framesPerBuffer());
+      mModel->finalize_(io.framesPerBuffer());
       for (int sample = 0; sample < io.framesPerBuffer(); sample++) {
         // calculate output from input
-        float input = io.in(0, sample);
-        float dry = 0.f;
-        mModel->process(&input, &dry, 1);
-        mModel->finalize_(1);
+        float dry = io.out(0, sample);
 
         // add fx
         float outL = dry + (0.31 * longDelay.processSample(detuneL.processSample(dry)));
