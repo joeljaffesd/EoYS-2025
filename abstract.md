@@ -1,0 +1,2 @@
+# A Framework & Toolkit for Music Performance in the AlloSphere
+The AlloSphere Research Facility at the University of California, Santa Barbara, is a pioneering multimedia research environment used extensively for multimodal synthesis and data visualization. However, it has rarely been explored for live popular music performance—a key area with potential for industry collaboration. This project develops, documents, and demonstrates a framework and toolkit for utilizing the facility in this context, laying the foundation for future endeavors.
