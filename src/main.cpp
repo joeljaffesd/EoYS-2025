@@ -2,11 +2,7 @@
 #include "al_ext/statedistribution/al_CuttleboneStateSimulationDomain.hpp"
 
 #include "../Gimmel/include/gimmel.hpp"
-
-#define NAM_SAMPLE_FLOAT
-#include "../microNam/NAM/all.h"
 #include "../resources/MarshallModel.h"
-
 #include "sphereScope.hpp"
 
 #define SAMPLE_RATE 48000
@@ -35,7 +31,8 @@ struct State {
 
 class MainApp : public al::DistributedAppWithState<State> {
 private:
-  std::unique_ptr<nam::DSP> mModel; 
+  ModelWeights mModelWeights;
+  wavenet::RTWavenet<1, 1, Layer1, Layer2> mModel; 
   SphereScope mScope;
 
   // declare fx
@@ -52,7 +49,7 @@ public:
       quit();
     }
     if (isPrimary()) { // load NAM model on primary
-      mModel = nam::get_dsp(MarshallModel);
+      mModel.loadModel(mModelWeights.weights);
       mScope.init(audioIO().framesPerSecond()); // init scope
     } else {
       mScope.init(state().dataSize);
@@ -77,11 +74,10 @@ public:
 
   void onSound(al::AudioIOData& io) override {
     if (isPrimary()) { // only do audio for primary
-      mModel->process(const_cast<float*>(io.inBuffer()), io.outBuffer(), io.framesPerBuffer());
-      mModel->finalize_(io.framesPerBuffer());
       for (int sample = 0; sample < io.framesPerBuffer(); sample++) {
         // calculate output from input
-        float dry = io.out(0, sample);
+        float dry = io.in(0, sample);
+        dry = mModel.model.forward(dry); // process input through model
 
         // add fx
         float outL = dry + (0.31 * longDelay.processSample(detuneL.processSample(dry)));

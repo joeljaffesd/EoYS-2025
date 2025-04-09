@@ -5,3 +5,5 @@ bin
 **/bin
 
 .DS_Store
+
+resources/*.h
