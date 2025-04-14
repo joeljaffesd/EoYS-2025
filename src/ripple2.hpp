@@ -1,12 +1,14 @@
 #ifndef RIPPLE2_HPP
 #define RIPPLE2_HPP
 
-#include "vfxEngine.hpp"
+#include "vfxUtility.hpp"
 
 // a transformation effect
 //working on more generic ripple effect
 class RippleEffect : public VertexEffect {
+    
 public:
+    //change these to protected??
     float rate = 5.0f;
     float mix = 0.2f;
     float spatialFreq = 5.0f; // 5 spatial ripples across the object, might remove this later
