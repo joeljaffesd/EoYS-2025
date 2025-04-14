@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.29)
 
-project(project_name_here)
-set(APP_NAME app_name_here)
+project(EoYS-2025)
+set(APP_NAME EoYS-2025)
 
 # cmake scripts are kept in the cmake directory
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
@@ -38,6 +38,9 @@ endif()
 # example of linking other libraries
 # target_include_directories(${APP_NAME} PRIVATE ${PATH_TO_INCLUDE_DIR})
 # target_link_libraries(${APP_NAME} PRIVATE ${PATH_TO_LIB_FILE})
+
+# Suppress warnings for now
+target_compile_options(${PROJECT_NAME} PRIVATE -w)
 
 # binaries are put into the ./bin directory by default
 set_target_properties(${APP_NAME} PROPERTIES
