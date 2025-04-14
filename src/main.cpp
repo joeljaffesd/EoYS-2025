@@ -2,10 +2,13 @@
 #include "al_ext/statedistribution/al_CuttleboneStateSimulationDomain.hpp"
 
 #include "../Gimmel/include/gimmel.hpp"
+
 #include "../resources/MarshallModel.h"
+
+#include "channelStrip.hpp"
 #include "sphereScope.hpp"
 
-#define SAMPLE_RATE 48000
+#define SAMPLE_RATE 44100
 
 struct State {
   static const int dataSize = SAMPLE_RATE;
@@ -29,17 +32,26 @@ struct State {
 
 };
 
+// Add NAM compatibility to giml
+namespace giml {
+  template<typename T, typename Layer1, typename Layer2>
+  class AmpModeler : public Effect<T>, public wavenet::RTWavenet<1, 1, Layer1, Layer2> {
+  public:
+    T processSample(const T& input) override {
+      if (!this->enabled) { return input; }
+      return this->model.forward(input);
+    }
+  };
+}
+
 class MainApp : public al::DistributedAppWithState<State> {
 private:
-  ModelWeights mModelWeights;
-  wavenet::RTWavenet<1, 1, Layer1, Layer2> mModel; 
   SphereScope mScope;
-
-  // declare fx
-  giml::Detune<float> detuneL{ SAMPLE_RATE };  
-  giml::Detune<float> detuneR{ SAMPLE_RATE };
-  giml::Delay<float> longDelay{ SAMPLE_RATE, 1000 }; 
-  giml::Delay<float> shortDelay{ SAMPLE_RATE, 1000 };
+  ModelWeights mModelWeights;
+  std::unique_ptr<giml::AmpModeler<float, Layer1, Layer2>> mAmpModeler{
+    std::make_unique<giml::AmpModeler<float, Layer1, Layer2>>()
+  };
+  ChannelStrip mChannelStrip;
 
 public:
   void onInit() override {
@@ -49,51 +61,43 @@ public:
       quit();
     }
     if (isPrimary()) { // load NAM model on primary
-      mModel.loadModel(mModelWeights.weights);
+
+      // mAmpModeler = std::make_unique<giml::AmpModeler<float, Layer1, Layer2>>(SAMPLE_RATE);
+      // mAmpModeler->toggle(true);
+      // mAmpModeler->loadModel(mModelWeights.weights);
+      // mChannelStrip.addEffect(std::move(mAmpModeler));
+
+      auto detune = std::make_unique<giml::Detune<float>>(SAMPLE_RATE);
+      detune->toggle(true);
+      detune->setPitchRatio(0.993);
+      detune->setBlend(0.5);
+      mChannelStrip.addEffect(std::move(detune));
+  
+      auto delay = std::make_unique<giml::Delay<float>>(SAMPLE_RATE);
+      delay->toggle(true);
+      delay->setDelayTime(398);
+      delay->setFeedback(0.30);
+      delay->setBlend(0.24);
+      mChannelStrip.addEffect(std::move(delay));
+
       mScope.init(audioIO().framesPerSecond()); // init scope
+      mChannelStrip.init();
     } else {
       mScope.init(state().dataSize);
     }
-
-    // init giml fx
-    detuneL.enable();
-    detuneR.enable();
-    longDelay.enable();
-    shortDelay.enable();
-    detuneL.setPitchRatio(0.993);
-    detuneR.setPitchRatio(1.007);
-    longDelay.setDelayTime(798);
-    longDelay.setFeedback(0.20);
-    longDelay.setBlend(1.0);
-    longDelay.setDamping(0.7);
-    shortDelay.setDelayTime(398);
-    shortDelay.setFeedback(0.30);
-    shortDelay.setBlend(1.0);
-    shortDelay.setDamping(0.7);
   }
 
   void onSound(al::AudioIOData& io) override {
     if (isPrimary()) { // only do audio for primary
+      //mChannelStrip.processAudio(io);
       for (int sample = 0; sample < io.framesPerBuffer(); sample++) {
-        // calculate output from input
-        float dry = io.in(0, sample);
-        dry = mModel.model.forward(dry); // process input through model
-
-        // add fx
-        float outL = dry + (0.31 * longDelay.processSample(detuneL.processSample(dry)));
-        float outR = dry + (0.31 * shortDelay.processSample(detuneR.processSample(dry)));
-
-        // write output to scope
-        mScope.writeSample(outL);
-
-        // write output to all output channels
+        float input = io.in(0, sample);
+        float output = input;
         for (int channel = 0; channel < io.channelsOut(); channel++) {
-          if (channel % 2 == 0) {
-            io.out(channel, sample) = outL;
-          } else {
-            io.out(channel, sample) = outR;
-          }
+          io.out(channel, sample) = output;
         }
+        // write output to scope
+        mScope.writeSample(io.out(0, sample));
       }
     }  
   }
@@ -102,6 +106,7 @@ public:
     if (isPrimary()) {
       mScope.update();
       state().pushMesh(mScope);
+      mChannelStrip.update();
     } else {
       state().pullMesh(mScope);
     }
@@ -109,6 +114,7 @@ public:
 
   void onDraw(al::Graphics& g) override {
     g.clear(0);
+    mChannelStrip.draw(g);
     g.meshColor();
     g.draw(mScope);
   }
