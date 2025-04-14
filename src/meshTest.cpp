@@ -1,8 +1,9 @@
 #include "al/app/al_App.hpp"
 #include <iostream>
 #include <cmath>
-#include "vfxEngine.hpp" // 
+#include "vfxUtility.hpp" // 
 #include "ripple2.hpp"
+#include "orbit.hpp"
 
 using namespace al;
 
@@ -16,7 +17,8 @@ public:
     int gridSize = 20;
     float spacing = 0.1f;
 
-    RippleEffect ripple;           // effect constructed
+    RippleEffect ripple;  
+    OrbitEffect orbit;
     VertexEffectChain effectChain; // chain constructed
 
     void onCreate() override {
@@ -51,10 +53,18 @@ public:
         ripple.mix = 0.2f;
         ripple.axis = 'y'; //x, y, z chars
         ripple.spatialFreq = 3.0f; //basically number of waves
-
-
-        // Add to chain
-        effectChain.pushBack(&ripple); //pushing my effect to the chain
+        
+        orbit.rate = 0.3f;
+        orbit.radius = 1.5f;
+        orbit.rotationAxes = 1;
+        orbit.orbitCenter = {0,2,0};
+        orbit.xDir = 1;
+        orbit.yDir = -1;
+        orbit.zDir = -1;
+        
+        // push effects to chain
+        //effectChain.pushBack(&ripple); 
+        effectChain.pushBack(&orbit);
     }
 
     void onAnimate(double dt) override {
