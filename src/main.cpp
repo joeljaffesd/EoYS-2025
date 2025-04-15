@@ -3,7 +3,7 @@
 
 #include "../Gimmel/include/gimmel.hpp"
 
-#include "../resources/MarshallModel.h"
+#include "../assets/MarshallModel.h"
 
 #include "channelStrip.hpp"
 #include "graphics/sphereScope.hpp"
