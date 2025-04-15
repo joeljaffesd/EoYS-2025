@@ -15,7 +15,7 @@ struct AssetEngine {
   Vec3f scene_min, scene_max, scene_center;
   //Texture tex;
   vector<Mesh> meshes;
-  float a = 0.f;  // current rotation angle
+  float a = 0.f, b = 0.f, c = 0.f;  // current rotation angle
 
   void loadAssets() {
     std::string fileName = "../assets/rough-human-ouroboros.obj";
@@ -41,8 +41,10 @@ struct AssetEngine {
     g.pushMatrix();
 
     // rotate it around the y axis
-    g.rotate(a, 1.f, 0.f, 0.f);
-    a += 0.5;
+    g.rotate(a, b, c, 0.f);
+    a -= 0.5f;
+    b += 0.5f;
+    c += 0.5f;
 
     // scale the whole asset to fit into our view frustum
     float tmp = scene_max[0] - scene_min[0];

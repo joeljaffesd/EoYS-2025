@@ -61,15 +61,30 @@ class MainApp : public al::DistributedApp {
 private:
   ModelWeights mModelWeights;
   giml::AmpModeler<float, Layer1, Layer2> mAmpModeler;
+
+  al::ParameterBool mDetuneToggle{"DetuneToggle", "", false};
+  al::Parameter mDetunePitchRatio{"DetunePitchRatio", "", 0.995, 0.0, 1.0};
+  al::Parameter mDetuneBlend{"DetuneBlend", "", 0.24, 0.0, 1.0};
+  al::ParameterBundle mDetuneBundle{"Detune"};
   std::unique_ptr<giml::Detune<float>> mDetune;
+
+  al::ParameterBool mDelayToggle{"DelayToggle", "", true};
+  al::Parameter mDelayTime{"DelayTime", "", 398, 0, 1000};
+  al::Parameter mDelayFeedback{"DelayFeedback", "", 0.30, 0.0, 1.0};
+  al::Parameter mDelayBlend{"DelayBlend", "", 0.24, 0.0, 1.0};
+  al::ParameterBundle mDelayBundle{"Delay"};
   std::unique_ptr<giml::Delay<float>> mDelay;
 
   ChannelStrip mChannelStrip;
   GraphicsVoice* mGraphicsVoice; // TODO: use a smart pointer
   al::DistributedScene mDistributedScene;
 
+  //al::ControlGUI mControlGUI;
+
 public:
   void onInit() override {
+
+    //mControlGUI.init();
 
     mDistributedScene.registerSynthClass<GraphicsVoice>();
     registerDynamicScene(mDistributedScene);
@@ -78,25 +93,29 @@ public:
     // only do audio stuff on primary
     if (isPrimary()) { 
 
+      mChannelStrip.init();
+
       // mAmpModeler = std::make_unique<giml::AmpModeler<float, Layer1, Layer2>>(SAMPLE_RATE);
       mAmpModeler.toggle(true);
       mAmpModeler.loadModel(mModelWeights.weights);
       mChannelStrip.getEffectsLine().pushBack(&mAmpModeler);
 
       mDetune = std::make_unique<giml::Detune<float>>(SAMPLE_RATE);
-      mDetune->toggle(true);
-      mDetune->setPitchRatio(0.993);
-      mDetune->setBlend(0.5);
+      mDetune->toggle(mDetuneToggle);
+      mDetune->setPitchRatio(mDetunePitchRatio);
+      mDetune->setBlend(mDetuneBlend);
+      mDetuneBundle << mDetuneToggle << mDetunePitchRatio << mDetuneBlend;
+      mChannelStrip.addBundle(mDetuneBundle);
       mChannelStrip.getEffectsLine().pushBack(mDetune.get());
   
       mDelay = std::make_unique<giml::Delay<float>>(SAMPLE_RATE);
-      mDelay->toggle(true);
-      mDelay->setDelayTime(398);
-      mDelay->setFeedback(0.30);
-      mDelay->setBlend(0.24);
+      mDelay->toggle(mDelayToggle);
+      mDelay->setDelayTime(mDelayTime);
+      mDelay->setFeedback(mDelayFeedback);
+      mDelay->setBlend(mDelayBlend);
+      mDelayBundle << mDelayToggle << mDelayTime << mDelayFeedback << mDelayBlend;
+      mChannelStrip.addBundle(mDelayBundle);
       mChannelStrip.getEffectsLine().pushBack(mDelay.get());
-
-      mChannelStrip.init();
     }
   }
 
@@ -119,6 +138,15 @@ public:
 
   void onAnimate(double dt) override {
     if (isPrimary()) {
+      mDetune->setPitchRatio(mDetunePitchRatio);
+      mDetune->setBlend(mDetuneBlend);
+      mDetune->toggle(mDetuneToggle);
+
+      mDelay->setDelayTime(mDelayTime);
+      mDelay->setFeedback(mDelayFeedback);
+      mDelay->setBlend(mDelayBlend);
+      mDelay->toggle(mDelayToggle);
+
       mDistributedScene.update();
       mChannelStrip.update();
     }

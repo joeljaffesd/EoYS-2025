@@ -88,14 +88,6 @@ private:
   al::Parameter mVolume { "Volume", "", 0.f, -96.f, 12.f };
   al::ParameterBundle mBasics { "Basics" };
 
-  al::Parameter mDelayTime { "Delay Time", "", 0.f, 0.f, 1.f };
-  al::Parameter mDelayFeedback { "Delay Feedback", "", 0.f, 0.f, 1.f };
-  al::ParameterBundle mDelay { "Delay" };
-
-  al::Parameter mReverbTime { "Reverb Time", "", 0.f, 0.f, 1.f };
-  al::Parameter mReverbFeedback { "Reverb Feedback", "", 0.f, 0.f, 1.f };
-  al::ParameterBundle mReverb { "Reverb" };
-
   al::ParameterMenu mTabs{"Tabs", "", 0};
   std::vector<al::ParameterBundle*> mBundles;
 
@@ -120,13 +112,9 @@ public:
     mTabs.setElements({"Basics", "Inserts", "Spatialization"});
     // Add parameters to bundles (tabs)
     mBasics << enabled << mInputChannel << mGain << mVolume;
-    mDelay << mDelayTime << mDelayFeedback;
-    mReverb << mReverbTime << mReverbFeedback;
 
     // Add bundles to the GUI
     this->addBundle(mBasics);
-    this->addBundle(mDelay);
-    this->addBundle(mReverb);
 
     // Initialize ImGui
     al::imguiInit();
@@ -179,11 +167,11 @@ public:
     al::imguiEndFrame();
   }
 
-  void draw(al::Graphics &g) {
+  void draw(al::Graphics& g) {
     al::imguiDraw();
   }
 
-  void addBundle(al::ParameterBundle &bundle) {
+  void addBundle(al::ParameterBundle& bundle) {
     mBundles.push_back(&bundle);
   }
 
