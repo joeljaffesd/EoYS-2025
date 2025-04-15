@@ -7,6 +7,8 @@
 
 #include "channelStrip.hpp"
 #include "graphics/sphereScope.hpp"
+#include "graphics/imageToSphere.hpp"
+#include "graphics/objImport.hpp"
 
 #define SAMPLE_RATE 44100
 
@@ -48,10 +50,10 @@ class MainApp : public al::DistributedAppWithState<State> {
 private:
   SphereScope mScope;
   ModelWeights mModelWeights;
-  std::unique_ptr<giml::AmpModeler<float, Layer1, Layer2>> mAmpModeler{
-    std::make_unique<giml::AmpModeler<float, Layer1, Layer2>>()
-  };
+  giml::AmpModeler<float, Layer1, Layer2> mAmpModeler;
   ChannelStrip mChannelStrip;
+  ImageSphereLoader mImageSphereLoader;
+  AssetEngine mAssetEngine;
 
 public:
   void onInit() override {
@@ -63,9 +65,9 @@ public:
     if (isPrimary()) { // load NAM model on primary
 
       // mAmpModeler = std::make_unique<giml::AmpModeler<float, Layer1, Layer2>>(SAMPLE_RATE);
-      mAmpModeler->toggle(true);
-      mAmpModeler->loadModel(mModelWeights.weights);
-      mChannelStrip.addEffect(std::move(mAmpModeler));
+      mAmpModeler.toggle(true);
+      mAmpModeler.loadModel(mModelWeights.weights);
+      // mChannelStrip.addEffect(std::move(mAmpModeler));
 
       auto detune = std::make_unique<giml::Detune<float>>(SAMPLE_RATE);
       detune->toggle(true);
@@ -82,6 +84,11 @@ public:
 
       mScope.init(audioIO().framesPerSecond()); // init scope
       mChannelStrip.init();
+
+      // add sphere image loader 
+      mImageSphereLoader.init();
+      mImageSphereLoader.createSphere();
+      mAssetEngine.loadAssets();
     } else {
       mScope.init(state().dataSize);
     }
@@ -113,10 +120,13 @@ public:
   }
 
   void onDraw(al::Graphics& g) override {
-    g.clear(0);
+    g.clear(0.1);
     mChannelStrip.draw(g);
+    mAssetEngine.draw(g); // Draw the 3D object
+    g.lighting(false);
     g.meshColor();
     g.draw(mScope);
+    mImageSphereLoader.draw(g); // Draw the sphere
   }
 
 };
@@ -129,6 +139,5 @@ int main() {
   }
 
   mMainApp.start();
-
   return 0;
 }
