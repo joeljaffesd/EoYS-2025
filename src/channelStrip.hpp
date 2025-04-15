@@ -176,7 +176,6 @@ public:
   }
 
   void draw(al::Graphics &g) {
-    g.clear(0);
     al::imguiDraw();
   }
 

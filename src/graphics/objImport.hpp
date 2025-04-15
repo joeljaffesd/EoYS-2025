@@ -58,7 +58,8 @@ struct AssetEngine {
     for (auto &m : meshes) {
       g.draw(m);
     }
-
+    
     g.popMatrix();
+    g.lighting(false);
   }
 };

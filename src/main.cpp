@@ -1,39 +1,18 @@
+// AlloLib includes 
 #include "al/app/al_DistributedApp.hpp"
-#include "al_ext/statedistribution/al_CuttleboneStateSimulationDomain.hpp"
 #include "al/scene/al_DistributedScene.hpp"
 
+// Gimmel/RTNeural includes
 #include "../Gimmel/include/gimmel.hpp"
-
 #include "../assets/MarshallModel.h"
 
+// EoYS includes
 #include "channelStrip.hpp"
 #include "graphics/sphereScope.hpp"
 #include "graphics/imageToSphere.hpp"
 #include "graphics/objImport.hpp"
 
 #define SAMPLE_RATE 44100
-
-struct State {
-  static const int dataSize = SAMPLE_RATE;
-  al::Vec3f data[dataSize]; // assuming sample rate 48000
-
-  void pushMesh(al::Mesh& m) {
-    for (int i = 0; i < dataSize; i++) {
-      if (i < m.vertices().size()) { // safety
-        data[i] = m.vertices()[i];
-      }
-    }
-  }
-
-  void pullMesh(al::Mesh& m) {
-    for (int i = 0; i < dataSize; i++) {
-      if (i < m.vertices().size()) { // safety
-        m.vertices()[i] = data[i];
-      }
-    }
-  }
-
-};
 
 // Add NAM compatibility to giml
 namespace giml {
@@ -51,6 +30,7 @@ class GraphicsVoice : public al::PositionedVoice {
 private:
   ImageSphereLoader mImageSphereLoader;
   AssetEngine mAssetEngine;
+  SphereScope mScope;
   
 public:
 
@@ -58,39 +38,38 @@ public:
     mImageSphereLoader.init();
     mImageSphereLoader.createSphere();
     mAssetEngine.loadAssets();
+    mScope.init(SAMPLE_RATE);
+  }
+
+  virtual void writeSample(float sample) {
+    mScope.writeSample(sample);
   }
 
   virtual void onProcess(Graphics& g) override {
     mAssetEngine.draw(g); // Draw the 3D object
-    g.lighting(false);
     g.meshColor();
+    g.draw(mScope);
     mImageSphereLoader.draw(g); // Draw the sphere
   }
 };
 
-class MainApp : public al::DistributedAppWithState<State> {
+class MainApp : public al::DistributedApp {
 private:
-  SphereScope mScope;
   ModelWeights mModelWeights;
   giml::AmpModeler<float, Layer1, Layer2> mAmpModeler;
   ChannelStrip mChannelStrip;
-  ImageSphereLoader mImageSphereLoader;
-  AssetEngine mAssetEngine;
+  GraphicsVoice* mGraphicsVoice; // TODO: use a smart pointer
   al::DistributedScene mDistributedScene;
 
 public:
   void onInit() override {
-    auto cuttleboneDomain = al::CuttleboneStateSimulationDomain<State>::enableCuttlebone(this);
-    if (!cuttleboneDomain) {
-      std::cerr << "ERROR: Could not start Cuttlebone. Quitting." << std::endl;
-      quit();
-    }
 
     mDistributedScene.registerSynthClass<GraphicsVoice>();
     registerDynamicScene(mDistributedScene);
     mDistributedScene.verbose(true);
 
-    if (isPrimary()) { // load NAM model on primary
+    // only do audio stuff on primary
+    if (isPrimary()) { 
 
       // mAmpModeler = std::make_unique<giml::AmpModeler<float, Layer1, Layer2>>(SAMPLE_RATE);
       mAmpModeler.toggle(true);
@@ -110,11 +89,7 @@ public:
       delay->setBlend(0.24);
       mChannelStrip.addEffect(std::move(delay));
 
-      mScope.init(audioIO().framesPerSecond()); // init scope
       mChannelStrip.init();
-
-    } else {
-      mScope.init(state().dataSize);
     }
   }
 
@@ -128,26 +103,29 @@ public:
           io.out(channel, sample) = output;
         }
         // write output to scope
-        mScope.writeSample(io.out(0, sample));
+        if (mGraphicsVoice != nullptr) {
+          mGraphicsVoice->writeSample(output);
+        }
       }
     }  
   }
 
   void onAnimate(double dt) override {
     if (isPrimary()) {
-      mScope.update();
-      state().pushMesh(mScope);
+      if (mGraphicsVoice != nullptr) {
+        mGraphicsVoice->update();
+      }
       mChannelStrip.update();
-    } else {
-      state().pullMesh(mScope);
     }
   }
 
   bool onKeyDown(const al::Keyboard& k) override {
     if (isPrimary()) {
       if (k.key() == ' ') {
-        auto* freeVoice = mDistributedScene.getVoice<GraphicsVoice>();
-        mDistributedScene.triggerOn(freeVoice);
+        if (mGraphicsVoice == nullptr) {
+          mGraphicsVoice = mDistributedScene.getVoice<GraphicsVoice>();
+          mDistributedScene.triggerOn(mGraphicsVoice);
+        }
       }
     }
     return true;
@@ -156,11 +134,9 @@ public:
   void onDraw(al::Graphics& g) override {
     g.clear(0.1);
     mDistributedScene.render(g);
-    // mAssetEngine.draw(g); // Draw the 3D object
-    // g.lighting(false);
-    // g.meshColor();
-    // g.draw(mScope);
-    // mImageSphereLoader.draw(g); // Draw the sphere
+    if (isPrimary()) {
+      mChannelStrip.draw(g);
+    }
   }
 
 };
