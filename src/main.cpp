@@ -6,7 +6,7 @@
 #include "../resources/MarshallModel.h"
 
 #include "channelStrip.hpp"
-#include "sphereScope.hpp"
+#include "graphics/sphereScope.hpp"
 
 #define SAMPLE_RATE 44100
 
@@ -63,9 +63,9 @@ public:
     if (isPrimary()) { // load NAM model on primary
 
       // mAmpModeler = std::make_unique<giml::AmpModeler<float, Layer1, Layer2>>(SAMPLE_RATE);
-      // mAmpModeler->toggle(true);
-      // mAmpModeler->loadModel(mModelWeights.weights);
-      // mChannelStrip.addEffect(std::move(mAmpModeler));
+      mAmpModeler->toggle(true);
+      mAmpModeler->loadModel(mModelWeights.weights);
+      mChannelStrip.addEffect(std::move(mAmpModeler));
 
       auto detune = std::make_unique<giml::Detune<float>>(SAMPLE_RATE);
       detune->toggle(true);
@@ -92,7 +92,7 @@ public:
       //mChannelStrip.processAudio(io);
       for (int sample = 0; sample < io.framesPerBuffer(); sample++) {
         float input = io.in(0, sample);
-        float output = input;
+        float output = mChannelStrip.processSample(input);
         for (int channel = 0; channel < io.channelsOut(); channel++) {
           io.out(channel, sample) = output;
         }

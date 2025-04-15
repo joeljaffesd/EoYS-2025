@@ -1,9 +1,9 @@
 #include "al/app/al_App.hpp"
 #include <iostream>
 #include <cmath>
-#include "vfxUtility.hpp" // 
-#include "ripple2.hpp"
-#include "orbit.hpp"
+#include "graphics/vfxUtility.hpp" // 
+#include "graphics/ripple2.hpp"
+#include "graphics/orbit.hpp"
 
 using namespace al;
 
@@ -63,7 +63,7 @@ public:
         orbit.zDir = -1;
         
         // push effects to chain
-        //effectChain.pushBack(&ripple); 
+        effectChain.pushBack(&ripple); 
         effectChain.pushBack(&orbit);
     }
 
