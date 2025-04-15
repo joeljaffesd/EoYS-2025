@@ -13,5 +13,5 @@ cmake -DCMAKE_BUILD_TYPE=Release -Wno-deprecated -DBUILD_EXAMPLES=0 -B build/Rel
 result=$?
 if [ ${result} == 0 ]; then
   cd bin
-  ./app_name_here
+  ./EoYS-2025
 fi
