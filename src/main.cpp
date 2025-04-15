@@ -45,6 +45,10 @@ public:
     mScope.writeSample(sample);
   }
 
+  virtual void update(double dt = 0) override {
+    mScope.update();
+  }
+
   virtual void onProcess(Graphics& g) override {
     mAssetEngine.draw(g); // Draw the 3D object
     g.meshColor();
@@ -57,6 +61,9 @@ class MainApp : public al::DistributedApp {
 private:
   ModelWeights mModelWeights;
   giml::AmpModeler<float, Layer1, Layer2> mAmpModeler;
+  std::unique_ptr<giml::Detune<float>> mDetune;
+  std::unique_ptr<giml::Delay<float>> mDelay;
+
   ChannelStrip mChannelStrip;
   GraphicsVoice* mGraphicsVoice; // TODO: use a smart pointer
   al::DistributedScene mDistributedScene;
@@ -74,20 +81,20 @@ public:
       // mAmpModeler = std::make_unique<giml::AmpModeler<float, Layer1, Layer2>>(SAMPLE_RATE);
       mAmpModeler.toggle(true);
       mAmpModeler.loadModel(mModelWeights.weights);
-      // mChannelStrip.addEffect(std::move(mAmpModeler));
+      mChannelStrip.getEffectsLine().pushBack(&mAmpModeler);
 
-      auto detune = std::make_unique<giml::Detune<float>>(SAMPLE_RATE);
-      detune->toggle(true);
-      detune->setPitchRatio(0.993);
-      detune->setBlend(0.5);
-      mChannelStrip.addEffect(std::move(detune));
+      mDetune = std::make_unique<giml::Detune<float>>(SAMPLE_RATE);
+      mDetune->toggle(true);
+      mDetune->setPitchRatio(0.993);
+      mDetune->setBlend(0.5);
+      mChannelStrip.getEffectsLine().pushBack(mDetune.get());
   
-      auto delay = std::make_unique<giml::Delay<float>>(SAMPLE_RATE);
-      delay->toggle(true);
-      delay->setDelayTime(398);
-      delay->setFeedback(0.30);
-      delay->setBlend(0.24);
-      mChannelStrip.addEffect(std::move(delay));
+      mDelay = std::make_unique<giml::Delay<float>>(SAMPLE_RATE);
+      mDelay->toggle(true);
+      mDelay->setDelayTime(398);
+      mDelay->setFeedback(0.30);
+      mDelay->setBlend(0.24);
+      mChannelStrip.getEffectsLine().pushBack(mDelay.get());
 
       mChannelStrip.init();
     }
@@ -98,7 +105,7 @@ public:
       //mChannelStrip.processAudio(io);
       for (int sample = 0; sample < io.framesPerBuffer(); sample++) {
         float input = io.in(0, sample);
-        float output = mChannelStrip.processSample(input);
+        float output = mChannelStrip.getEffectsLine().processSample(input);
         for (int channel = 0; channel < io.channelsOut(); channel++) {
           io.out(channel, sample) = output;
         }
@@ -112,9 +119,7 @@ public:
 
   void onAnimate(double dt) override {
     if (isPrimary()) {
-      if (mGraphicsVoice != nullptr) {
-        mGraphicsVoice->update();
-      }
+      mDistributedScene.update();
       mChannelStrip.update();
     }
   }

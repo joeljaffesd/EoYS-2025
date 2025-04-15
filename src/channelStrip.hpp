@@ -56,6 +56,10 @@ public:
     mEffectsLine.pushBack(mEffects.back().get());
   }
 
+  giml::EffectsLine<float>& getEffectsLine() {
+    return mEffectsLine;
+  }
+
   // TODO: Effect Params & GUI
 
   // TODO fix mixing strategy
