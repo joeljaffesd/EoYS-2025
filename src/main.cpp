@@ -1,5 +1,6 @@
 #include "al/app/al_DistributedApp.hpp"
 #include "al_ext/statedistribution/al_CuttleboneStateSimulationDomain.hpp"
+#include "al/scene/al_DistributedScene.hpp"
 
 #include "../Gimmel/include/gimmel.hpp"
 
@@ -46,6 +47,27 @@ namespace giml {
   };
 }
 
+class GraphicsVoice : public al::PositionedVoice {
+private:
+  ImageSphereLoader mImageSphereLoader;
+  AssetEngine mAssetEngine;
+  
+public:
+
+  virtual void init() override {
+    mImageSphereLoader.init();
+    mImageSphereLoader.createSphere();
+    mAssetEngine.loadAssets();
+  }
+
+  virtual void onProcess(Graphics& g) override {
+    mAssetEngine.draw(g); // Draw the 3D object
+    g.lighting(false);
+    g.meshColor();
+    mImageSphereLoader.draw(g); // Draw the sphere
+  }
+};
+
 class MainApp : public al::DistributedAppWithState<State> {
 private:
   SphereScope mScope;
@@ -54,6 +76,7 @@ private:
   ChannelStrip mChannelStrip;
   ImageSphereLoader mImageSphereLoader;
   AssetEngine mAssetEngine;
+  al::DistributedScene mDistributedScene;
 
 public:
   void onInit() override {
@@ -62,6 +85,11 @@ public:
       std::cerr << "ERROR: Could not start Cuttlebone. Quitting." << std::endl;
       quit();
     }
+
+    mDistributedScene.registerSynthClass<GraphicsVoice>();
+    registerDynamicScene(mDistributedScene);
+    mDistributedScene.verbose(true);
+
     if (isPrimary()) { // load NAM model on primary
 
       // mAmpModeler = std::make_unique<giml::AmpModeler<float, Layer1, Layer2>>(SAMPLE_RATE);
@@ -85,10 +113,6 @@ public:
       mScope.init(audioIO().framesPerSecond()); // init scope
       mChannelStrip.init();
 
-      // add sphere image loader 
-      mImageSphereLoader.init();
-      mImageSphereLoader.createSphere();
-      mAssetEngine.loadAssets();
     } else {
       mScope.init(state().dataSize);
     }
@@ -119,14 +143,24 @@ public:
     }
   }
 
+  bool onKeyDown(const al::Keyboard& k) override {
+    if (isPrimary()) {
+      if (k.key() == ' ') {
+        auto* freeVoice = mDistributedScene.getVoice<GraphicsVoice>();
+        mDistributedScene.triggerOn(freeVoice);
+      }
+    }
+    return true;
+  }
+
   void onDraw(al::Graphics& g) override {
     g.clear(0.1);
-    mChannelStrip.draw(g);
-    mAssetEngine.draw(g); // Draw the 3D object
-    g.lighting(false);
-    g.meshColor();
-    g.draw(mScope);
-    mImageSphereLoader.draw(g); // Draw the sphere
+    mDistributedScene.render(g);
+    // mAssetEngine.draw(g); // Draw the 3D object
+    // g.lighting(false);
+    // g.meshColor();
+    // g.draw(mScope);
+    // mImageSphereLoader.draw(g); // Draw the sphere
   }
 
 };

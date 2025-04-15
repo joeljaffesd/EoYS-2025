@@ -13,7 +13,13 @@ struct ImageSphereLoader {
   Parameter sphereRadius = {"sphereRadius", "", 3.f, 0.f, 10.f}; // You can adjust this value to make the sphere larger
 
   void init() {
+
     image = Image(file.path());
+    if(!image.loaded()) {
+      std::cerr << "Failed to load image: " << file.path() << std::endl;
+      return;
+    }
+    
     mMesh.primitive(Mesh::POINTS);
     for (int j = 0; j < image.height(); j++) { 
       for (int i = 0; i < image.width(); i++) {
