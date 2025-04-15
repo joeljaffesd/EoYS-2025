@@ -16,6 +16,8 @@ struct AssetEngine {
   //Texture tex;
   vector<Mesh> meshes;
   float a = 0.f, b = 0.f, c = 0.f;  // current rotation angle
+  ParameterBool assetShow{"assetShow", "", true};
+  Parameter scale{"scale", "", 1.f, 0.f, 10.f};
 
   void loadAssets() {
     std::string fileName = "../assets/rough-human-ouroboros.obj";
@@ -36,15 +38,16 @@ struct AssetEngine {
   }
 
   void draw(Graphics &g) {
+    if (!assetShow) return;
     gl::depthTesting(true);
     g.lighting(true);
     g.pushMatrix();
 
     // rotate it around the y axis
     g.rotate(a, b, c, 0.f);
-    a -= 0.5f;
-    b += 0.5f;
-    c += 0.5f;
+    a -= 0.2f;
+    b += 0.2f;
+    c += 0.2f;
 
     // scale the whole asset to fit into our view frustum
     float tmp = scene_max[0] - scene_min[0];
@@ -52,6 +55,7 @@ struct AssetEngine {
     tmp = std::max(scene_max[2] - scene_min[2], tmp);
     tmp = 2.f / tmp;
     g.scale(tmp);
+    g.scale(scale);
 
     // center the model
     g.translate(-scene_center);

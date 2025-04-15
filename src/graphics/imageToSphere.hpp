@@ -10,7 +10,9 @@ struct ImageSphereLoader {
   Mesh mMesh;
   File file = File::currentPath() + "../assets/imgWrap.png";
   Image image;
+  ParameterBool imageShow{"imageShow", "", true};
   Parameter sphereRadius = {"sphereRadius", "", 3.f, 0.f, 10.f}; // You can adjust this value to make the sphere larger
+  Parameter pointSize = {"pointSize", "", 10.f, 0.f, 100.f}; // Point size for the mesh
 
   void init() {
 
@@ -30,9 +32,14 @@ struct ImageSphereLoader {
     }
   }
 
+  void update() {
+    this->createSphere();
+  }
+
   void draw(Graphics& g) {
+    if (!imageShow) return;
     g.meshColor();
-    g.pointSize(10); // play with 
+    g.pointSize(pointSize); // play with 
     g.draw(mMesh);
   }
 
@@ -69,7 +76,7 @@ struct ImageSphereLoader {
       vertex -= center;
     }
 
-    std::cout << "Displaying Image Wrapped Around a Sphere." << std::endl;
+    //std::cout << "Displaying Image Wrapped Around a Sphere." << std::endl;
   }
 
 };
