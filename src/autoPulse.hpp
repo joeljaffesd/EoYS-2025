@@ -13,31 +13,31 @@ public:
     float amount = 0.2f;   // amount of pulsing (expansion/contraction)
     int direction = 1;     // 1 = expand outward, -1 = collapse inward
 
-    // constructor and initialize members
-    AutoPulseEffect(float r = 1.0f, float a = 0.2f, int d = 1)
+    // Original mesh state. need this for knowing where to pulse back to and handling additional transformation effects
+    std::vector<al::Vec3f> baseVerts;
+
+    AutoPulseEffect(float r = 1.0f, float a = 0.3f, int d = 1)
         : rate(r), amount(a), direction(d) {}
 
-    void setParams(float r, float a, int d = 1) {
-        rate = r;
-        amount = a;
-        direction = d;
+    // Set the base mesh (e.g., from mesh.vertices()) //effect will not work without setting base mesh ( -> approach)
+    void setBaseMesh(const std::vector<al::Vec3f>& verts) {
+        baseVerts = verts;
     }
 
     void process(al::VAOMesh& mesh, float t) override {
         auto& verts = mesh.vertices();
+        if (verts.size() != baseVerts.size()) return;
 
-        // calculate a pulse value (oscillates around zero)
-        float pulseAmount = std::sin(t * rate * M_2PI) * amount * direction;
+        float pulseAmount = std::sin(t * rate * M_2PI) * amount * direction; //oscillating pulse effect math
 
-        // get the mesh center
         al::Vec3f center{0, 0, 0};
-        for (auto& v : verts) center += v;
-        center /= verts.size();
+        for (auto& v : baseVerts) center += v;
+        center /= baseVerts.size(); //center of whole mesh 
 
-        // apply pulse as displacement from center
-        for (auto& v : verts) {
-            al::Vec3f fromCenter = v - center;
-            v += fromCenter.normalized() * pulseAmount;
+        for (size_t i = 0; i < verts.size(); ++i) {
+            al::Vec3f fromCenter = baseVerts[i] - center;
+            //keeps effect relative to initial geometry, not last frame ( this would cause rapid feedback shrink / grow issue)
+            verts[i] = center + fromCenter * (1.0f + pulseAmount);
         }
 
         mesh.update();

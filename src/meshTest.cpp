@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cmath>
 #include "al/graphics/al_VAOMesh.hpp"
+#include "autoPulse.hpp"
 #include "vfxUtility.hpp" // 
 #include "ripple2.hpp"
 #include "orbit.hpp"
@@ -24,6 +25,7 @@ public:
     RippleEffect ripple2;  
     OrbitEffect orbit;
     OrbitEffect orbit2;
+    AutoPulseEffect pulse;
     VertexEffectChain effectChain; // chain constructed
     VertexEffectChain effectChain2;
 
@@ -55,14 +57,18 @@ public:
 
         mesh.color(1, 1, 1);
         mesh2.color(0.6, 1, 1);
+        pulse. setBaseMesh(mesh.vertices());
 
         // Set effect parameters if desired
-        ripple.setParams(1.0, 0.2, 4.0, 'y');
+        ripple.setParams(1.0, 0.5, 4.0, 'y');
         
         orbit.setParams(1.0, 1.0, {0,2,1}, 0, -1, 1, 1);         
         // push effects to chain
-        effectChain.pushBack(&ripple); 
+        effectChain.pushBack(&pulse);
         effectChain.pushBack(&orbit);
+        effectChain.pushBack(&ripple); 
+    
+
 
         /////// END MESH 1 EFFECTS //////
 
