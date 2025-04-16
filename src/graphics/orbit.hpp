@@ -36,7 +36,9 @@ public:
           zDir(zD),
           rotationAxes(axes) {}  
 
-    void process(std::vector<al::Vec3f>& verts, float t) override {
+    void process(al::VAOMesh& mesh, float t) override {
+        //reference to vertices
+        auto& verts = mesh.vertices(); 
         // Compute angular position on orbit path
         float angle = t * rate * M_2PI;  // 2π means 1Hz = one full loop per second
 
@@ -67,7 +69,8 @@ public:
 
         // shift amount for each vertex. 
         al::Vec3f shift = targetCenter - meshCenter;
-        for (auto& v : verts) v += shift;
+        mesh.translate(shift);
+        //for (auto& v : verts) v += shift;
     }
 };
 
