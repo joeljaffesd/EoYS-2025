@@ -1,9 +1,10 @@
 #include "al/app/al_App.hpp"
 #include <iostream>
 #include <cmath>
-#include "graphics/vfxUtility.hpp" // 
-#include "graphics/ripple2.hpp"
-#include "graphics/orbit.hpp"
+#include "al/graphics/al_VAOMesh.hpp"
+#include "vfxUtility.hpp" // 
+#include "ripple2.hpp"
+#include "orbit.hpp"
 
 using namespace al;
 
@@ -11,15 +12,20 @@ using namespace al;
 
 class MyApp : public App {
 public:
-    Mesh mesh;
+    //Mesh mesh;
+    VAOMesh mesh;
+    VAOMesh mesh2;
     float t = 0.0f;
 
     int gridSize = 20;
     float spacing = 0.1f;
 
-    RippleEffect ripple;  
+    RippleEffect ripple; 
+    RippleEffect ripple2;  
     OrbitEffect orbit;
+    OrbitEffect orbit2;
     VertexEffectChain effectChain; // chain constructed
+    VertexEffectChain effectChain2;
 
     void onCreate() override {
         nav().pos(0, 0, 3);
@@ -34,43 +40,50 @@ public:
                         x * spacing,
                         y * spacing,
                         z * spacing
+                    
                     ));
+                    mesh2.vertex(Vec3f(
+                        x /2 *  spacing,
+                        y / 2* spacing,
+                        z / 2* spacing
+                    
+                    ));
+                    
                 }
             }
         }
 
         mesh.color(1, 1, 1);
+        mesh2.color(0.6, 1, 1);
 
         // Set effect parameters if desired
-
-        //inear wave settings//
-        // ripple.frequency = 1000000.f;
-        // ripple.amplitude = 30.f;
-
-        // freq is in hz so i is one cycle per sec
-        ripple.rate = 1.f;
-        //0.1 is really high
-        ripple.mix = 0.2f;
-        ripple.axis = 'y'; //x, y, z chars
-        ripple.spatialFreq = 3.0f; //basically number of waves
+        ripple.setParams(1.0, 0.2, 4.0, 'y');
         
-        orbit.rate = 0.3f;
-        orbit.radius = 1.5f;
-        orbit.rotationAxes = 1;
-        orbit.orbitCenter = {0,2,0};
-        orbit.xDir = 1;
-        orbit.yDir = -1;
-        orbit.zDir = -1;
-        
+        orbit.setParams(1.0, 1.0, {0,2,1}, 0, -1, 1, 1);         
         // push effects to chain
         effectChain.pushBack(&ripple); 
         effectChain.pushBack(&orbit);
+
+        /////// END MESH 1 EFFECTS //////
+
+        //// START MESH 2 EFFECTS/////
+        orbit2.rate = 0.9f;
+        orbit2.radius = 0.9f;
+        orbit2.rotationAxes = 1;
+        orbit2.orbitCenter = {0,2,0};
+        orbit2.xDir = -1;
+        orbit2.yDir = -1;
+        orbit2.zDir = 1;
+        effectChain2.pushBack(&orbit2);
+
+
     }
 
     void onAnimate(double dt) override {
         t += dt;
 
-        effectChain.process(mesh.vertices(), t); // run process function on chain
+        effectChain.process(mesh, t); // run process function on chain
+        effectChain2.process(mesh2, t);
     }
 
     void onDraw(Graphics& g) override {
@@ -80,6 +93,7 @@ public:
 
         //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         g.draw(mesh);
+        g.draw(mesh2);
         //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 };

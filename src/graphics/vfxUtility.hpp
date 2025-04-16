@@ -18,8 +18,8 @@ public:
     //overriden in actuall effect declaration
     virtual void process(al::VAOMesh& mesh, float t) = 0;
 
-    //also override
-     virtual void setParams(const std::vector<float>& params) {}
+    //no longer using
+     //virtual void setEffectParams(const std::vector<float>& params) {}
 };
 
 class VertexEffectChain {
