@@ -4,7 +4,7 @@
 #include "al/math/al_Vec.hpp"
 #include "vfxUtility.hpp"  //
 
-//wanted to use built in scale function, but cased issues with saving state and unwanted vertices updating
+//wanted to use built in scale function, but caused issues with saving state and unwanted vertices updating
 
 // a transformation effect
 class AutoPulseEffect : public VertexEffect {
@@ -13,16 +13,19 @@ public:
     float amount = 0.2f;   // amount of pulsing (expansion/contraction)
     int direction = 1;     // 1 = expand outward, -1 = collapse inward
 
-    // Original mesh state. need this for knowing where to pulse back to and handling additional transformation effects
-    //std::vector<al::Vec3f> baseVerts;
+    /**
+     * @brief Set effect parameters
+     * 
+     * @param Rate     Pulse rate in Hz
+     * @param Amount  Displacement strength (0.0–1.0)
+     * @param Direction     Direction: 1 = expand, -1 = contract
+     */
+    void setParams(float Rate, float Amount, int Direction) {
+        rate = Rate;
+        amount = Amount;
+        direction = Direction;
+    }
 
-    AutoPulseEffect(float r = 1.0f, float a = 0.3f, int d = 1)
-        : rate(r), amount(a), direction(d) {}
-
-    // Set the base mesh (e.g., from mesh.vertices()) //effect will not work without setting base mesh ( -> approach)
-    // void setBaseMesh(const std::vector<al::Vec3f>& verts) {
-    //     baseVerts = verts;
-    // }
 
     void process(al::VAOMesh& mesh, float t) override {
         auto& verts = mesh.vertices();
@@ -41,10 +44,8 @@ public:
             //no frame to frame distortion
         }
 
-
-
         mesh.update();
     }
 };
 
-#endif // PULSE_EFFECT_HPP
+#endif // AUTO_PULSE_EFFECT_HPP
