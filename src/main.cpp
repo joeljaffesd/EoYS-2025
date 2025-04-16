@@ -229,6 +229,7 @@ public:
   }
 
   void onDraw(al::Graphics& g) override {
+    g.lens().eyeSep(0.0); // disable stereo rendering
     g.clear(0.1);
     mDistributedScene.render(g);
     if (isPrimary()) {
