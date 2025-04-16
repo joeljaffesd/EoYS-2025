@@ -57,7 +57,7 @@ public:
 
         mesh.color(1, 1, 1);
         mesh2.color(0.6, 1, 1);
-        pulse. setBaseMesh(mesh.vertices());
+        pulse.setBaseMesh(mesh.vertices());
 
         // Set effect parameters if desired
         ripple.setParams(1.0, 0.5, 4.0, 'y');
@@ -65,7 +65,7 @@ public:
         orbit.setParams(1.0, 1.0, {0,2,1}, 0, -1, 1, 1);         
         // push effects to chain
         effectChain.pushBack(&pulse);
-        effectChain.pushBack(&orbit);
+        //effectChain.pushBack(&orbit);
         effectChain.pushBack(&ripple); 
     
 

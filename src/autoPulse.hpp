@@ -14,15 +14,15 @@ public:
     int direction = 1;     // 1 = expand outward, -1 = collapse inward
 
     // Original mesh state. need this for knowing where to pulse back to and handling additional transformation effects
-    std::vector<al::Vec3f> baseVerts;
+    //std::vector<al::Vec3f> baseVerts;
 
     AutoPulseEffect(float r = 1.0f, float a = 0.3f, int d = 1)
         : rate(r), amount(a), direction(d) {}
 
     // Set the base mesh (e.g., from mesh.vertices()) //effect will not work without setting base mesh ( -> approach)
-    void setBaseMesh(const std::vector<al::Vec3f>& verts) {
-        baseVerts = verts;
-    }
+    // void setBaseMesh(const std::vector<al::Vec3f>& verts) {
+    //     baseVerts = verts;
+    // }
 
     void process(al::VAOMesh& mesh, float t) override {
         auto& verts = mesh.vertices();
@@ -38,7 +38,10 @@ public:
             al::Vec3f fromCenter = baseVerts[i] - center;
             //keeps effect relative to initial geometry, not last frame ( this would cause rapid feedback shrink / grow issue)
             verts[i] = center + fromCenter * (1.0f + pulseAmount);
+            //no frame to frame distortion
         }
+
+
 
         mesh.update();
     }
