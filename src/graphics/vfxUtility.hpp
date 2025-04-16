@@ -5,6 +5,7 @@
 #include <vector>
 #include <cmath>
 
+//updated
 
 // want to make a more generic template class for any v effect that ovverides based on the mesh component the effect targets -- specifically: vertices (already implemented), normals, texture coords, etc (shading???)
 
@@ -14,6 +15,7 @@ public:
     virtual ~VertexEffect() = default;
     bool enabled = true;
 
+    //overriden in actuall effect declaration
     virtual void process(std::vector<al::Vec3f>& verts, float t) = 0;
 };
 
@@ -24,12 +26,15 @@ public:
     }
     //process gets called in every on animate (plug it into on animate)
     // verts is a reference, time gets passed in through onAnimate
-    void process(std::vector<al::Vec3f>& verts, float t) {
+    void process(al::VAOMesh& mesh, float t) {
         //loops through each effect in effects vector. i think this is working properly but need to test stacking multiple fx. e is a copy of a pointer basically
+        auto& verts = mesh.vertices(); // might change this to make it more modular. i.e. - set effect type
         for (auto* e : effects) {
-            //check if effect is on, then run process. (e is a r)
-            if (e->enabled) e->process(verts, t);
+            //check if effect is on, then run process. (e is a pointer)
+            if (e->enabled) e->process(verts, t); //process will be the actual effect logic
         }
+        mesh.update(); //part of vao mesh
+
     }
 
 private:
