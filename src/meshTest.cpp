@@ -59,13 +59,13 @@ public:
         mesh2.color(0.6, 1, 1);
         pulse.setBaseMesh(mesh.vertices());
 
-        // Set effect parameters if desired
+        // Set Parameters
         ripple.setParams(1.0, 0.5, 4.0, 'y');
-        
-        orbit.setParams(1.0, 1.0, {0,2,1}, 0, -1, 1, 1);         
+        orbit.setParams(1.0, 1.0, {0,2,1}, 0, -1, 1, 1);     
+        pulse.setParams(1.0, 2.0, 1);    
         // push effects to chain
         effectChain.pushBack(&pulse);
-        //effectChain.pushBack(&orbit);
+        effectChain.pushBack(&orbit);
         effectChain.pushBack(&ripple); 
     
 
@@ -73,15 +73,7 @@ public:
         /////// END MESH 1 EFFECTS //////
 
         //// START MESH 2 EFFECTS/////
-        orbit2.rate = 0.9f;
-        orbit2.radius = 0.9f;
-        orbit2.rotationAxes = 1;
-        orbit2.orbitCenter = {0,2,0};
-        orbit2.xDir = -1;
-        orbit2.yDir = -1;
-        orbit2.zDir = 1;
         effectChain2.pushBack(&orbit2);
-
 
     }
 
