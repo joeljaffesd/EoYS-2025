@@ -2,10 +2,12 @@
 #include <iostream>
 #include <cmath>
 #include "al/graphics/al_VAOMesh.hpp"
-#include "autoPulse.hpp"
-#include "vfxUtility.hpp" // 
-#include "ripple2.hpp"
-#include "orbit.hpp"
+//#include "autoPulse.hpp"
+//#include "src/scatter.hpp"
+// #include "vfxUtility.hpp" // 
+// #include "ripple.hpp"
+// #include "orbit.hpp"
+#include "vfxMain.hpp"
 
 using namespace al;
 
@@ -21,11 +23,17 @@ public:
     int gridSize = 20;
     float spacing = 0.1f;
 
+
+    //example effect instantiation
+
+
+
     RippleEffect ripple; 
     RippleEffect ripple2;  
     OrbitEffect orbit;
     OrbitEffect orbit2;
     AutoPulseEffect pulse;
+    ScatterEffect scatter;
     VertexEffectChain effectChain; // chain constructed
     VertexEffectChain effectChain2;
 
@@ -57,16 +65,21 @@ public:
 
         mesh.color(1, 1, 1);
         mesh2.color(0.6, 1, 1);
+
+        //// Basic template ////
+
+        //// Set Base Mesh for pulsing ////
         pulse.setBaseMesh(mesh.vertices());
 
-        // Set Parameters
+        //// Set Parameters ////
         ripple.setParams(1.0, 0.5, 4.0, 'y');
         orbit.setParams(1.0, 1.0, {0,2,1}, 0, -1, 1, 1);     
-        pulse.setParams(1.0, 2.0, 1);    
-        // push effects to chain
+        pulse.setParams(1.0, 1.0, 1);    
+        //// push effects to chain /////
         effectChain.pushBack(&pulse);
-        effectChain.pushBack(&orbit);
-        effectChain.pushBack(&ripple); 
+        // effectChain.pushBack(&orbit);
+        //effectChain.pushBack(&ripple); 
+        //effectChain.pushBack(&scatter); // not working yet
     
 
 
@@ -79,6 +92,10 @@ public:
 
     void onAnimate(double dt) override {
         t += dt;
+
+        if (dt == 10){
+            scatter.trigger();
+        }
 
         effectChain.process(mesh, t); // run process function on chain
         effectChain2.process(mesh2, t);

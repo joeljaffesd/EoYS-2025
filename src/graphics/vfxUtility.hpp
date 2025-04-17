@@ -18,8 +18,16 @@ public:
     //overriden in actuall effect declaration
     virtual void process(al::VAOMesh& mesh, float t) = 0;
 
+    virtual void setBaseMesh(const std::vector<al::Vec3f>& verts) {
+        baseVerts = verts;
+    }
+
     //no longer using
      //virtual void setEffectParams(const std::vector<float>& params) {}
+//}
+
+protected:
+    std::vector<al::Vec3f> baseVerts;  // holds a copy of the original mesh vertices
 };
 
 class VertexEffectChain {
