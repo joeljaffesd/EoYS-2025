@@ -56,6 +56,29 @@ public:
     prevMagnitudes = magnitudes;
     return flux;
   }
+  // get spectral centroid
+  float getCent() {
+    if (magnitudes.empty())
+      return 0.0f;
+
+    float weightedSum = 0.0f;
+    float magSum = 0.0f;
+
+    float binFreq = stft.binFreq(); // Frequency spacing per bin
+    for (size_t i = 0; i < magnitudes.size(); ++i) {
+      float freq = i * binFreq;
+      weightedSum += freq * magnitudes[i];
+      magSum += magnitudes[i];
+    }
+      
+
+
+    if (magSum == 0.0f) {
+      return 0.0f;
+      
+    }
+    return weightedSum / magSum;
+  };
 
   //   float getCentroid() {
   //     float centroid;

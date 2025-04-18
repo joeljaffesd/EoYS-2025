@@ -56,7 +56,7 @@ public:
     }
 
     mesh.color(1, 1, 1);
-    mesh2.color(0.6, 1, 1);
+    // mesh2.color(0.6, 1, 1);
 
     //// Basic template ////
 
@@ -72,8 +72,8 @@ public:
     // effectChain.pushBack(&autoPulse);
     //   effectChain.pushBack(&orbit);
     effectChain.pushBack(&ripple);
-    effectChain.pushBack(&mainPulse);
-    // effectChain.pushBack(&scatter); // not working yet
+    // effectChain.pushBack(&mainPulse);
+    //  effectChain.pushBack(&scatter); // not working yet
 
     /////// END MESH 1 EFFECTS //////
 
@@ -98,23 +98,26 @@ public:
     float flux = (specListen.getFlux() * 1000.f);
 
     std::cout << flux << std::endl;
-    // if (dt == 10) {
-    //   scatter.trigger();
-    // }
-    // autoPulse.setParams((flux * 10), flux / 10.f, 1);
+    // std::cout << "Centroid: " << centroid << std::endl;
+    //  if (dt == 10) {
+    //    scatter.trigger();
+    //  }
+    //  autoPulse.setParams((flux * 10), flux / 10.f, 1);
     mainPulse.setParams(flux / 100.0f, flux);
 
-    ripple.setParams(1.0, pow(flux, 2), 4.0, 'y');
+    ripple.setParams(1.0, flux / 10, 4.0, 'y');
 
     effectChain.process(mesh, t); // run process function on chain
     // effectChain2.process(mesh2, t);
+    // mesh.color();
   }
 
   void onDraw(Graphics &g) override {
     g.clear(0.1);
     g.pointSize(2.0);
-    g.color(0.5, 0.5, 1.0);
 
+    float centroid = specListen.getCent();
+    g.color((centroid / 4000.f), 0.5, 1.0);
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     g.draw(mesh);
     g.draw(mesh2);
