@@ -1,6 +1,7 @@
 #include "al/app/al_App.hpp"
 #include "al/graphics/al_VAOMesh.hpp"
 #include "audioReactor.hpp"
+#include "src/graphics/manualPulse.hpp"
 #include "vfxMain.hpp"
 #include <cmath>
 #include <iostream>
@@ -29,7 +30,8 @@ public:
   RippleEffect ripple2;
   OrbitEffect orbit;
   OrbitEffect orbit2;
-  AutoPulseEffect pulse;
+  AutoPulseEffect autoPulse;
+  ManualPulseEffect mainPulse;
   ScatterEffect scatter;
   VertexEffectChain effectChain; // chain constructed
   VertexEffectChain effectChain2;
@@ -59,16 +61,18 @@ public:
     //// Basic template ////
 
     //// Set Base Mesh for pulsing ////
-    pulse.setBaseMesh(mesh.vertices());
+    autoPulse.setBaseMesh(mesh.vertices());
+    mainPulse.setBaseMesh(mesh.vertices());
 
     //// Set Parameters ////
     ripple.setParams(1.0, 0.5, 4.0, 'y');
     orbit.setParams(1.0, 1.0, {0, 2, 1}, 0, -1, 1, 1);
-    pulse.setParams(1.0, 1.0, 1);
+    autoPulse.setParams(1.0, 1.0, 1);
     //// push effects to chain /////
-    effectChain.pushBack(&pulse);
-    //  effectChain.pushBack(&orbit);
+    // effectChain.pushBack(&autoPulse);
+    //   effectChain.pushBack(&orbit);
     effectChain.pushBack(&ripple);
+    effectChain.pushBack(&mainPulse);
     // effectChain.pushBack(&scatter); // not working yet
 
     /////// END MESH 1 EFFECTS //////
@@ -97,8 +101,10 @@ public:
     // if (dt == 10) {
     //   scatter.trigger();
     // }
-    pulse.setParams((flux * 10), flux / 10.f, 1);
-    ripple.setParams(1.0, flux, 4.0, 'y');
+    // autoPulse.setParams((flux * 10), flux / 10.f, 1);
+    mainPulse.setParams(flux / 100.0f, flux);
+
+    ripple.setParams(1.0, pow(flux, 2), 4.0, 'y');
 
     effectChain.process(mesh, t); // run process function on chain
     // effectChain2.process(mesh2, t);
