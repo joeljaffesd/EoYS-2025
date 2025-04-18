@@ -42,6 +42,8 @@ struct ImageSphereLoader {
   void update() { this->createSphere(); }
 
   void draw(Graphics &g) {
+    // this may need to be changed to handle mesh manipulations and shader..
+    // manipulations
     if (!imageShow)
       return;
     g.meshColor();
