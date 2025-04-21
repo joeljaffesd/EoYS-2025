@@ -15,7 +15,6 @@
 using namespace al;
 
 #define SpatializerType AmbisonicsSpatializer // for Ambisonics
-//#define SpatializerType Lbap // Layer-based amplitude panning
 
 // ===================
 // Helper: Convert Spherical to Cartesian using AlloSphere convention
@@ -301,11 +300,17 @@ struct MyApp : public App {
   
   // Flag to prevent feedback loop between parameter changes and pickable updates
   bool pickablesUpdatingParameters = false;
+  
+  // Fixed listener pose at origin
+  Pose fixedListenerPose;
 
   void onCreate() override {
-    auto speakers = StereoSpeakerLayout(); // stereo is for StereoSpeakerLayout(), Allosphere's 54.1 is for AlloSphereSpeakerLayoutCompensated()
+    auto speakers = StereoSpeakerLayout();
     scene.setSpatializer<SpatializerType>(speakers);
     scene.distanceAttenuation().law(ATTEN_NONE);
+    
+    // Set fixed listener pose at origin (0,0,0)
+    fixedListenerPose = Pose(Vec3f(0, 0, 0));
     
     // Create meshes for visual representation
     addSphere(sineMesh, 0.3);
@@ -431,14 +436,14 @@ struct MyApp : public App {
     // Prepare the scene for audio rendering
     scene.prepare(audioIO());
     
-    // Set up camera
+    // Set up camera - still movable but doesn't affect audio
     nav().pos(0, 0, 10);
-    navControl().useMouse(false);
     
     std::cout << "3D Sound Spatialization with GUI and Pickable Objects:" << std::endl;
     std::cout << "  1. Use sliders to control sound source positions" << std::endl;
     std::cout << "  2. Click and drag objects to move them in space" << std::endl;
     std::cout << "  3. Press SPACE to reset objects to original positions" << std::endl;
+    std::cout << "  4. Camera can be moved with arrow keys (view only, doesn't affect audio)" << std::endl;
   }
   
   // Update pickable positions based on current parameter values
@@ -530,8 +535,8 @@ struct MyApp : public App {
     g.clear();
     gl::depthTesting(true);
     
-    // Set listener pose
-    scene.listenerPose(nav());
+    // Set view based on nav() for visualization only
+    // This won't affect audio spatialization
     
     // Draw coordinate reference axes
     g.lineWidth(2.0);
@@ -602,6 +607,8 @@ struct MyApp : public App {
   }
 
   void onSound(AudioIOData &io) override {
+    // Use fixed listener pose at origin instead of camera position
+    scene.listenerPose(fixedListenerPose);
     scene.render(io);
   }
 
@@ -669,7 +676,7 @@ int main() {
   MyApp app;
   app.dimensions(800, 600);
   app.title("3D Sound Spatialization");
-  app.configureAudio(44100, 256, 2, 0);   // for stereo, app.configureAudio(44100, 256, 2, 0); 60 for allosphere
+  app.configureAudio(44100, 256, 2, 0);
   app.start();
   return 0;
 }
