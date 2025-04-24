@@ -15,6 +15,7 @@
 using namespace al;
 
 #define SpatializerType AmbisonicsSpatializer // for Ambisonics
+//#define SpatializerType Lbap // for playback within Allosphere, this needs to be uncommented with the "AmbisonicsSpatializer" commented out.
 
 // ===================
 // Helper: Convert Spherical to Cartesian using AlloSphere convention
@@ -258,6 +259,25 @@ public:
   }
 };
 
+// ===================
+// Enhanced Pickable that tracks selection state
+// ===================
+class SelectablePickable : public PickableBB {
+public:
+  bool selected = false;
+
+  bool onEvent(PickEvent e, Hit h) override {
+    bool handled = PickableBB::onEvent(e, h);
+    
+    // Set selected on pick
+    if (e.type == Pick && h.hit) {
+      selected = true;
+    }
+    
+    return handled;
+  }
+};
+
 // ==========================
 // Main App
 // ==========================
@@ -303,9 +323,14 @@ struct MyApp : public App {
   
   // Fixed listener pose at origin
   Pose fixedListenerPose;
+  
+  // Selectable pickable objects
+  SelectablePickable* sinePickable = nullptr;
+  SelectablePickable* squarePickable = nullptr;
+  SelectablePickable* pinkPickable = nullptr;
 
   void onCreate() override {
-    auto speakers = StereoSpeakerLayout();
+    auto speakers = StereoSpeakerLayout(); // for playback within Allosphere, this needs to be AlloSphereSpeakerLayoutCompensated()
     scene.setSpatializer<SpatializerType>(speakers);
     scene.distanceAttenuation().law(ATTEN_NONE);
     
@@ -332,11 +357,11 @@ struct MyApp : public App {
     sineGUI.setTitle("Sine Wave");
     sineGUI << sineAzimuth << sineElevation << sineDistance << sineGain;
     
-    squareGUI.init(250, 5, false);
+    squareGUI.init(5, 5, false);
     squareGUI.setTitle("Square Wave");
     squareGUI << squareAzimuth << squareElevation << squareDistance << squareGain;
     
-    pinkGUI.init(500, 5, false);
+    pinkGUI.init(5, 5, false);
     pinkGUI.setTitle("Pink Noise");
     pinkGUI << pinkAzimuth << pinkElevation << pinkDistance << pinkGain;
     
@@ -395,18 +420,18 @@ struct MyApp : public App {
       }
     });
     
-    // Create pickable objects
-    PickableBB* sinePickable = new PickableBB;
+    // Create selectable pickable objects
+    sinePickable = new SelectablePickable();
     sinePickable->set(sineMesh);
     sinePickable->pose = Pose(sphericalToCartesian(sineAzimuth.get(), sineElevation.get(), sineDistance.get()));
     pickableManager << sinePickable;
     
-    PickableBB* squarePickable = new PickableBB;
+    squarePickable = new SelectablePickable();
     squarePickable->set(squareMesh);
     squarePickable->pose = Pose(sphericalToCartesian(squareAzimuth.get(), squareElevation.get(), squareDistance.get()));
     pickableManager << squarePickable;
     
-    PickableBB* pinkPickable = new PickableBB;
+    pinkPickable = new SelectablePickable();
     pinkPickable->set(pinkMesh);
     pinkPickable->pose = Pose(sphericalToCartesian(pinkAzimuth.get(), pinkElevation.get(), pinkDistance.get()));
     pickableManager << pinkPickable;
@@ -440,32 +465,37 @@ struct MyApp : public App {
     nav().pos(0, 0, 10);
     
     std::cout << "3D Sound Spatialization with GUI and Pickable Objects:" << std::endl;
-    std::cout << "  1. Use sliders to control sound source positions" << std::endl;
+    std::cout << "  1. Click on a sound source to show its control panel" << std::endl;
     std::cout << "  2. Click and drag objects to move them in space" << std::endl;
     std::cout << "  3. Press SPACE to reset objects to original positions" << std::endl;
     std::cout << "  4. Camera can be moved with arrow keys (view only, doesn't affect audio)" << std::endl;
   }
   
+  // Clear selection on all pickables
+  void clearAllSelections() {
+    if (sinePickable) sinePickable->selected = false;
+    if (squarePickable) squarePickable->selected = false;
+    if (pinkPickable) pinkPickable->selected = false;
+  }
+  
   // Update pickable positions based on current parameter values
   void updatePickablePositions() {
-    auto pickables = pickableManager.pickables();
-    
     // Update sine wave pickable
-    if (pickables.size() > 0) {
+    if (sinePickable) {
       Vec3f position = sphericalToCartesian(sineAzimuth.get(), sineElevation.get(), sineDistance.get());
-      pickables[0]->pose = Pose(position);
+      sinePickable->pose = Pose(position);
     }
     
     // Update square wave pickable
-    if (pickables.size() > 1) {
+    if (squarePickable) {
       Vec3f position = sphericalToCartesian(squareAzimuth.get(), squareElevation.get(), squareDistance.get());
-      pickables[1]->pose = Pose(position);
+      squarePickable->pose = Pose(position);
     }
     
     // Update pink noise pickable
-    if (pickables.size() > 2) {
+    if (pinkPickable) {
       Vec3f position = sphericalToCartesian(pinkAzimuth.get(), pinkElevation.get(), pinkDistance.get());
-      pickables[2]->pose = Pose(position);
+      pinkPickable->pose = Pose(position);
     }
     
     updateAudioAgents();
@@ -494,31 +524,29 @@ struct MyApp : public App {
     navControl().active(!sineGUI.usingInput() && !squareGUI.usingInput() && !pinkGUI.usingInput());
     
     // Update parameters from pickable positions
-    auto pickables = pickableManager.pickables();
-    
     // Only update parameters from pickables if GUI isn't being used
     if (!sineGUI.usingInput() && !squareGUI.usingInput() && !pinkGUI.usingInput()) {
       pickablesUpdatingParameters = true;
       
-      if (pickables.size() > 0) {
+      if (sinePickable) {
         float az, el, dist;
-        cartesianToSpherical(pickables[0]->pose.get().pos(), az, el, dist);
+        cartesianToSpherical(sinePickable->pose.get().pos(), az, el, dist);
         sineAzimuth.set(az);
         sineElevation.set(el);
         sineDistance.set(dist);
       }
       
-      if (pickables.size() > 1) {
+      if (squarePickable) {
         float az, el, dist;
-        cartesianToSpherical(pickables[1]->pose.get().pos(), az, el, dist);
+        cartesianToSpherical(squarePickable->pose.get().pos(), az, el, dist);
         squareAzimuth.set(az);
         squareElevation.set(el);
         squareDistance.set(dist);
       }
       
-      if (pickables.size() > 2) {
+      if (pinkPickable) {
         float az, el, dist;
-        cartesianToSpherical(pickables[2]->pose.get().pos(), az, el, dist);
+        cartesianToSpherical(pinkPickable->pose.get().pos(), az, el, dist);
         pinkAzimuth.set(az);
         pinkElevation.set(el);
         pinkDistance.set(dist);
@@ -529,14 +557,29 @@ struct MyApp : public App {
     
     // Always update audio agents
     updateAudioAgents();
+    
+    // When clicking a new object, deselect all others - mutually exclusive selection
+    for (auto pickable : pickableManager.pickables()) {
+      SelectablePickable* sp = dynamic_cast<SelectablePickable*>(pickable);
+      if (sp && sp->selected) {
+        // If this one is selected, ensure others are deselected
+        if (sp == sinePickable) {
+          squarePickable->selected = false;
+          pinkPickable->selected = false;
+        } else if (sp == squarePickable) {
+          sinePickable->selected = false;
+          pinkPickable->selected = false;
+        } else if (sp == pinkPickable) {
+          sinePickable->selected = false;
+          squarePickable->selected = false;
+        }
+      }
+    }
   }
 
   void onDraw(Graphics &g) override {
     g.clear();
     gl::depthTesting(true);
-    
-    // Set view based on nav() for visualization only
-    // This won't affect audio spatialization
     
     // Draw coordinate reference axes
     g.lineWidth(2.0);
@@ -571,12 +614,15 @@ struct MyApp : public App {
         }
       }
       
-      if (index == 0) {
-        g.color(0.1, 0.9, 0.3); // Green for sine
-      } else if (index == 1) {
-        g.color(0.2, 0.4, 1.0); // Blue for square
-      } else if (index == 2) {
-        g.color(0.9, 0.3, 0.1); // Orange for pink
+      SelectablePickable* sp = dynamic_cast<SelectablePickable*>(pickable);
+      bool isSelected = sp && sp->selected;
+      
+      if (index == 0) { // Sine
+        g.color(isSelected ? RGB(0.3, 1.0, 0.5) : RGB(0.1, 0.9, 0.3)); // Brighter green when selected
+      } else if (index == 1) { // Square
+        g.color(isSelected ? RGB(0.4, 0.6, 1.0) : RGB(0.2, 0.4, 1.0)); // Brighter blue when selected
+      } else if (index == 2) { // Pink
+        g.color(isSelected ? RGB(1.0, 0.5, 0.2) : RGB(0.9, 0.3, 0.1)); // Brighter orange when selected
       } else {
         g.color(1, 1, 1);
       }
@@ -597,11 +643,18 @@ struct MyApp : public App {
       g.draw(line);
     }
     
-    // Draw the GUI
+    // Draw the GUI - only for selected objects
     imguiBeginFrame();
-    sineGUI.draw(g);
-    squareGUI.draw(g);
-    pinkGUI.draw(g);
+    
+    // Only show GUI for selected object
+    if (sinePickable && sinePickable->selected) {
+      sineGUI.draw(g);
+    } else if (squarePickable && squarePickable->selected) {
+      squareGUI.draw(g);
+    } else if (pinkPickable && pinkPickable->selected) {
+      pinkGUI.draw(g);
+    }
+    
     imguiEndFrame();
     imguiDraw();
   }
@@ -615,15 +668,15 @@ struct MyApp : public App {
   bool onKeyDown(const Keyboard &k) override {
     if (k.key() == ' ') {
       // Reset all positions to defaults
-      auto pickables = pickableManager.pickables();
+      clearAllSelections();
       
       // Reset sine wave
       sineAzimuth.set(90.0);
       sineElevation.set(30.0);
       sineDistance.set(8.0);
       sineGain.set(1.0);
-      if (pickables.size() > 0) {
-        pickables[0]->pose = Pose(sphericalToCartesian(90.0, 30.0, 8.0));
+      if (sinePickable) {
+        sinePickable->pose = Pose(sphericalToCartesian(90.0, 30.0, 8.0));
       }
       
       // Reset square wave
@@ -631,8 +684,8 @@ struct MyApp : public App {
       squareElevation.set(0.0);
       squareDistance.set(3.0);
       squareGain.set(0.7);
-      if (pickables.size() > 1) {
-        pickables[1]->pose = Pose(sphericalToCartesian(0.0, 0.0, 3.0));
+      if (squarePickable) {
+        squarePickable->pose = Pose(sphericalToCartesian(0.0, 0.0, 3.0));
       }
       
       // Reset pink noise
@@ -640,8 +693,8 @@ struct MyApp : public App {
       pinkElevation.set(30.0);
       pinkDistance.set(1.0);
       pinkGain.set(0.5);
-      if (pickables.size() > 2) {
-        pickables[2]->pose = Pose(sphericalToCartesian(-90.0, 30.0, 1.0));
+      if (pinkPickable) {
+        pinkPickable->pose = Pose(sphericalToCartesian(-90.0, 30.0, 1.0));
       }
       
       updateAudioAgents();
@@ -650,23 +703,68 @@ struct MyApp : public App {
     return false;
   }
   
-  // Handle pickable interaction - EXACTLY as in the example
+  // Mouse event handling
   bool onMouseMove(const Mouse &m) override {
+    // Check if the mouse is over a GUI first
+    if (sinePickable && sinePickable->selected && sineGUI.usingInput()) {
+      return true;
+    }
+    
+    if (squarePickable && squarePickable->selected && squareGUI.usingInput()) {
+      return true;
+    }
+    
+    if (pinkPickable && pinkPickable->selected && pinkGUI.usingInput()) {
+      return true;
+    }
+    
+    // If not over GUI, pass to pickable manager
     pickableManager.onMouseMove(graphics(), m, width(), height());
     return true;
   }
   
   bool onMouseDown(const Mouse &m) override {
+    // Check if the mouse is over a GUI first
+    if (sinePickable && sinePickable->selected && sineGUI.usingInput()) {
+      return true;
+    }
+    
+    if (squarePickable && squarePickable->selected && squareGUI.usingInput()) {
+      return true;
+    }
+    
+    if (pinkPickable && pinkPickable->selected && pinkGUI.usingInput()) {
+      return true;
+    }
+    
+    // If not over GUI, clear previous selections and pass to pickable manager
+    bool overGUI = (sineGUI.usingInput() || squareGUI.usingInput() || pinkGUI.usingInput());
+    if (!overGUI) {
+      clearAllSelections();
+    }
+    
     pickableManager.onMouseDown(graphics(), m, width(), height());
     return true;
   }
   
   bool onMouseDrag(const Mouse &m) override {
+    // Check if the mouse is over a GUI first
+    if (sineGUI.usingInput() || squareGUI.usingInput() || pinkGUI.usingInput()) {
+      return true;
+    }
+    
+    // If not over GUI, pass to pickable manager
     pickableManager.onMouseDrag(graphics(), m, width(), height());
     return true;
   }
   
   bool onMouseUp(const Mouse &m) override {
+    // Check if the mouse is over a GUI first
+    if (sineGUI.usingInput() || squareGUI.usingInput() || pinkGUI.usingInput()) {
+      return true;
+    }
+    
+    // If not over GUI, pass to pickable manager
     pickableManager.onMouseUp(graphics(), m, width(), height());
     return true;
   }
@@ -676,7 +774,7 @@ int main() {
   MyApp app;
   app.dimensions(800, 600);
   app.title("3D Sound Spatialization");
-  app.configureAudio(44100, 256, 2, 0);
+  app.configureAudio(44100, 256, 2, 0);  // for playback within Allosphere, it needs to be app.configureAudio(44100, 256, 60, 0)
   app.start();
   return 0;
 }
