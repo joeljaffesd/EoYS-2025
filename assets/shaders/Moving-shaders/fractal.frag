@@ -15,12 +15,12 @@ void main() {
     int i;
     for (i = 0; i < maxIterations; ++i) {
         float x = (z.x * z.x - z.y * z.y) + c.x;
-        float y = (2.0 * z.x * z.y) + c.y*i*u_time;
+        float y = (2.0 * z.x * z.y) + c.y;
         if ((x * x + y * y) > 4.0) break;
-        z = vec2(x, y-pow(u_time, maxIterations));
+        z = vec2(sin(x*u_time), y);
     }
 
-    float color = float(i) / float(maxIterations/u_time);
+    float color = float(i) / float(maxIterations);
 
     fragColor = vec4(vec3(color), 1.0); //
 }
