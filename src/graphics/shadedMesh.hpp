@@ -16,7 +16,7 @@
     in our main program, allowing easy shader -> mesh creation.
   - Goal: set shader asset files, mesh target, and uniforms.
 
-  ***IMPORTANT for Apple M1 / Metal drivers ***
+  FOR M1 MACS / METAL DRIVER -- crucial 
   - We MUST always send a dynamic uniform (like a mat4) each frame 
     to prevent the GPU from optimizing the shader as "static."
   - If you don't send a matrix, other uniforms (like u_time) will NOT update visually. This was the only solution i have found so far. I am not sure if it negatively impacts performance in a significant way. This may have to be tested in the future.
@@ -132,7 +132,7 @@ inline void ShadedMesh::setUniformMat4f(const std::string& name, const al::Mat4f
 
 //updating for spherical purposes, not sure if this will workl:
 inline void ShadedMesh::setMatrices(const al::Mat4f& view, const al::Mat4f& proj) {
-    shader.use(); // 🔥 Important: bind before setting uniforms
+    shader.use(); //Important: bind before setting uniforms
     shader.uniform("al_ModelViewMatrix", view);
     shader.uniform("al_ProjectionMatrix", proj);
 }
