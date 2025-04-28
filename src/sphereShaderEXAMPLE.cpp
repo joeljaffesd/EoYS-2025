@@ -15,7 +15,7 @@ struct MyApp : App {
     void onCreate() override {
         // *** SET SHADER PATH HERE *** //
         // for shaders folder 1: 
-        shaderSphere.setShaders("../assets/shaders/Shader-1/fullscreen.vert", "../assets/shaders/Shader-1/moving.frag");
+        shaderSphere.setShaders("../assets/shaders/Shader-1/moving.vert", "../assets/shaders/Shader-1/moving.frag");
         // for shader folder 2:
         //shaderSphere.setShaders("../assets/shaders/Shader-2/shaderToyDefault.vert", "../assets/shaders/Shader-2/shader2.frag");
         // *** END SET SHADER PATH *** //
