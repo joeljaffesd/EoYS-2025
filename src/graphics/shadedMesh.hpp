@@ -10,7 +10,6 @@
 #include <sstream>
 
 /*
-  === ShadedMesh Class ===
 
   Trying to take a more modular approach:
   - This class allows for constructing multiple instances of shaded meshes
@@ -30,7 +29,8 @@
 class ShadedMesh {
 public:
     al::ShaderProgram shader;
-    al::Mesh mesh; // Will update to VAOMesh once working
+    al::VAOMesh mesh; // Will update to VAOMesh once working
+
 
     // Constructor
     ShadedMesh() {}
@@ -43,6 +43,10 @@ public:
     void setUniformInt(const std::string& name, int value);
     void setUniformVec3f(const std::string& name, const al::Vec3f& vec);
     void setUniformMat4f(const std::string& name, const al::Mat4f& mat);
+
+    //updating for spherical purposes. not sure if this will work
+    void setMatrices(const al::Mat4f& view, const al::Mat4f& proj);
+
 
 private:
     // Helper function to load shader source code
@@ -124,4 +128,11 @@ inline void ShadedMesh::setUniformVec3f(const std::string& name, const al::Vec3f
 inline void ShadedMesh::setUniformMat4f(const std::string& name, const al::Mat4f& mat) {
     shader.use();
     shader.uniform(name.c_str(), mat);
+}
+
+//updating for spherical purposes, not sure if this will workl:
+inline void ShadedMesh::setMatrices(const al::Mat4f& view, const al::Mat4f& proj) {
+    shader.use(); // 🔥 Important: bind before setting uniforms
+    shader.uniform("al_ModelViewMatrix", view);
+    shader.uniform("al_ProjectionMatrix", proj);
 }
