@@ -1,6 +1,3 @@
-
-
-
 // file for testing loading in shaders onto sphere
 
 #include "al/app/al_App.hpp"

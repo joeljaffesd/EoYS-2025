@@ -32,7 +32,6 @@ public:
   OrbitEffect orbit2;
   AutoPulseEffect autoPulse;
   ManualPulseEffect mainPulse;
-  ScatterEffect scatter;
   VertexEffectChain effectChain; // chain constructed
   VertexEffectChain effectChain2;
 

@@ -5,7 +5,6 @@
 #include "manualPulse.hpp"
 #include "orbit.hpp"
 #include "ripple.hpp"
-#include "scatter.hpp"
 #include "vfxUtility.hpp"
 
 // After creating effect instances//
