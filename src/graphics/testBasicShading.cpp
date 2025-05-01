@@ -22,8 +22,8 @@ struct BasicShaderApp : App {
    
 
     // Fragment shader: load in my files
-    std::string vertSource = loadFile("../assets/shaders/fullscreen.vert");
-std::string fragSource = loadFile("../assets/shaders/static_color.frag");
+    std::string vertSource = loadFile("../src/shaders/fullscreen.vert");
+std::string fragSource = loadFile("../src/shaders/static_color.frag");
     std::cout << "VERTEX SHADER:\n" << vertSource << "\n";
 std::cout << "FRAGMENT SHADER:\n" << fragSource << "\n";
 

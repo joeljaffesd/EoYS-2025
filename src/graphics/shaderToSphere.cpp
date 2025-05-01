@@ -1,5 +1,5 @@
 #include "al/app/al_App.hpp"
-#include "ShadedMesh.hpp"
+#include "shadedMesh.hpp"
 #include "al/graphics/al_Shapes.hpp"
 
 using namespace al;
@@ -43,8 +43,8 @@ struct MyApp : App {
 
     // Set shaders - method from shadedMesh header
     shadedSphere.setShaders(
-        "../assets/shaders/fullscreen.vert",
-        "../assets/shaders/static_color.frag"
+        "../src/shaders/fullscreen.vert",
+        "../src/shaders/static_color.frag"
     );
 
     // camera

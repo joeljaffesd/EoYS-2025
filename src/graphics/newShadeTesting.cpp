@@ -1,5 +1,5 @@
 #include "al/app/al_App.hpp"
-#include "ShadedMesh.hpp" // Our modular class
+#include "shadedMesh.hpp" // Our modular class
 
 using namespace al;
 
@@ -20,8 +20,8 @@ struct MyApp : App {
 
         // Load shaders
         shadedSquare.setShaders(
-            "../assets/shaders/fullscreen.vert",
-            "../assets/shaders/static_color.frag"
+            "../src/shaders/fullscreen.vert",
+            "../src/shaders/static_color.frag"
         );
 
         dummyMatrix.setIdentity(); // always ready

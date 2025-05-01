@@ -1,5 +1,5 @@
 #pragma once
-#include "ShadedMesh.hpp" 
+#include "shadedMesh.hpp" 
 
 
 /*
@@ -77,7 +77,7 @@ struct ShaderToSphere {
 ShaderToSphere shaderSphere;
 etc
 void onCreate() override {
-        shaderSphere.setShaders("../assets/shaders/fullscreen.vert", "../assets/shaders/static_color.frag");
+        shaderSphere.setShaders("../src/shaders/fullscreen.vert", "../src/shaders/static_color.frag");
         shaderSphere.setSphere(15.0f, 1000);
 
         etc
