@@ -1,0 +1,780 @@
+#include <iostream>
+#include <cmath>
+
+#include "al/app/al_App.hpp"
+#include "al/graphics/al_Shapes.hpp"
+#include "al/math/al_Random.hpp"
+#include "al/math/al_Spherical.hpp"
+#include "al/scene/al_DynamicScene.hpp"
+#include "al/sound/al_Ambisonics.hpp"
+#include "al/sphere/al_AlloSphereSpeakerLayout.hpp"
+#include "al/sound/al_Lbap.hpp"
+#include "al/ui/al_ControlGUI.hpp"
+#include "al/ui/al_PickableManager.hpp"
+
+using namespace al;
+
+#define SpatializerType AmbisonicsSpatializer // for Ambisonics
+//#define SpatializerType Lbap // for playback within Allosphere, this needs to be uncommented with the "AmbisonicsSpatializer" commented out.
+
+// ===================
+// Helper: Convert Spherical to Cartesian using AlloSphere convention
+// ===================
+Vec3f sphericalToCartesian(float azimuthDeg, float elevationDeg, float radius) {
+  // Convert azimuth and elevation from degrees to radians
+  float azimuth_rad = azimuthDeg * M_PI / 180.0f;
+  float elevation_rad = elevationDeg * M_PI / 180.0f;
+  
+  // Calculate the Cartesian coordinates using AlloSphere convention
+  float x = radius * cos(elevation_rad) * sin(azimuth_rad);
+  float y = radius * sin(elevation_rad);
+  float z = -radius * cos(elevation_rad) * cos(azimuth_rad);  // Right-handed system flip
+  
+  return Vec3f(x, y, z);
+}
+
+// Convert Cartesian to Spherical coordinates
+void cartesianToSpherical(const Vec3f& cartesian, float& azimuthDeg, float& elevationDeg, float& radius) {
+  float x = cartesian.x;
+  float y = cartesian.y;
+  float z = cartesian.z;
+  
+  radius = sqrt(x*x + y*y + z*z);
+  
+  if (radius < 0.0001f) {
+    azimuthDeg = 0.0f;
+    elevationDeg = 0.0f;
+    return;
+  }
+  
+  elevationDeg = asin(y / radius) * 180.0f / M_PI;
+  azimuthDeg = atan2(x, -z) * 180.0f / M_PI;  // Note the negative z for AlloSphere convention
+}
+
+// Simple low-pass filter for air absorption simulation
+class LowpassFilter {
+public:
+  float cutoff = 20000.0f;
+  float sampleRate = 44100.0f;
+  float filterState = 0.0f;
+  float filterCoeff = 0.0f;
+  
+  void setCutoff(float cutoffFreq) {
+    cutoff = cutoffFreq;
+    filterCoeff = std::exp(-2.0f * M_PI * cutoff / sampleRate);
+  }
+  
+  float process(float input) {
+    filterState = input * (1.0f - filterCoeff) + filterState * filterCoeff;
+    return filterState;
+  }
+  
+  void updateForDistance(float distance) {
+    float distCutoff = 20000.0f / (1.0f + distance * 0.8f);
+    distCutoff = std::max(distCutoff, 300.0f);
+    setCutoff(distCutoff);
+  }
+};
+
+// ===================
+// Sine Tone Agent
+// ===================
+class MyAgent : public PositionedVoice {
+public:
+  float phase = 0.0f;
+  float freq = 440.0f;
+  float baseAmplitude = 0.2f;
+  float amplitude = 0.2f;
+  float gain = 1.0f;
+  float distance = 1.0f;
+  float size = 1.0f;
+  unsigned int mLifeSpan = 0;
+  
+  LowpassFilter airFilter;
+
+  void onProcess(AudioIOData &io) override {
+    float phaseInc = 2.0f * M_PI * freq / io.framesPerSecond();
+    while (io()) {
+      float sample = amplitude * gain * sin(phase);
+      sample = airFilter.process(sample);
+      io.out(0) += sample;
+      phase += phaseInc;
+      if (phase > 2.0f * M_PI) phase -= 2.0f * M_PI;
+    }
+
+    if (mLifeSpan > 0) {
+      mLifeSpan--;
+      if (mLifeSpan <= 0) {
+        free();
+      }
+    }
+  }
+
+  void set(float azimuthDeg, float elevationDeg, float distanceVal, float sizeVal, float frequency, float gainVal, float lifeSpanFrames) {
+    Vec3f position = sphericalToCartesian(azimuthDeg, elevationDeg, distanceVal);
+    setPose(Pose(position));
+    baseAmplitude = 0.2f;
+    freq = frequency;
+    distance = distanceVal;
+    size = sizeVal;
+    gain = gainVal;
+    mLifeSpan = static_cast<unsigned int>(lifeSpanFrames);
+    
+    float distanceAttenuation = 1.0f / (distance * distance);
+    distanceAttenuation = std::min(distanceAttenuation, 5.0f);
+    amplitude = baseAmplitude * distanceAttenuation;
+    
+    airFilter.sampleRate = 44100.0f;
+    airFilter.updateForDistance(distance);
+  }
+
+  void onTriggerOn() override {
+    phase = 0.0f;
+    airFilter.filterState = 0.0f;
+  }
+};
+
+// ===================
+// Pink Noise Agent
+// ===================
+class PinkAgent : public PositionedVoice {
+public:
+  float baseAmplitude = 0.15f;
+  float amplitude = 0.15f;
+  float gain = 1.0f;
+  float distance = 1.0f;
+  float size = 1.0f;
+  unsigned int mLifeSpan = 0;
+  
+  float b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+  
+  LowpassFilter airFilter;
+
+  float generatePinkNoise(float white) {
+    b0 = 0.99886f * b0 + white * 0.0555179f;
+    b1 = 0.99332f * b1 + white * 0.0750759f;
+    b2 = 0.96900f * b2 + white * 0.1538520f;
+    b3 = 0.86650f * b3 + white * 0.3104856f;
+    b4 = 0.55000f * b4 + white * 0.5329522f;
+    b5 = -0.7616f * b5 - white * 0.0168980f;
+    float pink = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362f;
+    b6 = white * 0.115926f;
+    return pink * 0.11f;
+  }
+
+  void onProcess(AudioIOData &io) override {
+    while (io()) {
+      float white = rnd::uniformS();
+      float pink = generatePinkNoise(white);
+      pink = airFilter.process(pink);
+      io.out(0) += pink * amplitude * gain;
+    }
+
+    if (mLifeSpan > 0) {
+      mLifeSpan--;
+      if (mLifeSpan <= 0) {
+        free();
+      }
+    }
+  }
+
+  void set(float azimuthDeg, float elevationDeg, float distanceVal, float sizeVal, float gainVal, float lifeSpanFrames) {
+    Vec3f position = sphericalToCartesian(azimuthDeg, elevationDeg, distanceVal);
+    setPose(Pose(position));
+    baseAmplitude = 0.15f;
+    distance = distanceVal;
+    size = sizeVal;
+    gain = gainVal;
+    mLifeSpan = static_cast<unsigned int>(lifeSpanFrames);
+    
+    float distanceAttenuation = 1.0f / (distance * distance);
+    distanceAttenuation = std::min(distanceAttenuation, 5.0f);
+    amplitude = baseAmplitude * distanceAttenuation;
+    
+    airFilter.sampleRate = 44100.0f;
+    airFilter.updateForDistance(distance);
+  }
+
+  void onTriggerOn() override {
+    b0 = b1 = b2 = b3 = b4 = b5 = b6 = 0.0f;
+    airFilter.filterState = 0.0f;
+  }
+};
+
+// ===================
+// Square Wave Agent
+// ===================
+class SquareAgent : public PositionedVoice {
+public:
+  float phase = 0.0f;
+  float freq = 440.0f;
+  float baseAmplitude = 0.2f;
+  float amplitude = 0.2f;
+  float gain = 1.0f;
+  float distance = 1.0f;
+  float size = 1.0f;
+  unsigned int mLifeSpan = 0;
+  
+  LowpassFilter airFilter;
+
+  void onProcess(AudioIOData &io) override {
+    float phaseInc = 2.0f * M_PI * freq / io.framesPerSecond();
+    while (io()) {
+      float sample = amplitude * gain * (sin(phase) >= 0 ? 1.0f : -1.0f);
+      sample = airFilter.process(sample);
+      io.out(0) += sample;
+      phase += phaseInc;
+      if (phase > 2.0f * M_PI) phase -= 2.0f * M_PI;
+    }
+
+    if (mLifeSpan > 0) {
+      mLifeSpan--;
+      if (mLifeSpan <= 0) {
+        free();
+      }
+    }
+  }
+
+  void set(float azimuthDeg, float elevationDeg, float distanceVal, float sizeVal, float frequency, float gainVal, float lifeSpanFrames) {
+    Vec3f position = sphericalToCartesian(azimuthDeg, elevationDeg, distanceVal);
+    setPose(Pose(position));
+    baseAmplitude = 0.2f;
+    freq = frequency;
+    distance = distanceVal;
+    size = sizeVal;
+    gain = gainVal;
+    mLifeSpan = static_cast<unsigned int>(lifeSpanFrames);
+    
+    float distanceAttenuation = 1.0f / (distance * distance);
+    distanceAttenuation = std::min(distanceAttenuation, 5.0f);
+    amplitude = baseAmplitude * distanceAttenuation;
+    
+    airFilter.sampleRate = 44100.0f;
+    airFilter.updateForDistance(distance);
+  }
+
+  void onTriggerOn() override {
+    phase = 0.0f;
+    airFilter.filterState = 0.0f;
+  }
+};
+
+// ===================
+// Enhanced Pickable that tracks selection state
+// ===================
+class SelectablePickable : public PickableBB {
+public:
+  bool selected = false;
+
+  bool onEvent(PickEvent e, Hit h) override {
+    bool handled = PickableBB::onEvent(e, h);
+    
+    // Set selected on pick
+    if (e.type == Pick && h.hit) {
+      selected = true;
+    }
+    
+    return handled;
+  }
+};
+
+// ==========================
+// Main App
+// ==========================
+struct MyApp : public App {
+  DynamicScene scene;
+  PickableManager pickableManager;
+  
+  // GUI controls
+  ControlGUI sineGUI;
+  ControlGUI squareGUI;
+  ControlGUI pinkGUI;
+  
+  // Parameters for sine wave
+  Parameter sineAzimuth{"Azimuth", "", 90.0, "", -180.0, 180.0};
+  Parameter sineElevation{"Elevation", "", 30.0, "", -90.0, 90.0};
+  Parameter sineDistance{"Distance", "", 8.0, "", 0.1, 20.0};
+  Parameter sineGain{"Gain", "", 1.0, "", 0.0, 2.0};
+  
+  // Parameters for square wave
+  Parameter squareAzimuth{"Azimuth", "", 0.0, "", -180.0, 180.0};
+  Parameter squareElevation{"Elevation", "", 0.0, "", -90.0, 90.0};
+  Parameter squareDistance{"Distance", "", 3.0, "", 0.1, 20.0};
+  Parameter squareGain{"Gain", "", 0.7, "", 0.0, 2.0};
+  
+  // Parameters for pink noise
+  Parameter pinkAzimuth{"Azimuth", "", -90.0, "", -180.0, 180.0};
+  Parameter pinkElevation{"Elevation", "", 30.0, "", -90.0, 90.0};
+  Parameter pinkDistance{"Distance", "", 1.0, "", 0.1, 20.0};
+  Parameter pinkGain{"Gain", "", 0.5, "", 0.0, 2.0};
+  
+  // Meshes
+  VAOMesh sineMesh;
+  VAOMesh squareMesh;
+  VAOMesh pinkMesh;
+  
+  // The actual sound agents
+  MyAgent* sineAgent = nullptr;
+  SquareAgent* squareAgent = nullptr;
+  PinkAgent* pinkAgent = nullptr;
+  
+  // Flag to prevent feedback loop between parameter changes and pickable updates
+  bool pickablesUpdatingParameters = false;
+  
+  // Fixed listener pose at origin
+  Pose fixedListenerPose;
+  
+  // Selectable pickable objects
+  SelectablePickable* sinePickable = nullptr;
+  SelectablePickable* squarePickable = nullptr;
+  SelectablePickable* pinkPickable = nullptr;
+
+  void onCreate() override {
+    auto speakers = StereoSpeakerLayout(); // for playback within Allosphere, this needs to be AlloSphereSpeakerLayoutCompensated()
+    scene.setSpatializer<SpatializerType>(speakers);
+    scene.distanceAttenuation().law(ATTEN_NONE);
+    
+    // Set fixed listener pose at origin (0,0,0)
+    fixedListenerPose = Pose(Vec3f(0, 0, 0));
+    
+    // Create meshes for visual representation
+    addSphere(sineMesh, 0.3);
+    sineMesh.primitive(Mesh::LINE_STRIP);
+    sineMesh.update();
+    
+    addSphere(squareMesh, 0.3);
+    squareMesh.primitive(Mesh::LINE_STRIP);
+    squareMesh.update();
+    
+    addSphere(pinkMesh, 0.3);
+    pinkMesh.primitive(Mesh::LINE_STRIP);
+    pinkMesh.update();
+    
+    // Set up GUI windows
+    imguiInit();
+    
+    sineGUI.init(5, 5, false);
+    sineGUI.setTitle("Sine Wave");
+    sineGUI << sineAzimuth << sineElevation << sineDistance << sineGain;
+    
+    squareGUI.init(5, 5, false);
+    squareGUI.setTitle("Square Wave");
+    squareGUI << squareAzimuth << squareElevation << squareDistance << squareGain;
+    
+    pinkGUI.init(5, 5, false);
+    pinkGUI.setTitle("Pink Noise");
+    pinkGUI << pinkAzimuth << pinkElevation << pinkDistance << pinkGain;
+    
+    // Register parameter callbacks for GUI updates
+    sineAzimuth.registerChangeCallback([this](float value) {
+      if (!pickablesUpdatingParameters) {
+        updatePickablePositions();
+      }
+    });
+    
+    sineElevation.registerChangeCallback([this](float value) {
+      if (!pickablesUpdatingParameters) {
+        updatePickablePositions();
+      }
+    });
+    
+    sineDistance.registerChangeCallback([this](float value) {
+      if (!pickablesUpdatingParameters) {
+        updatePickablePositions();
+      }
+    });
+    
+    squareAzimuth.registerChangeCallback([this](float value) {
+      if (!pickablesUpdatingParameters) {
+        updatePickablePositions();
+      }
+    });
+    
+    squareElevation.registerChangeCallback([this](float value) {
+      if (!pickablesUpdatingParameters) {
+        updatePickablePositions();
+      }
+    });
+    
+    squareDistance.registerChangeCallback([this](float value) {
+      if (!pickablesUpdatingParameters) {
+        updatePickablePositions();
+      }
+    });
+    
+    pinkAzimuth.registerChangeCallback([this](float value) {
+      if (!pickablesUpdatingParameters) {
+        updatePickablePositions();
+      }
+    });
+    
+    pinkElevation.registerChangeCallback([this](float value) {
+      if (!pickablesUpdatingParameters) {
+        updatePickablePositions();
+      }
+    });
+    
+    pinkDistance.registerChangeCallback([this](float value) {
+      if (!pickablesUpdatingParameters) {
+        updatePickablePositions();
+      }
+    });
+    
+    // Create selectable pickable objects
+    sinePickable = new SelectablePickable();
+    sinePickable->set(sineMesh);
+    sinePickable->pose = Pose(sphericalToCartesian(sineAzimuth.get(), sineElevation.get(), sineDistance.get()));
+    pickableManager << sinePickable;
+    
+    squarePickable = new SelectablePickable();
+    squarePickable->set(squareMesh);
+    squarePickable->pose = Pose(sphericalToCartesian(squareAzimuth.get(), squareElevation.get(), squareDistance.get()));
+    pickableManager << squarePickable;
+    
+    pinkPickable = new SelectablePickable();
+    pinkPickable->set(pinkMesh);
+    pinkPickable->pose = Pose(sphericalToCartesian(pinkAzimuth.get(), pinkElevation.get(), pinkDistance.get()));
+    pickableManager << pinkPickable;
+    
+    // Start sound agents
+    sineAgent = scene.getVoice<MyAgent>();
+    if (sineAgent) {
+      sineAgent->set(sineAzimuth.get(), sineElevation.get(), sineDistance.get(), 
+                   1.0f, 440.0f, sineGain.get(), 0);
+      scene.triggerOn(sineAgent);
+    }
+    
+    squareAgent = scene.getVoice<SquareAgent>();
+    if (squareAgent) {
+      squareAgent->set(squareAzimuth.get(), squareElevation.get(), squareDistance.get(), 
+                     1.0f, 330.0f, squareGain.get(), 0);
+      scene.triggerOn(squareAgent);
+    }
+    
+    pinkAgent = scene.getVoice<PinkAgent>();
+    if (pinkAgent) {
+      pinkAgent->set(pinkAzimuth.get(), pinkElevation.get(), pinkDistance.get(), 
+                    1.0f, pinkGain.get(), 0);
+      scene.triggerOn(pinkAgent);
+    }
+    
+    // Prepare the scene for audio rendering
+    scene.prepare(audioIO());
+    
+    // Set up camera - still movable but doesn't affect audio
+    nav().pos(0, 0, 10);
+    
+    std::cout << "3D Sound Spatialization with GUI and Pickable Objects:" << std::endl;
+    std::cout << "  1. Click on a sound source to show its control panel" << std::endl;
+    std::cout << "  2. Click and drag objects to move them in space" << std::endl;
+    std::cout << "  3. Press SPACE to reset objects to original positions" << std::endl;
+    std::cout << "  4. Camera can be moved with arrow keys (view only, doesn't affect audio)" << std::endl;
+  }
+  
+  // Clear selection on all pickables
+  void clearAllSelections() {
+    if (sinePickable) sinePickable->selected = false;
+    if (squarePickable) squarePickable->selected = false;
+    if (pinkPickable) pinkPickable->selected = false;
+  }
+  
+  // Update pickable positions based on current parameter values
+  void updatePickablePositions() {
+    // Update sine wave pickable
+    if (sinePickable) {
+      Vec3f position = sphericalToCartesian(sineAzimuth.get(), sineElevation.get(), sineDistance.get());
+      sinePickable->pose = Pose(position);
+    }
+    
+    // Update square wave pickable
+    if (squarePickable) {
+      Vec3f position = sphericalToCartesian(squareAzimuth.get(), squareElevation.get(), squareDistance.get());
+      squarePickable->pose = Pose(position);
+    }
+    
+    // Update pink noise pickable
+    if (pinkPickable) {
+      Vec3f position = sphericalToCartesian(pinkAzimuth.get(), pinkElevation.get(), pinkDistance.get());
+      pinkPickable->pose = Pose(position);
+    }
+    
+    updateAudioAgents();
+  }
+  
+  // Update audio agents with current parameters
+  void updateAudioAgents() {
+    if (sineAgent) {
+      sineAgent->set(sineAzimuth.get(), sineElevation.get(), sineDistance.get(), 
+                   1.0f, 440.0f, sineGain.get(), 0);
+    }
+    
+    if (squareAgent) {
+      squareAgent->set(squareAzimuth.get(), squareElevation.get(), squareDistance.get(), 
+                     1.0f, 330.0f, squareGain.get(), 0);
+    }
+    
+    if (pinkAgent) {
+      pinkAgent->set(pinkAzimuth.get(), pinkElevation.get(), pinkDistance.get(), 
+                    1.0f, pinkGain.get(), 0);
+    }
+  }
+  
+  void onAnimate(double dt) override {
+    // Disable navControl when GUI is in use
+    navControl().active(!sineGUI.usingInput() && !squareGUI.usingInput() && !pinkGUI.usingInput());
+    
+    // Update parameters from pickable positions
+    // Only update parameters from pickables if GUI isn't being used
+    if (!sineGUI.usingInput() && !squareGUI.usingInput() && !pinkGUI.usingInput()) {
+      pickablesUpdatingParameters = true;
+      
+      if (sinePickable) {
+        float az, el, dist;
+        cartesianToSpherical(sinePickable->pose.get().pos(), az, el, dist);
+        sineAzimuth.set(az);
+        sineElevation.set(el);
+        sineDistance.set(dist);
+      }
+      
+      if (squarePickable) {
+        float az, el, dist;
+        cartesianToSpherical(squarePickable->pose.get().pos(), az, el, dist);
+        squareAzimuth.set(az);
+        squareElevation.set(el);
+        squareDistance.set(dist);
+      }
+      
+      if (pinkPickable) {
+        float az, el, dist;
+        cartesianToSpherical(pinkPickable->pose.get().pos(), az, el, dist);
+        pinkAzimuth.set(az);
+        pinkElevation.set(el);
+        pinkDistance.set(dist);
+      }
+      
+      pickablesUpdatingParameters = false;
+    }
+    
+    // Always update audio agents
+    updateAudioAgents();
+    
+    // When clicking a new object, deselect all others - mutually exclusive selection
+    for (auto pickable : pickableManager.pickables()) {
+      SelectablePickable* sp = dynamic_cast<SelectablePickable*>(pickable);
+      if (sp && sp->selected) {
+        // If this one is selected, ensure others are deselected
+        if (sp == sinePickable) {
+          squarePickable->selected = false;
+          pinkPickable->selected = false;
+        } else if (sp == squarePickable) {
+          sinePickable->selected = false;
+          pinkPickable->selected = false;
+        } else if (sp == pinkPickable) {
+          sinePickable->selected = false;
+          squarePickable->selected = false;
+        }
+      }
+    }
+  }
+
+  void onDraw(Graphics &g) override {
+    g.clear();
+    gl::depthTesting(true);
+    
+    // Draw coordinate reference axes
+    g.lineWidth(2.0);
+    Mesh axes;
+    axes.primitive(Mesh::LINES);
+    
+    // X axis (red)
+    g.color(1, 0, 0);
+    axes.vertex(0, 0, 0);
+    axes.vertex(1, 0, 0);
+    
+    // Y axis (green)
+    g.color(0, 1, 0);
+    axes.vertex(0, 0, 0);
+    axes.vertex(0, 1, 0);
+    
+    // Z axis (blue)
+    g.color(0, 0, 1);
+    axes.vertex(0, 0, 0);
+    axes.vertex(0, 0, 1);
+    
+    g.draw(axes);
+    
+    // Draw pickable objects - Using the exact method from example
+    for (auto pickable : pickableManager.pickables()) {
+      // Color based on which sound source
+      int index = -1;
+      for (int i = 0; i < pickableManager.pickables().size(); i++) {
+        if (pickable == pickableManager.pickables()[i]) {
+          index = i;
+          break;
+        }
+      }
+      
+      SelectablePickable* sp = dynamic_cast<SelectablePickable*>(pickable);
+      bool isSelected = sp && sp->selected;
+      
+      if (index == 0) { // Sine
+        g.color(isSelected ? RGB(0.3, 1.0, 0.5) : RGB(0.1, 0.9, 0.3)); // Brighter green when selected
+      } else if (index == 1) { // Square
+        g.color(isSelected ? RGB(0.4, 0.6, 1.0) : RGB(0.2, 0.4, 1.0)); // Brighter blue when selected
+      } else if (index == 2) { // Pink
+        g.color(isSelected ? RGB(1.0, 0.5, 0.2) : RGB(0.9, 0.3, 0.1)); // Brighter orange when selected
+      } else {
+        g.color(1, 1, 1);
+      }
+      
+      // Draw using lambda function like in the example
+      pickable->draw(g, [&](Pickable &p) {
+        auto &b = dynamic_cast<PickableBB &>(p);
+        b.drawMesh(g);
+      });
+      
+      // Draw line from origin to sound source
+      g.lineWidth(1.0);
+      g.color(0.5, 0.5, 0.5, 0.3);
+      Mesh line;
+      line.primitive(Mesh::LINES);
+      line.vertex(0, 0, 0);
+      line.vertex(pickable->pose.get().pos());
+      g.draw(line);
+    }
+    
+    // Draw the GUI - only for selected objects
+    imguiBeginFrame();
+    
+    // Only show GUI for selected object
+    if (sinePickable && sinePickable->selected) {
+      sineGUI.draw(g);
+    } else if (squarePickable && squarePickable->selected) {
+      squareGUI.draw(g);
+    } else if (pinkPickable && pinkPickable->selected) {
+      pinkGUI.draw(g);
+    }
+    
+    imguiEndFrame();
+    imguiDraw();
+  }
+
+  void onSound(AudioIOData &io) override {
+    // Use fixed listener pose at origin instead of camera position
+    scene.listenerPose(fixedListenerPose);
+    scene.render(io);
+  }
+
+  bool onKeyDown(const Keyboard &k) override {
+    if (k.key() == ' ') {
+      // Reset all positions to defaults
+      clearAllSelections();
+      
+      // Reset sine wave
+      sineAzimuth.set(90.0);
+      sineElevation.set(30.0);
+      sineDistance.set(8.0);
+      sineGain.set(1.0);
+      if (sinePickable) {
+        sinePickable->pose = Pose(sphericalToCartesian(90.0, 30.0, 8.0));
+      }
+      
+      // Reset square wave
+      squareAzimuth.set(0.0);
+      squareElevation.set(0.0);
+      squareDistance.set(3.0);
+      squareGain.set(0.7);
+      if (squarePickable) {
+        squarePickable->pose = Pose(sphericalToCartesian(0.0, 0.0, 3.0));
+      }
+      
+      // Reset pink noise
+      pinkAzimuth.set(-90.0);
+      pinkElevation.set(30.0);
+      pinkDistance.set(1.0);
+      pinkGain.set(0.5);
+      if (pinkPickable) {
+        pinkPickable->pose = Pose(sphericalToCartesian(-90.0, 30.0, 1.0));
+      }
+      
+      updateAudioAgents();
+      return true;
+    }
+    return false;
+  }
+  
+  // Mouse event handling
+  bool onMouseMove(const Mouse &m) override {
+    // Check if the mouse is over a GUI first
+    if (sinePickable && sinePickable->selected && sineGUI.usingInput()) {
+      return true;
+    }
+    
+    if (squarePickable && squarePickable->selected && squareGUI.usingInput()) {
+      return true;
+    }
+    
+    if (pinkPickable && pinkPickable->selected && pinkGUI.usingInput()) {
+      return true;
+    }
+    
+    // If not over GUI, pass to pickable manager
+    pickableManager.onMouseMove(graphics(), m, width(), height());
+    return true;
+  }
+  
+  bool onMouseDown(const Mouse &m) override {
+    // Check if the mouse is over a GUI first
+    if (sinePickable && sinePickable->selected && sineGUI.usingInput()) {
+      return true;
+    }
+    
+    if (squarePickable && squarePickable->selected && squareGUI.usingInput()) {
+      return true;
+    }
+    
+    if (pinkPickable && pinkPickable->selected && pinkGUI.usingInput()) {
+      return true;
+    }
+    
+    // If not over GUI, clear previous selections and pass to pickable manager
+    bool overGUI = (sineGUI.usingInput() || squareGUI.usingInput() || pinkGUI.usingInput());
+    if (!overGUI) {
+      clearAllSelections();
+    }
+    
+    pickableManager.onMouseDown(graphics(), m, width(), height());
+    return true;
+  }
+  
+  bool onMouseDrag(const Mouse &m) override {
+    // Check if the mouse is over a GUI first
+    if (sineGUI.usingInput() || squareGUI.usingInput() || pinkGUI.usingInput()) {
+      return true;
+    }
+    
+    // If not over GUI, pass to pickable manager
+    pickableManager.onMouseDrag(graphics(), m, width(), height());
+    return true;
+  }
+  
+  bool onMouseUp(const Mouse &m) override {
+    // Check if the mouse is over a GUI first
+    if (sineGUI.usingInput() || squareGUI.usingInput() || pinkGUI.usingInput()) {
+      return true;
+    }
+    
+    // If not over GUI, pass to pickable manager
+    pickableManager.onMouseUp(graphics(), m, width(), height());
+    return true;
+  }
+};
+
+int main() {
+  MyApp app;
+  app.dimensions(800, 600);
+  app.title("3D Sound Spatialization");
+  app.configureAudio(44100, 256, 2, 0);  // for playback within Allosphere, it needs to be app.configureAudio(44100, 256, 60, 0)
+  app.start();
+  return 0;
+}
