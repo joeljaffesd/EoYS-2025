@@ -1,5 +1,6 @@
 #pragma once
 #include "shadedMesh.hpp" 
+#include "al/graphics/al_Shapes.hpp"
 
 
 /*
@@ -30,23 +31,25 @@ struct ShaderToSphere {
         radius = r;
         subdivisions = subdiv;
         shadedMesh.mesh.reset();
-        shadedMesh.mesh.primitive(al::Mesh::POINTS);
+        shadedMesh.mesh.primitive(al::Mesh::TRIANGLE_FAN);
+        al::addTexSphere(shadedMesh.mesh, 5, 30, true);
+        // shadedMesh.mesh.primitive(al::Mesh::POINTS);
 
-        for (int j = 0; j <= subdivisions; ++j) {
-            float v = float(j) / subdivisions;
-            float theta = v * M_PI;
+        // for (int j = 0; j <= subdivisions; ++j) {
+        //     float v = float(j) / subdivisions;
+        //     float theta = v * M_PI;
 
-            for (int i = 0; i <= subdivisions; ++i) {
-                float u = float(i) / subdivisions;
-                float phi = u * M_2PI;
+        //     for (int i = 0; i <= subdivisions; ++i) {
+        //         float u = float(i) / subdivisions;
+        //         float phi = u * M_2PI;
 
-                float x = radius * sin(theta) * cos(phi);
-                float y = radius * cos(theta);
-                float z = radius * sin(theta) * sin(phi);
+        //         float x = radius * sin(theta) * cos(phi);
+        //         float y = radius * cos(theta);
+        //         float z = radius * sin(theta) * sin(phi);
 
-                shadedMesh.mesh.vertex(al::Vec3f(x, y, z));
-            }
-        }
+        //         shadedMesh.mesh.vertex(al::Vec3f(x, y, z));
+        //     }
+        // }
         shadedMesh.mesh.update(); // 🔥 Push to GPU
     }
 
