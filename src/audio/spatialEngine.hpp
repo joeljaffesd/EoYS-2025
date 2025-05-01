@@ -167,7 +167,7 @@ public:
   void onProcess(AudioIOData &io) override {
     float phaseInc = 2.0f * M_PI * freq / io.framesPerSecond();
     while (io()) {
-      float sample = amplitude * gain * sin(phase);
+      float sample = amplitude * gain * rnd::uniformS();
       sample = airFilter.lpf(sample);
       io.out(0) += sample;
       phase += phaseInc;
