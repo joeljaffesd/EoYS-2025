@@ -1,47 +1,56 @@
+#define SPATIALIZER_TYPE al::AmbisonicsSpatializer // for Ambisonics
+#ifndef SPATIALIZER_TYPE
+#define SPATIALIZER_TYPE al::Lbap // for playback in Allosphere
+#endif
 
-
-#define SAMPLERATE 44100
-#define SPATIALIZER_TYPE Lbap // for playback in Allosphere
+#define AUDIO_CONFIG 48000, 128, 2, 1 // for lap/desktop computer 
+#ifndef AUDIO_CONFIG
 #define AUDIO_CONFIG 44100, 256, 60, 0 // for playback in Allosphere
-#define SPEAKER_LAYOUT AlloSphereSpeakerLayoutCompensated() // for playback in Allosphere
+#endif
 
+#define SPEAKER_LAYOUT al::StereoSpeakerLayout() // for lap/desktop computer 
+#ifndef SPEAKER_LAYOUT
+#define SPEAKER_LAYOUT al::AlloSphereSpeakerLayoutCompensated() // for playback in Allosphere
+#endif
+
+#include "al/scene/al_DistributedScene.hpp"
 #include "../../audio/spatialEngine.hpp"
 
-struct MyApp : public App {
-  DynamicScene scene;
-  PickableManager pickableManager;
-  //std::vector<std::unique_ptr<SpatialAgent>> mAgents; // TODO
+struct MyApp : public al::App {
+  al::DistributedScene mDistributedScene;
+  al::PickableManager mPickableManager;
+  //std::vector<std::unique_ptr<SpatialAgent>> mAgents; // TODO (smart pointers)
   std::vector<SpatialAgent*> mAgents;
   
   // Flag to prevent feedback loop between parameter changes and pickable updates
   bool pickablesUpdatingParameters = false;
   
   // Fixed listener pose at origin
-  Pose fixedListenerPose;
+  al::Pose fixedListenerPose;
 
   void onCreate() override {
     auto speakers = SPEAKER_LAYOUT; 
-    scene.setSpatializer<SPATIALIZER_TYPE>(speakers);
-    scene.distanceAttenuation().law(ATTEN_NONE);
+    mDistributedScene.setSpatializer<SPATIALIZER_TYPE>(speakers);
+    mDistributedScene.distanceAttenuation().law(al::ATTEN_NONE);
     
     // Set fixed listener pose at origin (0,0,0)
-    fixedListenerPose = Pose(Vec3f(0, 0, 0));
+    fixedListenerPose = al::Pose(al::Vec3f(0, 0, 0));
     
     // Set up GUI windows
-    imguiInit();
+    al::imguiInit();
     
     // Add sound agents
     for (unsigned i = 0; i < 3; i++) {
-      mAgents.push_back(scene.getVoice<SpatialAgent>()); // add an agent
+      mAgents.push_back(mDistributedScene.getVoice<SpatialAgent>()); // add an agent
     }
 
     for (auto agent : mAgents) {
-      scene.triggerOn(agent); // trigger on
-      pickableManager << agent->mPickable; // add pickable to manager
+      mDistributedScene.triggerOn(agent); // trigger on
+      mPickableManager << agent->mPickableMesh; // add pickable to manager
     }
     
-    // Prepare the scene for audio rendering
-    scene.prepare(audioIO());
+    // Prepare the mDistributedScene for audio rendering
+    mDistributedScene.prepare(audioIO());
     
     // Set up camera - still movable but doesn't affect audio
     nav().pos(0, 0, 10);
@@ -56,21 +65,23 @@ struct MyApp : public App {
   // Clear selection on all pickables
   void clearAllSelections() {
     for (auto agent : mAgents) {
-      agent->mPickable.selected = false;
+      agent->mPickableMesh.selected = false;
     }
   }
 
+  // TODO: Move to `update()` call in mDistributedScene
   void updateAgents() {
     for (auto agent : mAgents) {
       agent->set(agent->mAzimuth.get(), agent->mElevation.get(), agent->mDistance.get(), 
-                 agent->size, agent->freq, agent->gain, 0);
+                 agent->size, agent->gain, int(this->audioIO().framesPerSecond()));
     }
   }
 
+  // TODO: Move to `update()` call in mDistributedScene
   void updatePickablePositions() {
     for (auto agent : mAgents) {
-      Vec3f position = sphericalToCartesian(agent->mAzimuth.get(), agent->mElevation.get(), agent->mDistance.get());
-      agent->mPickable.pose = Pose(position);
+      al::Vec3f position = sphericalToCartesian(agent->mAzimuth.get(), agent->mElevation.get(), agent->mDistance.get());
+      agent->mPickableMesh.pose = al::Pose(position);
     }
   }
   
@@ -82,9 +93,10 @@ struct MyApp : public App {
     // Only update parameters from pickables if GUI isn't being used
 
     // Check if the mouse is over a GUI first
+    // TODO: Move to `update()` call in mDistributedScene
     bool any = false;
     for (auto agent : mAgents) {
-      if (agent->mPickable.selected && agent->mGui.usingInput()) {
+      if (agent->mPickableMesh.selected && agent->mGui.usingInput()) {
         any = true;
         break;
       }
@@ -96,23 +108,23 @@ struct MyApp : public App {
       pickablesUpdatingParameters = true;
       for (auto agent : mAgents) {
         float az, el, dist;
-        cartesianToSpherical(agent->mPickable.pose.get().pos(), az, el, dist);
+        cartesianToSpherical(agent->mPickableMesh.pose.get().pos(), az, el, dist);
         agent->mAzimuth.set(az);
         agent->mElevation.set(el);
         agent->mDistance.set(dist);
       }
       pickablesUpdatingParameters = false;
     }
-    
+
     // Always update agents
     updateAgents();
     updatePickablePositions();
     
     // When clicking a new object, deselect all others - mutually exclusive selection
-    for (auto pickable : pickableManager.pickables()) {
+    for (auto pickable : mPickableManager.pickables()) {
       SelectablePickable* sp = dynamic_cast<SelectablePickable*>(pickable);
       if (sp && sp->selected) {
-        for (auto otherPickable : pickableManager.pickables()) {
+        for (auto otherPickable : mPickableManager.pickables()) {
           SelectablePickable* otherSp = dynamic_cast<SelectablePickable*>(otherPickable);
           if (otherSp && otherSp != sp) {
             otherSp->selected = false; // Deselect all others
@@ -123,14 +135,14 @@ struct MyApp : public App {
 
   }
 
-  void onDraw(Graphics &g) override {
+  void onDraw(al::Graphics &g) override {
     g.clear();
-    gl::depthTesting(true);
+    al::gl::depthTesting(true);
     
     // Draw coordinate reference axes
     g.lineWidth(2.0);
-    Mesh axes;
-    axes.primitive(Mesh::LINES);
+    al::Mesh axes;
+    axes.primitive(al::Mesh::LINES);
     
     // X axis (red)
     g.color(1, 0, 0);
@@ -150,88 +162,99 @@ struct MyApp : public App {
     g.draw(axes);
     
     // Draw pickable objects - Using the exact method from example
-    for (auto pickable : pickableManager.pickables()) {
+    // TODO: Move to `update()` call in mDistributedScene
+    for (auto pickable : mPickableManager.pickables()) {
       // Color based on which sound source
       int index = -1;
-      for (int i = 0; i < pickableManager.pickables().size(); i++) {
-        if (pickable == pickableManager.pickables()[i]) {
+      for (int i = 0; i < mPickableManager.pickables().size(); i++) {
+        if (pickable == mPickableManager.pickables()[i]) {
           index = i;
           break;
         }
       }
       
+      // TODO: Move to `update()` call in mDistributedScene
       SelectablePickable* sp = dynamic_cast<SelectablePickable*>(pickable);
       bool isSelected = sp && sp->selected;
       
+      // TODO: Move to `update()` call in mDistributedScene
       if (index == 0) { // Sine
-        g.color(isSelected ? RGB(0.3, 1.0, 0.5) : RGB(0.1, 0.9, 0.3)); // Brighter green when selected
+        g.color(isSelected ? al::RGB(0.3, 1.0, 0.5) : al::RGB(0.1, 0.9, 0.3)); // Brighter green when selected
       } else if (index == 1) { // Square
-        g.color(isSelected ? RGB(0.4, 0.6, 1.0) : RGB(0.2, 0.4, 1.0)); // Brighter blue when selected
+        g.color(isSelected ? al::RGB(0.4, 0.6, 1.0) : al::RGB(0.2, 0.4, 1.0)); // Brighter blue when selected
       } else if (index == 2) { // Pink
-        g.color(isSelected ? RGB(1.0, 0.5, 0.2) : RGB(0.9, 0.3, 0.1)); // Brighter orange when selected
+        g.color(isSelected ? al::RGB(1.0, 0.5, 0.2) : al::RGB(0.9, 0.3, 0.1)); // Brighter orange when selected
       } else {
         g.color(1, 1, 1);
       }
       
       // Draw using lambda function like in the example
-      pickable->draw(g, [&](Pickable &p) {
-        auto &b = dynamic_cast<PickableBB &>(p);
+      // TODO: Move to `update()` call in mDistributedScene
+      pickable->draw(g, [&](al::Pickable &p) {
+        auto &b = dynamic_cast<al::PickableBB &>(p);
         b.drawMesh(g);
       });
       
       // Draw line from origin to sound source
+      // TODO: Move to `update()` call in mDistributedScene
       g.lineWidth(1.0);
       g.color(0.5, 0.5, 0.5, 0.3);
-      Mesh line;
-      line.primitive(Mesh::LINES);
+      al::Mesh line;
+      line.primitive(al::Mesh::LINES);
       line.vertex(0, 0, 0);
       line.vertex(pickable->pose.get().pos());
       g.draw(line);
     }
     
     // Draw the GUI - only for selected objects
-    imguiBeginFrame();
+    al::imguiBeginFrame();
     
     // Only show GUI for selected object
+    // TODO: Move to `update()` call in mDistributedScene
     for (auto agent : mAgents) {
-      if (agent->mPickable.selected) {
+      if (agent->mPickableMesh.selected) {
         agent->mGui.draw(g);
       }
     }
     
-    imguiEndFrame();
-    imguiDraw();
+    al::imguiEndFrame();
+    al::imguiDraw();
   }
 
-  void onSound(AudioIOData &io) override {
+  void onSound(al::AudioIOData &io) override {
     // Use fixed listener pose at origin instead of camera position
-    scene.listenerPose(fixedListenerPose);
-    scene.render(io);
+    mDistributedScene.listenerPose(fixedListenerPose);
+    mDistributedScene.render(io);
   }
   
   // Mouse event handling
-  bool onMouseMove(const Mouse &m) override {
+  bool onMouseMove(const al::Mouse& m) override {
     // Check if the mouse is over a GUI first
+    // TODO: Move to `update()` call in mDistributedScene
     for (auto agent : mAgents) {
-      if (agent->mPickable.selected && agent->mGui.usingInput()) {
+      if (agent->mPickableMesh.selected && agent->mGui.usingInput()) {
         return true;
       }
     }
   
     // If not over GUI, pass to pickable manager
-    pickableManager.onMouseMove(graphics(), m, width(), height());
+    // maybe integrate mPickableManager into an AudioManager class,
+    // that inherits from DistributedScene?
+    mPickableManager.onMouseMove(graphics(), m, width(), height());
     return true;
   }
   
-  bool onMouseDown(const Mouse &m) override {
+  bool onMouseDown(const al::Mouse& m) override {
     // Check if the mouse is over a GUI first
+    // TODO: Move to `update()` call in mDistributedScene
     for (auto agent : mAgents) {
-      if (agent->mPickable.selected && agent->mGui.usingInput()) {
+      if (agent->mPickableMesh.selected && agent->mGui.usingInput()) {
         return true;
       }
     }
     
     // If not over GUI, clear previous selections and pass to pickable manager
+    // TODO: Move to `update()` call in mDistributedScene
     bool overGUI = false; 
     for (auto agent : mAgents) {
       if (agent->mGui.usingInput()) {
@@ -243,34 +266,41 @@ struct MyApp : public App {
     if (!overGUI) {
       clearAllSelections();
     }
-    
-    pickableManager.onMouseDown(graphics(), m, width(), height());
+
+    // maybe integrate mPickableManager into an AudioManager class,
+    // that inherit from DistributedScene?
+    mPickableManager.onMouseDown(graphics(), m, width(), height());
     return true;
   }
   
-  bool onMouseDrag(const Mouse &m) override {
+  bool onMouseDrag(const al::Mouse& m) override {
     // Check if the mouse is over a GUI first
     for (auto agent : mAgents) {
-      if (agent->mPickable.selected && agent->mGui.usingInput()) {
+      if (agent->mPickableMesh.selected && agent->mGui.usingInput()) {
         return true;
       }
     }
     
     // If not over GUI, pass to pickable manager
-    pickableManager.onMouseDrag(graphics(), m, width(), height());
+    // maybe integrate mPickableManager into an AudioManager class,
+    // that inherit from DistributedScene?
+    mPickableManager.onMouseDrag(graphics(), m, width(), height());
     return true;
   }
   
-  bool onMouseUp(const Mouse &m) override {
+  bool onMouseUp(const al::Mouse& m) override {
     // Check if the mouse is over a GUI first
+    // TODO: Move to `update()` call in mDistributedScene
     for (auto agent : mAgents) {
-      if (agent->mPickable.selected && agent->mGui.usingInput()) {
+      if (agent->mPickableMesh.selected && agent->mGui.usingInput()) {
         return true;
       }
     }
     
     // If not over GUI, pass to pickable manager
-    pickableManager.onMouseUp(graphics(), m, width(), height());
+    // maybe integrate mPickableManager into an AudioManager class,
+    // that inherit from DistributedScene?
+    mPickableManager.onMouseUp(graphics(), m, width(), height());
     return true;
   }
 };
