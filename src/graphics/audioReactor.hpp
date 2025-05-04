@@ -118,9 +118,12 @@ class DynamicListener {
   float currentRMS;
   float sumOfSquares;
   int sampleCounter;
+  float onsetThreshMin;
+  float onsetThreshMax;
+  bool onsetStateon;
 
   //keeping consistent with how spectral listener is designed, avoiding undefined behavior, 
-  DynamicListener () : currentRMS(0.0f), sumOfSquares(0.0f), sampleCounter(0){}
+  DynamicListener () : currentRMS(0.0f), sumOfSquares(0.0f), sampleCounter(0), onsetThreshMin(0.0f), onsetThreshMax(0.05), onsetStateon(false){}
 /** 
 * @brief call in onSound. pass in input sample
 */
@@ -150,6 +153,26 @@ class DynamicListener {
     sampleCounter = 0;
     sumOfSquares = 0.0f;
   }
+
+  bool detectOnset(){
+    //getRMS();
+    // working on logic to detect NEW onsets
+
+    if (currentRMS >= onsetThreshMax && onsetStateon == false){ //if rms is newly above the threshold
+    onsetStateon = true;
+    return true;
+
+    }
+    else if (currentRMS >= onsetThreshMax && onsetStateon == true){ // if signal has already been above the thresold
+    return false;
+    }
+    else if (currentRMS < onsetThreshMax){ 
+      onsetStateon = false;
+      return false;
+    }
+  }
+
+
  
 };
 
