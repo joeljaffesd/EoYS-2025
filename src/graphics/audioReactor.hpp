@@ -6,13 +6,14 @@
 #include "Gamma/DFT.h"
 #include "Gamma/FFT.h"
 #include "Gamma/tbl.h"
+//#include "Gamma/"
 
 #include <cstddef>
 #include <vector>
 
 /* TO DO:
 - implement rms 
-- implement onset detection 
+- implement onset detection -- use silence detected from gamma
 - make sure everything is memory safe - already caught a seg fault issue
 */
 
@@ -29,13 +30,13 @@ public:
   std::vector<float> magnitudes;
   std::vector<float> prevMagnitudes;
 
-  // initializer, creates members (arguments) before my constructor runs
-  //commenting out constructor for now, seems to be causing memory leak / seg fault -
   SpectralListener() : stft(1024, 256, 0, gam::HAMMING) {
     stft.numAux(1); // 1 deals with mag spectrum
   }
 
-
+/**
+ * @brief Call in on sound. Pass in input samples
+ */
   void process(float inputSample) {
     if (stft(inputSample)) { // if sample != null basically
       stft.spctToPolar();    // converts complex/ imaginary numbers to mag and
@@ -53,11 +54,11 @@ public:
     return magnitudes;
   } // reference to current magnitudes. might change this, but is currently
     // useful for comparing state in between frames. if process return a vector,
-    // it would be constantly getting overwritten i think
-
-  // std::vector<float> process(std::vector<float> &spectrum) {
 
   // decleration and implementation
+/** 
+* @brief Store in a var or pass into param. Measures difference in freq spectrum magnitude between frames.
+*/
   float getFlux() {
     if (prevMagnitudes.empty()) {
       prevMagnitudes = magnitudes;
@@ -73,6 +74,9 @@ public:
     return flux;
   }
   // get spectral centroid
+  /** 
+* @brief Store in a var or pass into param. Measures center of mass of current freq.
+*/
   float getCent() {
     if (magnitudes.empty())
       return 0.0f;
@@ -98,9 +102,11 @@ public:
 
 };
 
-// class DynamicListener {
-//   // gam::EnvFollow envfollow;
-//   // gam::ZeroCross zrc;
+//class DynamicListener {
+  //public:
+  // gam::EnvFollow env{0.1};
+  // gam::RMS
+   //gam::ZeroCross zrc;
 
 // public:
 //   void process();
