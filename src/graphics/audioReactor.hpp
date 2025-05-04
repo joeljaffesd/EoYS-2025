@@ -1,14 +1,26 @@
 #ifndef AUDIO_REACTOR_HPP
 #define AUDIO_REACTOR_HPP
 
-// #include "al_ext/external/Gamma/Gamma/Gamma.h"
+
 #include "Gamma/Analysis.h"
 #include "Gamma/DFT.h"
 #include "Gamma/FFT.h"
 #include "Gamma/tbl.h"
-// #include "Gamma/Window.h"
+
 #include <cstddef>
 #include <vector>
+
+/* TO DO:
+- implement rms 
+- implement onset detection 
+- make sure everything is memory safe - already caught a seg fault issue
+*/
+
+/**
+ * @brief Creates a spectrum analyzer. Has methods for retrieving centroid and flux. 
+ * Need to call process in onSound. 
+ * Call retrieval functions in onSound. Not useful to print / send values at audio rate.
+ */
 
 class SpectralListener {
 public:
@@ -18,9 +30,11 @@ public:
   std::vector<float> prevMagnitudes;
 
   // initializer, creates members (arguments) before my constructor runs
+  //commenting out constructor for now, seems to be causing memory leak / seg fault -
   SpectralListener() : stft(1024, 256, 0, gam::HAMMING) {
     stft.numAux(1); // 1 deals with mag spectrum
   }
+
 
   void process(float inputSample) {
     if (stft(inputSample)) { // if sample != null basically
@@ -29,7 +43,9 @@ public:
       stft.copyBinsToAux(0, 0);  // copy magnitudes to auxilary buffer. there is
                                  // also an inverse function
       float *mags = stft.aux(0); // creates pointer to aux buffer
+      if (mags){ //might not need this but seemed to be extra protection from seg fault on init - magnitudes are only assigned if there are values- no null pointer
       magnitudes.assign(mags, mags + stft.numBins());
+      }
     }
   }
 
@@ -80,10 +96,6 @@ public:
     return weightedSum / magSum;
   };
 
-  //   float getCentroid() {
-  //     float centroid;
-  //     return centroid;
-  //   }
 };
 
 // class DynamicListener {
