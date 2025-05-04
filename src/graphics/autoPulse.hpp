@@ -6,6 +6,12 @@
 
 //wanted to use built in scale function, but caused issues with saving state and unwanted vertices updating
 
+/**
+ * @brief Mesh effect scales entire mesh inward and outward at pulse rate. 
+ * Must use .setBaseMesh in onCreate to create a reference point for scaling. Can be updated in onAnimate
+ * Effect must be passed into a VFX Chain instance via effectChain.push back in on create
+ * Set params is initialized in onCreate. can be updated in onAnimate.
+ */
 // a transformation effect
 class AutoPulseEffect : public VertexEffect {
 public:
