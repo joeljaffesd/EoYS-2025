@@ -104,7 +104,8 @@ public:
 };
 
 /** 
-* @brief Creates a dynamics analyzer. Has methods for rms, more to come. 
+* @brief Creates a dynamics analyzer.
+* Methods for getRMS and reset RMS. Methods for detecting new note onsets and detecting thresholds.
 * Need to call process in onSound. 
 * Call retrieval functions in onSound. Not useful to print / send values at audio rate.
 */
@@ -120,10 +121,10 @@ class DynamicListener {
   int sampleCounter;
   float onsetThreshMin;
   float onsetThreshMax;
-  bool onsetStateon;
+  bool onsetStateOn;
 
   //keeping consistent with how spectral listener is designed, avoiding undefined behavior, 
-  DynamicListener () : currentRMS(0.0f), sumOfSquares(0.0f), sampleCounter(0), onsetThreshMin(0.0f), onsetThreshMax(0.05), onsetStateon(false){}
+  DynamicListener () : currentRMS(0.0f), sumOfSquares(0.0f), sampleCounter(0), onsetThreshMin(0.0f), onsetThreshMax(0.05), onsetStateOn(false){}
 /** 
 * @brief call in onSound. pass in input sample
 */
@@ -148,26 +149,37 @@ class DynamicListener {
     return currentRMS;
   
   }
+  /** 
+* @brief Call to reset RMS values - could be useful between songs / scenes?
+*/
   void resetRMS(){
     currentRMS = 0.0f;
     sampleCounter = 0;
     sumOfSquares = 0.0f;
   }
+/** 
+* @brief Set threshold for onset (RMS float value). Tweak according to sound check.
+* Currently does not handle different frequency bands
+*/
+void setOnsetThresh(float threshold) {
+  onsetThreshMax = threshold;
+}
+/** 
+* @brief Returns true if new onset is detected at / above threshold.
+*/
+bool detectOnset(){
+    
 
-  bool detectOnset(){
-    //getRMS();
-    // working on logic to detect NEW onsets
-
-    if (currentRMS >= onsetThreshMax && onsetStateon == false){ //if rms is newly above the threshold
-    onsetStateon = true;
+    if (currentRMS >= onsetThreshMax && onsetStateOn == false){ //if rms is newly above the threshold
+    onsetStateOn = true;
     return true;
 
     }
-    else if (currentRMS >= onsetThreshMax && onsetStateon == true){ // if signal has already been above the thresold
+    else if (currentRMS >= onsetThreshMax && onsetStateOn == true){ // if signal has already been above the thresold
     return false;
     }
     else if (currentRMS < onsetThreshMax){ 
-      onsetStateon = false;
+      onsetStateOn = false;
       return false;
     }
   }
