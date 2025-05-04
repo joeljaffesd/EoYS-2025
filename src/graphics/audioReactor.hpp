@@ -117,7 +117,10 @@ class DynamicListener {
 
   float currentRMS;
   float sumOfSquares;
-  float sampleCounter;
+  int sampleCounter;
+
+  //keeping consistent with how spectral listener is designed, avoiding undefined behavior, 
+  DynamicListener () : currentRMS(0.0f), sumOfSquares(0.0f), sampleCounter(0){}
 /** 
 * @brief call in onSound. pass in input sample
 */
@@ -136,9 +139,9 @@ class DynamicListener {
     if (sampleCounter > 0){
     currentRMS = std::sqrt(sumOfSquares / sampleCounter);
     }
-    // else{
-    //   currentRMS = 0.0f;
-    // }
+    else{
+      currentRMS = 0.0f;
+    }
     return currentRMS;
   
   }
