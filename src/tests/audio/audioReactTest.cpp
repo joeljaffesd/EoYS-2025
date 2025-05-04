@@ -5,23 +5,30 @@
 
 class MyApp : public al::App {
 public:
-  SpectralListener listener;
+  SpectralListener specListen;
+  DynamicListener dynListen;
   float flux = 0.0f;
   float centroid = 0.0f;
+  float rms = 0.0f;
   int frame = 0;
 
   void onSound(al::AudioIOData &io) override {
     while (io()) {
       float in = io.in(0); // mono for now
-      listener.process(in);
+      specListen.process(in);
+      dynListen.process(in);
     }
 
     //increment frame in on sound
     // need to tweak values, "frames" don't currently correlate to actual visual frame rate. crude implementation for now
     if (++frame % 30 == 0) {
-      flux = listener.getFlux();
-      centroid = listener.getCent();
-      std::cout << "Flux: " << flux << ", Centroid: " << centroid << std::endl;
+      flux = specListen.getFlux();
+      centroid = specListen.getCent();
+
+      rms = dynListen.getRMS();
+      std::cout << "Flux: " << flux << ", Centroid: " << centroid << ", RMS: " << rms << std::endl;
+
+
     }
   }
 

@@ -8,6 +8,7 @@
 #include "Gamma/tbl.h"
 //#include "Gamma/"
 
+#include <cmath>
 #include <cstddef>
 #include <vector>
 
@@ -102,14 +103,51 @@ public:
 
 };
 
-//class DynamicListener {
-  //public:
-  // gam::EnvFollow env{0.1};
-  // gam::RMS
-   //gam::ZeroCross zrc;
+/** 
+* @brief Creates a dynamics analyzer. Has methods for rms, more to come. 
+* Need to call process in onSound. 
+* Call retrieval functions in onSound. Not useful to print / send values at audio rate.
+*/
 
-// public:
-//   void process();
-// };
+class DynamicListener {
+  public:
+  //not using yet
+  // gam::EnvFollow<float> env{0.1};
+  // gam::ZeroCross<float> zrc;
+
+  float currentRMS;
+  float sumOfSquares;
+  float sampleCounter;
+/** 
+* @brief call in onSound. pass in input sample
+*/
+  void process(float inputSample){
+    // env(inputSample);
+    // zrc(inputSample); 
+
+    sumOfSquares += inputSample * inputSample; //squaring raw input sample value and summing.
+    sampleCounter++;
+
+  }
+  /** 
+* @brief call in onSound. returns float of up to date rms
+*/
+  float getRMS(){
+    if (sampleCounter > 0){
+    currentRMS = std::sqrt(sumOfSquares / sampleCounter);
+    }
+    // else{
+    //   currentRMS = 0.0f;
+    // }
+    return currentRMS;
+  
+  }
+  void resetRMS(){
+    currentRMS = 0.0f;
+    sampleCounter = 0;
+    sumOfSquares = 0.0f;
+  }
+ 
+};
 
 #endif
