@@ -13,23 +13,25 @@
 #define SPEAKER_LAYOUT al::AlloSphereSpeakerLayoutCompensated() // for playback in Allosphere
 #endif
 
+#include "al/app/al_DistributedApp.hpp"
 #include "al/scene/al_DistributedScene.hpp"
-#include "../../audio/spatialEngine.hpp"
+#include "../../audio/audioManager.hpp"
 
-struct MyApp : public al::App {
+struct MyApp : public al::DistributedApp {
   AudioManager mAudioManager;
 
-  void onCreate() override {
+  void onInit() override {
+    // TODO
+    // mAudioManager.scene()->registerSynthClass<SpatialAgent>();
+
+    // TODO: encapsulate this in a function
     auto speakers = SPEAKER_LAYOUT; 
     mAudioManager.scene()->setSpatializer<SPATIALIZER_TYPE>(speakers);
     mAudioManager.scene()->distanceAttenuation().law(al::ATTEN_NONE);
     
     // Set fixed listener pose at origin (0,0,0)
     mAudioManager.setListenerPose(al::Pose(al::Vec3f(0, 0, 0)));
-    
-    // Set up GUI windows
-    al::imguiInit();
-    
+
     // Add sound agents
     for (unsigned i = 0; i < 3; i++) {
       mAudioManager.addAgent();
@@ -37,6 +39,14 @@ struct MyApp : public al::App {
 
     // prepare audio engine
     mAudioManager.prepare(audioIO());
+
+    // TODO
+    // registerDynamicScene(*mAudioManager.scene()); 
+  }
+
+  void onCreate() override {
+    // Set up GUI windows
+    al::imguiInit();
     
     // Set up camera - still movable but doesn't affect audio
     nav().pos(0, 0, 10);

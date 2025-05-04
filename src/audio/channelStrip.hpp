@@ -1,5 +1,5 @@
-#ifndef EOYS_CHANNEL_STRIP_HPP
-#define EOYS_CHANNEL_STRIP_HPP
+#ifndef EOYS_CHANNEL_STRIP
+#define EOYS_CHANNEL_STRIP
 
 // std includes
 #include <vector>
@@ -12,35 +12,6 @@
 
 // giml includes
 #include "../Gimmel/include/gimmel.hpp"
-
-/**
- * @brief TODO
- */
-class SpatialEngine {
-private:
-  al::Pose listenerPose;
-  al::Pose sourcePose;
-  al::Spatializer* spatializer;
-  al::Speakers speakerLayout;
-
-public:
-  SpatialEngine() : spatializer(nullptr) {}
-
-  void init() {} // TODO
-
-  /**
-   * @brief TODO
-   */
-  void processAudio(al::AudioIOData& io) {
-    if (spatializer) {
-      spatializer->prepare(io);
-      spatializer->renderBuffer(io, sourcePose.pos(), io.busBuffer(0),
-                                io.framesPerBuffer());
-      spatializer->finalize(io);
-    }
-  }
-
-}; // TODO
 
 /**
  * @brief Basic encapsulation of the an fx chain / inserts, using `Gimmel`
@@ -80,7 +51,7 @@ public:
  * @brief TODO
  * @todo Finish and encapsulate GUI
  */
-class ChannelStrip : public SpatialEngine, public EffectsEngine {
+class ChannelStrip : public EffectsEngine {
 private:
   al::ParameterBool enabled { "Enabled", "", true };
   al::ParameterInt mInputChannel { "Input Channel", "", 0, 0, 1 };
@@ -187,4 +158,4 @@ public:
   }
 
 };
-#endif
+#endif // EOYS_CHANNEL_STRIP
