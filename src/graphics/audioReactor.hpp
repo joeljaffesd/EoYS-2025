@@ -13,8 +13,7 @@
 #include <vector>
 
 /* TO DO:
-- implement rms 
-- implement onset detection -- use silence detected from gamma
+- Implement silence dection and use to reset RMS. otherwise RMS builds up and onset detetion is less useful
 - make sure everything is memory safe - already caught a seg fault issue
 */
 
@@ -104,10 +103,11 @@ public:
 };
 
 /** 
-* @brief Creates a dynamics analyzer.
-* Methods for getRMS and reset RMS. Methods for detecting new note onsets and detecting thresholds.
+* @brief Creates a dynamics analyzer. IMPORTANT - set silenceDuration (in samples), silence threshold, and onset threshold.
+* Methods for getRMS and reset RMS. Methods for detecting new note onsets,  setting thresholds.
 * Need to call process in onSound. 
 * Call retrieval functions in onSound. Not useful to print / send values at audio rate.
+* RMS is reset after 1 second of silence (below silence threshold). Update silence duration based on samplerate. This allows for new onset detection rather than a longterm RMS.
 */
 
 class DynamicListener {
@@ -119,12 +119,26 @@ class DynamicListener {
   float currentRMS;
   float sumOfSquares;
   int sampleCounter;
-  float onsetThreshMin;
+  //float onsetThreshMin;
   float onsetThreshMax;
   bool onsetStateOn;
+  gam::SilenceDetect silenceDuration;
+  float silenceThreshold; // added to allow proper silence detection
+ 
 
   //keeping consistent with how spectral listener is designed, avoiding undefined behavior, 
-  DynamicListener () : currentRMS(0.0f), sumOfSquares(0.0f), sampleCounter(0), onsetThreshMin(0.0f), onsetThreshMax(0.05), onsetStateOn(false){}
+  DynamicListener () 
+    : currentRMS(0.0f), sumOfSquares(0.0f), sampleCounter(0), 
+      onsetThreshMax(0.05), onsetStateOn(false), 
+      silenceDuration(44100), silenceThreshold(0.01f) {} // 2048 samples of quiet before reset
+
+// defined first so reset works in process
+      void resetRMS(){
+    currentRMS = 0.0f;
+    sampleCounter = 0;
+    sumOfSquares = 0.0f;
+  }
+
 /** 
 * @brief call in onSound. pass in input sample
 */
@@ -135,57 +149,61 @@ class DynamicListener {
     sumOfSquares += inputSample * inputSample; //squaring raw input sample value and summing.
     sampleCounter++;
 
+    // reset RMS if silence is detected using gamma's SilenceDetect
+    if (silenceDuration(inputSample, silenceThreshold)) {
+      resetRMS();
+      onsetStateOn = false;
+      
+      //std::cout << "Silence detected — RMS reset" << std::endl;
+    }
   }
-  /** 
+
+/** 
 * @brief call in onSound. returns float of up to date rms
 */
   float getRMS(){
     if (sampleCounter > 0){
-    currentRMS = std::sqrt(sumOfSquares / sampleCounter);
+      currentRMS = std::sqrt(sumOfSquares / sampleCounter);
     }
     else{
       currentRMS = 0.0f;
     }
     return currentRMS;
-  
   }
-  /** 
+
+/** 
 * @brief Call to reset RMS values - could be useful between songs / scenes?
 */
-  void resetRMS(){
-    currentRMS = 0.0f;
-    sampleCounter = 0;
-    sumOfSquares = 0.0f;
-  }
+  // void resetRMS(){
+  //   currentRMS = 0.0f;
+  //   sampleCounter = 0;
+  //   sumOfSquares = 0.0f;
+  // }
+
 /** 
 * @brief Set threshold for onset (RMS float value). Tweak according to sound check.
 * Currently does not handle different frequency bands
 */
-void setOnsetThresh(float threshold) {
-  onsetThreshMax = threshold;
-}
+  void setOnsetThresh(float threshold) {
+    onsetThreshMax = threshold;
+  }
+
 /** 
 * @brief Returns true if new onset is detected at / above threshold.
 */
-bool detectOnset(){
-    
-
+  bool detectOnset(){
     if (currentRMS >= onsetThreshMax && onsetStateOn == false){ //if rms is newly above the threshold
-    onsetStateOn = true;
-    return true;
-
+      onsetStateOn = true;
+      return true;
     }
-    else if (currentRMS >= onsetThreshMax && onsetStateOn == true){ // if signal has already been above the thresold
-    return false;
+    else if (currentRMS >= onsetThreshMax && onsetStateOn == true){ // if signal has already been above the threshold
+      return false;
     }
     else if (currentRMS < onsetThreshMax){ 
       onsetStateOn = false;
       return false;
     }
   }
-
-
- 
 };
 
 #endif

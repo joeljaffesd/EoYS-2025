@@ -16,6 +16,10 @@ public:
 //   void onInit() {
 //     dynListen.setOnsetThresh(0.01);
 //   }
+  void onCreate() override {
+    dynListen.setOnsetThresh(0.035);
+  }
+
 
   void onSound(al::AudioIOData &io) override {
     while (io()) {
@@ -26,23 +30,27 @@ public:
 
     //increment frame in on sound
     // need to tweak values, "frames" don't currently correlate to actual visual frame rate. crude implementation for now
-    if (++frame % 30 == 0) {
+    
+
+    // basic RMS implemented 
+      rms = dynListen.getRMS();
+      //std::cout << "Flux: " << flux << ", Centroid: " << centroid << ", RMS: " << rms << std::endl;
+      // basic onset detection - 
+      if (dynListen.detectOnset()) {
+        std::cout << "New Onset detected!" << std::endl;
+      }
+      if (++frame % 30 == 0) {
      // basic flux implemented 
       flux = specListen.getFlux();
       //  basic centroid implemented 
       centroid = specListen.getCent();
 
-    // basic RMS implemented 
-      rms = dynListen.getRMS();
+      //print every 30 times the loop is run
       std::cout << "Flux: " << flux << ", Centroid: " << centroid << ", RMS: " << rms << std::endl;
-      // basic onset detection - 
-      if (dynListen.detectOnset()) {
-        std::cout << "New Onset detected!" << std::endl;
-      }
-
 
     }
   }
+};
 
 //   void onCreate() override {
 //   }
