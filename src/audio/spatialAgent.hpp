@@ -3,10 +3,11 @@
 
 #include "al/graphics/al_Shapes.hpp"
 #include "al/math/al_Random.hpp"
-#include "al/ui/al_ControlGUI.hpp"
 #include "al/ui/al_PickableManager.hpp"
 
 #include "../../Gimmel/include/filter.hpp"
+
+#include "tabbedGUI.hpp"
 
 /**
  * @brief Converts spherical coordinates to Cartesian coordinates.
@@ -20,7 +21,9 @@
  * @param radius The radial distance from the origin.
  * @return A Vec3f object representing the Cartesian coordinates (x, y, z).
  */
-al::Vec3f sphericalToCartesian(float azimuthDeg, float elevationDeg, float radius) {
+al::Vec3f sphericalToCartesian(float azimuthDeg, 
+                               float elevationDeg, 
+                               float radius) {
   // Convert azimuth and elevation from degrees to radians
   constexpr float degToRad = M_PI / 180.0f; // constexpr to increase efficiency 
   float azimuthRad = azimuthDeg * degToRad;
@@ -103,11 +106,8 @@ public:
 
 /**
  * @class SpatialAgent
- * @brief A spatialized audio agent that generates a sine wave sound with adjustable parameters.
- * 
- * This class extends PositionedVoice and provides functionality for spatialized audio synthesis.
- * It supports configurable frequency, amplitude, gain, distance, size, and lifespan, with
- * distance-based attenuation and low-pass filtering for realistic sound propagation.
+ * @brief A spatialized audio agent with logic for object-based sound spatialization. 
+ * Includes a mesh for visualizing position, and a GUI.
  */
 class SpatialAgent : public al::PositionedVoice {
 public:
@@ -123,17 +123,20 @@ public:
   al::Parameter mElevation{ "Elevation", "", 30.0, "", -90.0, 90.0 };
   al::Parameter mDistance{ "Distance", "", 8.0, "", 0.1, 20.0 };
   al::Parameter mGain{ "Gain", "", 1.0, "", 0.0, 2.0 };
-  al::ControlGUI mGui;
+  al::ParameterBundle mSpatializationParams{ "Spatialization" };
+  TabbedGUI mGui;
 
   SpatialAgent() {
-    registerParameters(mAzimuth, mElevation, mDistance, mGain);
+    // registerParameters(mAzimuth, mElevation, mDistance, mGain);
   }
 
 
   void init() {
+    registerParameters(mAzimuth, mElevation, mDistance, mGain);
     mGui.init(5, 5, false);
     mGui.setTitle("Spatial Agent");
-    mGui << mAzimuth << mElevation << mDistance << mGain;
+    mSpatializationParams << mAzimuth << mElevation << mDistance << mGain;
+    mGui << mSpatializationParams;
 
     mPickableMesh.pose = al::Pose(sphericalToCartesian(mAzimuth.get(), 
                                   mElevation.get(), 
