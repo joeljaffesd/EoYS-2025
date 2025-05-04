@@ -124,10 +124,10 @@ public:
   PickableMesh mPickableMesh;
   giml::OnePole<float> airFilter;
 
-  al::Parameter mAzimuth{"Azimuth", "", 90.0, "", -180.0, 180.0};
-  al::Parameter mElevation{"Elevation", "", 30.0, "", -90.0, 90.0};
-  al::Parameter mDistance{"Distance", "", 8.0, "", 0.1, 20.0};
-  al::Parameter mGain{"Gain", "", 1.0, "", 0.0, 2.0};
+  al::Parameter mAzimuth{ "Azimuth", "", 90.0, "", -180.0, 180.0 };
+  al::Parameter mElevation{ "Elevation", "", 30.0, "", -90.0, 90.0 };
+  al::Parameter mDistance{ "Distance", "", 8.0, "", 0.1, 20.0 };
+  al::Parameter mGain{ "Gain", "", 1.0, "", 0.0, 2.0 };
   al::ControlGUI mGui;
 
 
@@ -333,25 +333,27 @@ public:
     al::imguiDraw();
   }
 
-  void onMouseMove(al::Graphics& g, const al::Mouse& m, int w, int h) {
-    // Check if the mouse is over a GUI first
+  // helper function for mouse events
+  bool mouseOverGUI() {
     for (auto agent : mAgents) {
       if (agent->mPickableMesh.selected && agent->mGui.usingInput()) {
-        return; // Don't pass to pickable manager if over GUI
+        return true; // Mouse is over GUI
       }
     }
+    return false; // Mouse is not over GUI
+  }
+
+  void onMouseMove(al::Graphics& g, const al::Mouse& m, int w, int h) {
+    // Check if the mouse is over a GUI first
+    if (mouseOverGUI()) { return; }
     // If not over GUI, pass to pickable manager
     mPickableManager.onMouseMove(g, m, w, h);
   }
 
   void onMouseDown(al::Graphics& g, const al::Mouse& m, int w, int h) {
     // Check if the mouse is over a GUI first
-    for (auto agent : mAgents) {
-      if (agent->mPickableMesh.selected && agent->mGui.usingInput()) {
-        return;
-      }
-    }
-    
+    if (mouseOverGUI()) { return; }
+
     // If not over GUI, clear previous selections and pass to pickable manager
     bool overGUI = false; 
     for (auto agent : mAgents) {
@@ -361,31 +363,21 @@ public:
       }
     }
 
-    if (!overGUI) {
-      clearAllSelections();
-    }
+    if (!overGUI) { clearAllSelections(); }
 
     mPickableManager.onMouseDown(g, m, w, h);
   }
 
   void onMouseDrag(al::Graphics& g, const al::Mouse& m, int w, int h) {
     // Check if the mouse is over a GUI first
-    for (auto agent : mAgents) {
-      if (agent->mPickableMesh.selected && agent->mGui.usingInput()) {
-        return; // Don't pass to pickable manager if over GUI
-      }
-    }
+    if (mouseOverGUI()) { return; }
     // If not over GUI, pass to pickable manager
     mPickableManager.onMouseDrag(g, m, w, h);
   }
 
   void onMouseUp(al::Graphics& g, const al::Mouse& m, int w, int h) {
     // Check if the mouse is over a GUI first
-    for (auto agent : mAgents) {
-      if (agent->mPickableMesh.selected && agent->mGui.usingInput()) {
-        return; // Don't pass to pickable manager if over GUI
-      }
-    }
+    if (mouseOverGUI()) { return; }
     // If not over GUI, pass to pickable manager
     mPickableManager.onMouseUp(g, m, w, h);
   }
