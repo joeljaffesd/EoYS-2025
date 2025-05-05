@@ -13,9 +13,11 @@ struct MyApp : al::App {
   DynamicListener dynListen;
   float flux = 0.0f;
   float centroid = 0.0f;
+  float smoothCent;
   float rms = 0.0f;
   int frame = 0;
   float newOnset = 0.0f;
+  SmoothedValue smooth;
 
     void onCreate() override {
         dynListen.setOnsetThresh(0.035);
@@ -54,7 +56,6 @@ struct MyApp : al::App {
         else{
           newOnset = 0.0f;
         }
-
       }
       // else if (dynListen.detectOnset() && newOnset == 0.0f) {
       //   std::cout << "New Onset detected!" << std::endl;
@@ -78,6 +79,9 @@ struct MyApp : al::App {
 
     void onAnimate(double dt) override {
         t += dt;
+        smoothCent = smooth.smooth(centroid);
+        std::cout << "smooth" << smoothCent << std::endl;
+
     }
 
     void onDraw(al::Graphics& g) override {
@@ -86,12 +90,11 @@ struct MyApp : al::App {
         //doing this to handle uniforms being stuck . didnt need for example 1
         shaderSphere.shadedMesh.shader.use();
 
-
         //shaderSphere.shadedMesh.use(); //not properly accessing this member
         //For shader 1:
         shaderSphere.setUniformFloat("u_time", (float)t);
         shaderSphere.setUniformFloat("onset", newOnset);
-        //shaderSphere.setUniformFloat("cent", (centroid/1000.0f));
+        shaderSphere.setUniformFloat("cent", (smoothCent/2500.0f));
         //For shader 2:
         //shaderSphere.setUniformFloat("iTime", t);
         //shaderSphere.setUniformVec3f("iResolution", Vec3f(width(), (height()), 0.0f)); // this simulates values of a screen size. it gets passed into the vertex shader then converted to normalized spherical coords. should maybe change where this operation happens. 

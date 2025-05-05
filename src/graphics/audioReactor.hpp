@@ -12,10 +12,8 @@
 #include <cstddef>
 #include <vector>
 
-/* TO DO:
-- Implement silence dection and use to reset RMS. otherwise RMS builds up and onset detetion is less useful
-- make sure everything is memory safe - already caught a seg fault issue
-*/
+
+
 
 /**
  * @brief Creates a spectrum analyzer. Has methods for retrieving centroid and flux. 
@@ -106,6 +104,7 @@ public:
 * @brief Creates a dynamics analyzer. IMPORTANT - set silenceDuration (in samples), silence threshold, and onset threshold.
 * Methods for getRMS and reset RMS. Methods for detecting new note onsets,  setting thresholds.
 * Need to call process in onSound. 
+* used .setOnsetThreshold and .setSilenceThresh based on audio input needs
 * Call retrieval functions in onSound. Not useful to print / send values at audio rate.
 * RMS is reset after 1 second of silence (below silence threshold). Update silence duration based on samplerate. This allows for new onset detection rather than a longterm RMS.
 */
@@ -187,6 +186,9 @@ class DynamicListener {
   void setOnsetThresh(float threshold) {
     onsetThreshMax = threshold;
   }
+  void setSilenceThresh(float thresh){
+    silenceThreshold = thresh;
+  }
 
 /** 
 * @brief Returns true if new onset is detected at / above threshold.
@@ -207,3 +209,38 @@ class DynamicListener {
 };
 
 #endif
+
+
+
+class SmoothedValue {
+public:
+  float smoothingFactor;
+  float smoothedValue;
+  bool initialized;
+
+  SmoothedValue(float factor = 0.1f)
+      : smoothingFactor(factor), smoothedValue(0.0f), initialized(false) {}
+
+  void setSmoothingFactor(float factor) {
+    smoothingFactor = factor;
+  }
+
+  float smooth(float input) {
+    if (!initialized) {
+      smoothedValue = input;
+      initialized = true;
+    } else {
+      smoothedValue = (1.0f - smoothingFactor) * smoothedValue + smoothingFactor * input;
+    }
+    return smoothedValue;
+  }
+
+  float value() const {
+    return smoothedValue;
+  }
+
+  void reset(float value = 0.0f) {
+    smoothedValue = value;
+    initialized = false;
+  }
+};
