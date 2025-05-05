@@ -32,7 +32,7 @@ struct ShaderToSphere {
         subdivisions = subdiv;
         shadedMesh.mesh.reset();
         shadedMesh.mesh.primitive(al::Mesh::TRIANGLE_FAN);
-        al::addTexSphere(shadedMesh.mesh, 5, 30, true);
+        al::addTexSphere(shadedMesh.mesh, 15, 30, true);
         // shadedMesh.mesh.primitive(al::Mesh::POINTS);
 
         // for (int j = 0; j <= subdivisions; ++j) {
