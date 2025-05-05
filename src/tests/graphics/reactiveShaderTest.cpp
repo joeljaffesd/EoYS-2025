@@ -15,7 +15,7 @@ struct MyApp : al::App {
   float centroid = 0.0f;
   float rms = 0.0f;
   int frame = 0;
-  int newOnset = 0;
+  float newOnset = 0.0f;
 
     void onCreate() override {
         dynListen.setOnsetThresh(0.035);
@@ -48,8 +48,18 @@ struct MyApp : al::App {
       // basic onset detection - 
       if (dynListen.detectOnset()) {
         std::cout << "New Onset detected!" << std::endl;
-        newOnset = 0;
+        if (newOnset == 0.0){
+        newOnset = 1.0f;
+        }
+        else{
+          newOnset = 0.0f;
+        }
+
       }
+      // else if (dynListen.detectOnset() && newOnset == 0.0f) {
+      //   std::cout << "New Onset detected!" << std::endl;
+      //   newOnset = 1.0f;
+      // }
       // else{
       //   newOnset = 0;
       //}
@@ -80,7 +90,8 @@ struct MyApp : al::App {
         //shaderSphere.shadedMesh.use(); //not properly accessing this member
         //For shader 1:
         shaderSphere.setUniformFloat("u_time", (float)t);
-        shaderSphere.setUniformFloat("onset", int(newOnset));
+        shaderSphere.setUniformFloat("onset", newOnset);
+        //shaderSphere.setUniformFloat("cent", (centroid/1000.0f));
         //For shader 2:
         //shaderSphere.setUniformFloat("iTime", t);
         //shaderSphere.setUniformVec3f("iResolution", Vec3f(width(), (height()), 0.0f)); // this simulates values of a screen size. it gets passed into the vertex shader then converted to normalized spherical coords. should maybe change where this operation happens. 
