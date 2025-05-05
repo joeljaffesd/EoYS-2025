@@ -18,6 +18,7 @@ public:
 //   }
   void onCreate() override {
     dynListen.setOnsetThresh(0.035);
+    dynListen.setSilenceThresh(0.1);
   }
 
 
