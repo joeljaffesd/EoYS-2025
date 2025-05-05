@@ -111,9 +111,6 @@ public:
  */
 class SpatialAgent : public al::PositionedVoice {
 public:
-  float baseAmplitude = 0.2f; // TODO
-  float amplitude = 0.2f; // TODO
-  float gain = 1.0f;
   float distance = 1.0f;
   float size = 1.0f;
   PickableMesh mPickableMesh;
@@ -122,7 +119,6 @@ public:
   al::Parameter mAzimuth{ "Azimuth", "", 90.0, "", -180.0, 180.0 };
   al::Parameter mElevation{ "Elevation", "", 30.0, "", -90.0, 90.0 };
   al::Parameter mDistance{ "Distance", "", 8.0, "", 0.1, 20.0 };
-  al::Parameter mGain{ "Gain", "", 1.0, "", 0.0, 2.0 };
   al::ParameterBundle mSpatializationParams{ "Spatialization" };
   TabbedGUI mGui;
 
@@ -132,10 +128,10 @@ public:
 
 
   void init() {
-    registerParameters(mAzimuth, mElevation, mDistance, mGain);
+    registerParameters(mAzimuth, mElevation, mDistance);
     mGui.init(5, 5, false);
     mGui.setTitle("Spatial Agent");
-    mSpatializationParams << mAzimuth << mElevation << mDistance << mGain;
+    mSpatializationParams << mAzimuth << mElevation << mDistance;
     mGui << mSpatializationParams;
 
     mPickableMesh.pose = al::Pose(sphericalToCartesian(mAzimuth.get(), 
@@ -144,26 +140,21 @@ public:
 
   }
 
-  void onProcess(al::AudioIOData &io) override {
-    while (io()) {
-      //io.out(0) = io.in(0); // TODO (Channel Routing)
-      io.out(0) = al::rnd::uniformS(); // default to noise 
+  void onProcess(al::AudioIOData& io) override {
+    for (auto sample = 0; sample < io.framesPerBuffer(); sample++) {
+      float input = io.in(0, sample);
+      float output = al::rnd::uniformS();
+      io.out(0) = output;
     }
   }
 
   void set(float azimuthDeg, float elevationDeg, float distanceVal, 
-           float sizeVal, float gainVal, unsigned int sampleRate) {
+           float sizeVal, unsigned int sampleRate) {
             
     al::Vec3f position = sphericalToCartesian(azimuthDeg, elevationDeg, distanceVal);
     setPose(al::Pose(position));
-    baseAmplitude = 0.2f;
     distance = distanceVal;
     size = sizeVal;
-    gain = gainVal;
-    
-    float distanceAttenuation = 1.0f / (distance * distance);
-    distanceAttenuation = std::min(distanceAttenuation, 5.0f);
-    amplitude = baseAmplitude * distanceAttenuation;
 
     float distCutoff = 20000.0f / (1.0f + distance * 0.8f);
     distCutoff = std::max(distCutoff, 300.0f);

@@ -5,20 +5,40 @@
 #include "al/sound/al_Spatializer.hpp"
 #include "al/sound/al_Ambisonics.hpp"
 #include "spatialAgent.hpp"
+#include "channelStrip.hpp"
+
+class DistributedSceneWithInput : public al::DistributedScene {
+public:
+  /**
+   * @brief Determines the number of input channels allocated for the internal
+   * AudioIOData objects
+   * @param channels
+   *
+   * Always call prepare() after calling this function. The changes are only
+   * applied by prepare().
+   */
+  void setVoiceMaxInputChannels(uint16_t channels) {
+    this->mVoiceMaxInputChannels = channels;
+  }
+};
 
 /**
  * @brief AudioManager class for handling a number of SpatialAgents
  */
 class AudioManager {
 private:
-  al::DistributedScene mDistributedScene;
+  DistributedSceneWithInput mDistributedScene;
   al::PickableManager mPickableManager;
-  std::vector<SpatialAgent*> mAgents;
+  std::vector<ChannelStrip*> mAgents;
   bool pickablesUpdatingParameters = false;
   al::Pose fixedListenerPose;
   int sampleRate = -1;
 
 public:
+
+  AudioManager() {
+    mDistributedScene.setVoiceMaxInputChannels(1);
+  }
 
   al::DistributedScene* scene() {
     return &mDistributedScene;
@@ -32,7 +52,7 @@ public:
   }
 
   void addAgent() {
-    auto* newAgent = mDistributedScene.getVoice<SpatialAgent>();
+    auto* newAgent = mDistributedScene.getVoice<ChannelStrip>();
     mAgents.push_back(newAgent);
     mPickableManager << newAgent->mPickableMesh; // add pickable to manager
   }
@@ -59,7 +79,7 @@ public:
   void updateAgents() {
     for (auto agent : mAgents) {
       agent->set(agent->mAzimuth.get(), agent->mElevation.get(),
-                 agent->mDistance.get(), agent->size, agent->gain, sampleRate);
+                 agent->mDistance.get(), agent->size, sampleRate);
     }
   }
 
