@@ -3,7 +3,7 @@
 #define SAMPLE_RATE 44100 // for playback in Allosphere
 #endif
 
-#define AUDIO_CONFIG SAMPLE_RATE, 128, 2, 1 // for lap/desktop computer 
+#define AUDIO_CONFIG SAMPLE_RATE, 128, 2, 8 // for lap/desktop computer 
 #ifndef AUDIO_CONFIG
 #define AUDIO_CONFIG SAMPLE_RATE, 256, 60, 8 // for playback in Allosphere
 #endif
@@ -28,6 +28,9 @@
 // EoYS includes
 #include "../../audio/channelStrip.hpp"
 #include "../../audio/audioManager.hpp"
+
+// Gamma ig for now
+#include "Gamma/SamplePlayer.h"
 
 // Add NAM compatibility to giml
 namespace giml {
@@ -61,19 +64,34 @@ private:
 
   AudioManager mAudioManager;
 
+  gam::SamplePlayer<float, gam::ipl::Cubic, gam::phsInc::Loop> player[8];
+
+
 public:
   void onInit() override {
+
+    player[0].load("../assets/wavFiles/vocals.wav");
+    player[1].load("../assets/wavFiles/guitar.wav");
+    player[2].load("../assets/wavFiles/bass.wav");
+    player[3].load("../assets/wavFiles/kick.wav");
+    player[4].load("../assets/wavFiles/snare.wav");
+    player[5].load("../assets/wavFiles/floorTom.wav");
+    player[6].load("../assets/wavFiles/midTom.wav");
+    player[7].load("../assets/wavFiles/highTom.wav");
 
     // TODO: encapsulate this in a function
     auto speakers = SPEAKER_LAYOUT; 
     mAudioManager.scene()->setSpatializer<SPATIALIZER_TYPE>(speakers);
     mAudioManager.scene()->distanceAttenuation().law(al::ATTEN_NONE);
+    mAudioManager.scene()->registerSynthClass<ChannelStrip>();
+    registerDynamicScene(*mAudioManager.scene());
+    mAudioManager.scene()->verbose(true);
     
     // Set fixed listener pose at origin (0,0,0)
     mAudioManager.setListenerPose(al::Pose(al::Vec3f(0, 0, 0)));
 
     // Add sound agents
-    for (unsigned i = 0; i < 3; i++) {
+    for (unsigned i = 0; i < 8; i++) {
       mAudioManager.addAgent();
     }
 
@@ -117,15 +135,15 @@ public:
     std::cout << "  3. Camera can be moved with arrow keys (view only, doesn't affect audio)" << std::endl;
   }
 
-  void onSound(al::AudioIOData& io) override {
-    // for (int sample = 0; sample < io.framesPerBuffer(); sample++) {
-    //   float input = float(impulse);
-    //   float output = mChannelStrip.processSample(input);
-    //   for (int channel = 0; channel < io.channelsOut(); channel++) {
-    //     io.out(channel, sample) = output;
-    //   }
-    //   impulse = false; // reset impulse 
-    // }
+  void onSound(al::AudioIOData& io) override {  
+
+    for (auto sample = 0; sample < io.framesPerBuffer(); sample++) {
+      float input[8];
+      for (auto index = 0; index < 8; index++) {
+        input[index] = player[index]();
+        io.inW(index, sample) = input[index];
+      }
+    }
     mAudioManager.processAudio(io);
   }
 

@@ -148,6 +148,20 @@ public:
     }
   }
 
+  void onProcess(al::Graphics& g) override {
+    g.color(al::HSV(al::rnd::uniform(), 1.0, 1.0));
+    g.draw(mPickableMesh);
+
+    // TODO line from origin (Distributed scene seems to translate origin)
+    // g.lineWidth(1.0);
+    // g.color(0.5, 0.5, 0.5, 0.3);
+    // al::Mesh line;
+    // line.primitive(al::Mesh::LINES);
+    // line.vertex(0, 0, 0);
+    // line.vertex(this->mPose.get().pos());
+    // g.draw(line);
+  }
+
   void set(float azimuthDeg, float elevationDeg, float distanceVal, 
            float sizeVal, unsigned int sampleRate) {
             

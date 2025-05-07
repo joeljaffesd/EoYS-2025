@@ -13,9 +13,9 @@
 class ChannelStrip : public EffectsEngine, public SpatialAgent {
 private:
   al::ParameterBool enabled { "Enabled", "", false };
-  al::ParameterInt mInputChannel { "Input Channel", "", 0, 0, 8 };
+  al::ParameterInt mInputChannel { "Input Channel", "", 0, 0, 7 };
   al::Parameter mGain { "Gain", "", 0.f, -96.f, 12.f };
-  al::Parameter mVolume { "Volume", "", -96.f, -96.f, 12.f };
+  al::Parameter mVolume { "Volume", "", 0.f, -96.f, 12.f };
   al::ParameterBundle mBasics { "Basics" };
   
 public:
@@ -23,8 +23,10 @@ public:
     mBasics << enabled << mInputChannel << mGain << mVolume;
     mGui << mBasics;
     SpatialAgent::init();
+    registerParameters(this->mPose); // need for distributed.
     
     std::unique_ptr<giml::Chorus<float>> chorus = std::make_unique<giml::Chorus<float>>(48000);
+    chorus->toggle(true);
     this->addEffect(std::move(chorus));
 
   }
@@ -34,8 +36,7 @@ public:
     if (!enabled) { return; }
     for (auto sample = 0; sample < io.framesPerBuffer(); sample++) {
       float input = io.in(mInputChannel, sample) * giml::dBtoA(mGain); 
-      //float output = this->processSample(input) * giml::dBtoA(mVolume);
-      float output = al::rnd::uniformS() * giml::dBtoA(mVolume);
+      float output = this->processSample(input) * giml::dBtoA(mVolume);
       io.out(0, sample) = output;
     }
   }

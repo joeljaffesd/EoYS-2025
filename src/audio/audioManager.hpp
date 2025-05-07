@@ -37,7 +37,7 @@ private:
 public:
 
   AudioManager() {
-    mDistributedScene.setVoiceMaxInputChannels(1);
+    mDistributedScene.setVoiceMaxInputChannels(8);
   }
 
   al::DistributedScene* scene() {
@@ -116,6 +116,7 @@ public:
     // Always update agents
     updateAgents();
     updatePickablePositions();
+    mDistributedScene.update();
     
     // When clicking a new object, deselect all others - mutually exclusive selection
     for (auto pickable : mPickableManager.pickables()) {
@@ -132,50 +133,44 @@ public:
   }
 
   void processAudio(al::AudioIOData& io) {
+    io.zeroOut(); // clear outputs 
     mDistributedScene.listenerPose(fixedListenerPose);
     mDistributedScene.render(io);
   }
 
   void draw(al::Graphics& g) {
-    // Draw pickable objects - Using the exact method from example
-    for (auto pickable : mPickableManager.pickables()) {
-      // Color based on which sound source
-      int index = -1;
-      for (int i = 0; i < mPickableManager.pickables().size(); i++) {
-        if (pickable == mPickableManager.pickables()[i]) {
-          index = i;
-          break;
-        }
-      }
+    mDistributedScene.render(g);
+    // // Draw pickable objects - Using the exact method from example
+    // for (auto pickable : mPickableManager.pickables()) {
+    //   // Color based on which sound source
+    //   int index = -1;
+    //   for (int i = 0; i < mPickableManager.pickables().size(); i++) {
+    //     if (pickable == mPickableManager.pickables()[i]) {
+    //       index = i;
+    //       break;
+    //     }
+    //   }
       
-      SelectablePickable* sp = dynamic_cast<SelectablePickable*>(pickable);
-      bool isSelected = sp && sp->selected;
+    //   SelectablePickable* sp = dynamic_cast<SelectablePickable*>(pickable);
+    //   bool isSelected = sp && sp->selected;
       
-      if (index == 0) { // Sine
-        g.color(isSelected ? al::RGB(0.3, 1.0, 0.5) : al::RGB(0.1, 0.9, 0.3)); // Brighter green when selected
-      } else if (index == 1) { // Square
-        g.color(isSelected ? al::RGB(0.4, 0.6, 1.0) : al::RGB(0.2, 0.4, 1.0)); // Brighter blue when selected
-      } else if (index == 2) { // Pink
-        g.color(isSelected ? al::RGB(1.0, 0.5, 0.2) : al::RGB(0.9, 0.3, 0.1)); // Brighter orange when selected
-      } else {
-        g.color(1, 1, 1);
-      }
+    //   g.color(al::HSV(al::rnd::uniform(), 1.0, 1.0));
       
-      // Draw using lambda function like in the example
-      pickable->draw(g, [&](al::Pickable &p) {
-        auto &b = dynamic_cast<al::PickableBB &>(p);
-        b.drawMesh(g);
-      });
+    //   // Draw using lambda function like in the example
+    //   pickable->draw(g, [&](al::Pickable &p) {
+    //     auto &b = dynamic_cast<al::PickableBB &>(p);
+    //     b.drawMesh(g);
+    //   });
       
-      // Draw line from origin to sound source
-      g.lineWidth(1.0);
-      g.color(0.5, 0.5, 0.5, 0.3);
-      al::Mesh line;
-      line.primitive(al::Mesh::LINES);
-      line.vertex(0, 0, 0);
-      line.vertex(pickable->pose.get().pos());
-      g.draw(line);
-    }
+    //   // Draw line from origin to sound source
+    //   g.lineWidth(1.0);
+    //   g.color(0.5, 0.5, 0.5, 0.3);
+    //   al::Mesh line;
+    //   line.primitive(al::Mesh::LINES);
+    //   line.vertex(0, 0, 0);
+    //   line.vertex(pickable->pose.get().pos());
+    //   g.draw(line);
+    // }
   }
 
   void drawGUI(al::Graphics& g) {
