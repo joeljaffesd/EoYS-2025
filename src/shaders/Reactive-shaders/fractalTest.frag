@@ -13,12 +13,12 @@ uniform float flux;
 
 void main() {
     vec2 uv = 0.275 * vPos.xy;
-    float t = (u_time * 0.01)*flux; //+ (cent);
+    float t = (u_time * (0.001*(flux*2)))+onset; //+ (cent);
     //t += flux;
     //t +=cent;
     float k = cos(t);
     float l = sin(t);
-    float s = 0.2;
+    float s = 0.2 + (onset / u_time);
 
     for(int i=0; i<64; ++i) {
         uv  = abs(uv) - s*flux;//-onset;    // Mirror
@@ -33,6 +33,6 @@ void main() {
     //fragColor =  vec4(vec3(x),1);
      //fragColor =  x* vec4(1,2*flux,3,1);
    
-    fragColor = .5 + .5*cos(6.28318*(40.0*length(uv))*vec4(3,2*cent,3+flux,1));
+    fragColor = .5 + .5*cos(6.28318*(40.0*length(uv))*vec4(-1,2,3+flux,1));
 
 }

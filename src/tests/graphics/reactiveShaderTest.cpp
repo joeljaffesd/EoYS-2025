@@ -8,7 +8,11 @@
 #include "src/graphics/vfxUtility.hpp"
 #include "src/graphics/vfxMain.hpp"
 
-//using namespace al;
+/* TO DO :
+* move var memory writing outside of audio callback - buffer approach?
+* move printing and writing to draw
+*
+*/
 
 struct MyApp : al::DistributedApp {
     ShaderToSphere shaderSphere;
@@ -29,6 +33,7 @@ struct MyApp : al::DistributedApp {
   // VertexEffectChain effectChain;
 
   giml::OnePole<float> mOnePole;
+  giml::OnePole<float> mOnePoleCent;
 
 
     void onCreate() override {
@@ -99,11 +104,13 @@ struct MyApp : al::DistributedApp {
 
     void onAnimate(double dt) override {
         t += dt;
-        smooth.setSmoothingFactor(0.1);
-        smoothCent = smooth.smooth(centroid);
+        //smooth.setSmoothingFactor(0.1);
+        mOnePoleCent.setCutoff(15000, 60);
+        smoothCent = mOnePoleCent.lpf(centroid);
+        //smoothCent = smooth.smooth(centroid);
        std::cout << "flux" << smoothFlux <<  std::endl;
 
-       smooth.setSmoothingFactor(0.05);
+       //smooth.setSmoothingFactor(0.05);
       //smoothFlux = smooth.smooth(flux);
 
       mOnePole.setCutoff(15000, 60);
@@ -117,18 +124,15 @@ struct MyApp : al::DistributedApp {
     void onDraw(al::Graphics& g) override {
         g.clear(0);
         shaderSphere.setMatrices(view().viewMatrix(), view().projMatrix(width(), height()));
-        //doing this to handle uniforms being stuck . didnt need for example 1
         shaderSphere.shadedMesh.shader.use();
 
-        //shaderSphere.shadedMesh.use(); //not properly accessing this member
-        //For shader 1:
+
         shaderSphere.setUniformFloat("u_time", (float)t);
         shaderSphere.setUniformFloat("onset", newOnset);
-        shaderSphere.setUniformFloat("cent", (smoothCent/2500.0f));
+        shaderSphere.setUniformFloat("cent", (smoothCent));
         shaderSphere.setUniformFloat("flux", smoothFlux);
-        //For shader 2:
-        //shaderSphere.setUniformFloat("iTime", t);
-        //shaderSphere.setUniformVec3f("iResolution", Vec3f(width(), (height()), 0.0f)); // this simulates values of a screen size. it gets passed into the vertex shader then converted to normalized spherical coords. should maybe change where this operation happens. 
+        std::cout << "flux:" << smoothFlux << "cent:" << smoothCent << std::endl;
+      
 
 
         shaderSphere.draw(g);
