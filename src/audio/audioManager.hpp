@@ -25,11 +25,12 @@ public:
 /**
  * @brief AudioManager class for handling a number of SpatialAgents
  */
+template <class TSynthVoice>
 class AudioManager {
 private:
   DistributedSceneWithInput mDistributedScene;
   al::PickableManager mPickableManager;
-  std::vector<ChannelStrip*> mAgents;
+  std::vector<TSynthVoice*> mAgents;
   bool pickablesUpdatingParameters = false;
   al::Pose fixedListenerPose;
   int sampleRate = -1;
@@ -38,13 +39,14 @@ public:
 
   AudioManager() {
     mDistributedScene.setVoiceMaxInputChannels(8);
+    mDistributedScene.registerSynthClass<TSynthVoice>(); 
   }
 
   al::DistributedScene* scene() {
     return &mDistributedScene;
   }
 
-  std::vector<ChannelStrip*>* agents() {
+  std::vector<TSynthVoice*>* agents() {
     return &mAgents;
   }
 
@@ -56,8 +58,8 @@ public:
   }
 
   void addAgent(const char name[]) {
-    auto* newAgent = mDistributedScene.getVoice<ChannelStrip>();
-    newAgent->setName(name);
+    auto* newAgent = mDistributedScene.getVoice<TSynthVoice>();
+    newAgent->setName(name); 
     mAgents.push_back(newAgent);
     mPickableManager << newAgent->mPickableMesh; // add pickable to manager
   }
@@ -138,44 +140,13 @@ public:
   }
 
   void processAudio(al::AudioIOData& io) {
-    io.zeroOut(); // clear outputs 
-    mDistributedScene.listenerPose(fixedListenerPose);
+    io.zeroOut(); // clear outputs... should be done?
+    mDistributedScene.listenerPose(fixedListenerPose); // seg faults
     mDistributedScene.render(io);
   }
 
   void draw(al::Graphics& g) {
     mDistributedScene.render(g);
-    // // Draw pickable objects - Using the exact method from example
-    // for (auto pickable : mPickableManager.pickables()) {
-    //   // Color based on which sound source
-    //   int index = -1;
-    //   for (int i = 0; i < mPickableManager.pickables().size(); i++) {
-    //     if (pickable == mPickableManager.pickables()[i]) {
-    //       index = i;
-    //       break;
-    //     }
-    //   }
-      
-    //   SelectablePickable* sp = dynamic_cast<SelectablePickable*>(pickable);
-    //   bool isSelected = sp && sp->selected;
-      
-    //   g.color(al::HSV(al::rnd::uniform(), 1.0, 1.0));
-      
-    //   // Draw using lambda function like in the example
-    //   pickable->draw(g, [&](al::Pickable &p) {
-    //     auto &b = dynamic_cast<al::PickableBB &>(p);
-    //     b.drawMesh(g);
-    //   });
-      
-    //   // Draw line from origin to sound source
-    //   g.lineWidth(1.0);
-    //   g.color(0.5, 0.5, 0.5, 0.3);
-    //   al::Mesh line;
-    //   line.primitive(al::Mesh::LINES);
-    //   line.vertex(0, 0, 0);
-    //   line.vertex(pickable->pose.get().pos());
-    //   g.draw(line);
-    // }
   }
 
   void drawGUI(al::Graphics& g) {

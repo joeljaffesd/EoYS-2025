@@ -139,7 +139,6 @@ public:
   void init() {
     registerParameters(mAzimuth, mElevation, mDistance);
     mGui.init(5, 5, false);
-    // mGui.setTitle("Spatial Agent");
     mSpatializationParams << mAzimuth << mElevation << mDistance;
     mGui << mSpatializationParams;
 
@@ -151,7 +150,6 @@ public:
 
   void onProcess(al::AudioIOData& io) override {
     for (auto sample = 0; sample < io.framesPerBuffer(); sample++) {
-      float input = io.in(0, sample);
       float output = al::rnd::uniformS();
       io.out(0) = output;
     }
