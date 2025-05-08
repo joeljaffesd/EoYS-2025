@@ -44,6 +44,10 @@ public:
     return &mDistributedScene;
   }
 
+  std::vector<ChannelStrip*>* agents() {
+    return &mAgents;
+  }
+
   // TODO
   // void setSpatializer() {}
 
@@ -51,8 +55,9 @@ public:
     fixedListenerPose = pose;
   }
 
-  void addAgent() {
+  void addAgent(const char name[]) {
     auto* newAgent = mDistributedScene.getVoice<ChannelStrip>();
+    newAgent->setName(name);
     mAgents.push_back(newAgent);
     mPickableManager << newAgent->mPickableMesh; // add pickable to manager
   }

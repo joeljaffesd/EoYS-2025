@@ -23,7 +23,7 @@
 
 // Gimmel/RTNeural includes
 #include "../Gimmel/include/gimmel.hpp"
-#include "../assets/MarshallModel.h"
+#include "../assets/namModels/MarshallModel.h"
 
 // EoYS includes
 #include "../../audio/channelStrip.hpp"
@@ -46,26 +46,14 @@ namespace giml {
 
 class ChannelStripTestApp : public al::DistributedApp {
 private:
-  ModelWeights mModelWeights;
-  std::unique_ptr<giml::AmpModeler<float, Layer1, Layer2>> mAmpModeler;
-
-  al::ParameterBool mDetuneToggle{"DetuneToggle", "", false};
-  al::Parameter mDetunePitchRatio{"DetunePitchRatio", "", 0.995, 0.0, 1.0};
-  al::Parameter mDetuneBlend{"DetuneBlend", "", 0.24, 0.0, 1.0};
-  al::ParameterBundle mDetuneBundle{"Detune"};
-  std::unique_ptr<giml::Detune<float>> mDetune;
-
-  al::ParameterBool mDelayToggle{"DelayToggle", "", true};
-  al::Parameter mDelayTime{"DelayTime", "", 398, 0, 1000};
-  al::Parameter mDelayFeedback{"DelayFeedback", "", 0.30, 0.0, 1.0};
-  al::Parameter mDelayBlend{"DelayBlend", "", 0.24, 0.0, 1.0};
-  al::ParameterBundle mDelayBundle{"Delay"};
-  std::unique_ptr<giml::Delay<float>> mDelay;
-
+  // Audio engine, handles spatialization and distribution over network
   AudioManager mAudioManager;
 
   gam::SamplePlayer<float, gam::ipl::Cubic, gam::phsInc::Loop> player[8];
+  std::vector<std::string> names;
 
+  // reference sphere for audio source positions
+  al::Mesh mSphereReference;
 
 public:
   void onInit() override {
@@ -78,6 +66,15 @@ public:
     player[5].load("../assets/wavFiles/floorTom.wav");
     player[6].load("../assets/wavFiles/midTom.wav");
     player[7].load("../assets/wavFiles/highTom.wav");
+
+    names.push_back("Vocals");
+    names.push_back("Guitar");
+    names.push_back("Bass");
+    names.push_back("Kick");
+    names.push_back("Snare");
+    names.push_back("Floor Tom");
+    names.push_back("Mid Tom");
+    names.push_back("High Tom");
 
     // TODO: encapsulate this in a function
     auto speakers = SPEAKER_LAYOUT; 
@@ -92,42 +89,21 @@ public:
 
     // Add sound agents
     for (unsigned i = 0; i < 8; i++) {
-      mAudioManager.addAgent();
+      mAudioManager.addAgent(names[i].c_str());
+      mAudioManager.agents()->at(i)->mInputChannel = i;
     }
 
     // prepare audio engine
     mAudioManager.prepare(audioIO());
 
-    // todo - make amp modeler play nice as a std::unique_ptr
-    // mAmpModeler = std::make_unique<giml::AmpModeler<float, Layer1, Layer2>>();
-    // mAmpModeler->toggle(true);
-    // mAmpModeler->loadModel(mModelWeights.weights);
-    // mChannelStrip.addEffect(std::move(mAmpModeler));
-
-    // mDetune = std::make_unique<giml::Detune<float>>(SAMPLE_RATE);
-    // mDetune->toggle(mDetuneToggle);
-    // mDetune->setPitchRatio(mDetunePitchRatio);
-    // mDetune->setBlend(mDetuneBlend);
-    // mDetuneBundle << mDetuneToggle << mDetunePitchRatio << mDetuneBlend;
-    // mAudioManager..addBundle(mDetuneBundle);
-    // mChannelStrip.addEffect(std::move(mDetune));
-
-    // mDelay = std::make_unique<giml::Delay<float>>(SAMPLE_RATE);
-    // mDelay->toggle(mDelayToggle);
-    // mDelay->setDelayTime(mDelayTime);
-    // mDelay->setFeedback(mDelayFeedback);
-    // mDelay->setBlend(mDelayBlend);
-    // mDelayBundle << mDelayToggle << mDelayTime << mDelayFeedback << mDelayBlend;
-    // mChannelStrip.addBundle(mDelayBundle);
-    // mChannelStrip.addEffect(std::move(mDelay));
+    // prepare reference sphere
+    al::addSphere(mSphereReference, 15);
+    mSphereReference.primitive(al::Mesh::LINES);
   }
 
   void onCreate() override {
     // Set up GUI windows
     al::imguiInit();
-    
-    // Set up camera - still movable but doesn't affect audio
-    nav().pos(0, 0, 10);
     
     std::cout << "3D Sound Spatialization with GUI and Pickable Objects:" << std::endl;
     std::cout << "  1. Click on a sound source to show its control panel" << std::endl;
@@ -137,6 +113,7 @@ public:
 
   void onSound(al::AudioIOData& io) override {  
 
+    // for now... write audio files to input to simulate audio input
     for (auto sample = 0; sample < io.framesPerBuffer(); sample++) {
       float input[8];
       for (auto index = 0; index < 8; index++) {
@@ -144,6 +121,7 @@ public:
         io.inW(index, sample) = input[index];
       }
     }
+
     mAudioManager.processAudio(io);
   }
 
@@ -153,22 +131,14 @@ public:
 
   void onDraw(al::Graphics& g) override {
     g.lens().eyeSep(0.0); // disable stereo rendering
-    g.clear(0.1);
-    al::gl::depthTesting(true);
-    //mChannelStrip.draw(g); // hmm... seg faults
+    g.clear(0.0);
+    al::gl::depthTesting(true); // necessary?
+
     mAudioManager.draw(g);
     mAudioManager.drawGUI(g);
-  }
-
-  // fire an impulse when space is pressed
-  bool impulse = false;
-  bool onKeyDown(const al::Keyboard& k) override {
-    if (k.key() == ' ') {
-      if (!impulse) {
-        impulse = true;
-      }
-    }
-    return true;
+    
+    g.color(1.0);
+    g.draw(mSphereReference);
   }
 
   // Mouse event handling

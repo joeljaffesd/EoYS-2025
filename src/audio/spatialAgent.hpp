@@ -4,6 +4,7 @@
 #include "al/graphics/al_Shapes.hpp"
 #include "al/math/al_Random.hpp"
 #include "al/ui/al_PickableManager.hpp"
+#include "al/graphics/al_Font.hpp"
 
 #include "../../Gimmel/include/filter.hpp"
 
@@ -113,8 +114,10 @@ class SpatialAgent : public al::PositionedVoice {
 public:
   float distance = 1.0f;
   float size = 1.0f;
+  al::HSV color = al::HSV(1.0);
   PickableMesh mPickableMesh;
   giml::OnePole<float> airFilter;
+  al::FontRenderer mFontRenderer;
 
   al::Parameter mAzimuth{ "Azimuth", "", 90.0, "", -180.0, 180.0 };
   al::Parameter mElevation{ "Elevation", "", 30.0, "", -90.0, 90.0 };
@@ -122,15 +125,21 @@ public:
   al::ParameterBundle mSpatializationParams{ "Spatialization" };
   TabbedGUI mGui;
 
-  SpatialAgent() {
-    // registerParameters(mAzimuth, mElevation, mDistance, mGain);
+  // constructor that takes
+  SpatialAgent(const char channelName[] = "No Name") {
+    this->color = al::HSV(al::rnd::uniform(), 1.0, 1.0);
+    mFontRenderer.load(al::Font::defaultFont().c_str(), 64, 2048);
   }
 
+  void setName(const char name[]) {
+    mFontRenderer.write(name);
+    mGui.setTitle(name);
+  }
 
   void init() {
     registerParameters(mAzimuth, mElevation, mDistance);
     mGui.init(5, 5, false);
-    mGui.setTitle("Spatial Agent");
+    // mGui.setTitle("Spatial Agent");
     mSpatializationParams << mAzimuth << mElevation << mDistance;
     mGui << mSpatializationParams;
 
@@ -149,17 +158,9 @@ public:
   }
 
   void onProcess(al::Graphics& g) override {
-    g.color(al::HSV(al::rnd::uniform(), 1.0, 1.0));
+    g.color(this->color);
     g.draw(mPickableMesh);
-
-    // TODO line from origin (Distributed scene seems to translate origin)
-    // g.lineWidth(1.0);
-    // g.color(0.5, 0.5, 0.5, 0.3);
-    // al::Mesh line;
-    // line.primitive(al::Mesh::LINES);
-    // line.vertex(0, 0, 0);
-    // line.vertex(this->mPose.get().pos());
-    // g.draw(line);
+    mFontRenderer.renderAt(g, al::Vec3d(0.0));
   }
 
   void set(float azimuthDeg, float elevationDeg, float distanceVal, 

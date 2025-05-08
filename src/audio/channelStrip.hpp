@@ -11,7 +11,7 @@
  * @todo Finish and encapsulate GUI
  */
 class ChannelStrip : public EffectsEngine, public SpatialAgent {
-private:
+public:
   al::ParameterBool enabled { "Enabled", "", false };
   al::ParameterInt mInputChannel { "Input Channel", "", 0, 0, 7 };
   al::Parameter mGain { "Gain", "", 0.f, -96.f, 12.f };
@@ -24,11 +24,6 @@ public:
     mGui << mBasics;
     SpatialAgent::init();
     registerParameters(this->mPose); // need for distributed.
-    
-    std::unique_ptr<giml::Chorus<float>> chorus = std::make_unique<giml::Chorus<float>>(48000);
-    chorus->toggle(true);
-    this->addEffect(std::move(chorus));
-
   }
 
   // TODO... reconcile inheritance pattern
