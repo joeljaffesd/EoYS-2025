@@ -3,23 +3,27 @@
 #define SAMPLE_RATE 44100 // for playback in Allosphere
 #endif
 
-#define AUDIO_CONFIG SAMPLE_RATE, 128, 2, 8 // for lap/desktop computer 
+// #define AUDIO_CONFIG SAMPLE_RATE, 128, 2, 8 // for lap/desktop computer 
 #ifndef AUDIO_CONFIG
 #define AUDIO_CONFIG SAMPLE_RATE, 256, 60, 8 // for playback in Allosphere
 #endif
 
-#define SPATIALIZER_TYPE al::AmbisonicsSpatializer // for Ambisonics
+// #define SPATIALIZER_TYPE al::AmbisonicsSpatializer // for Ambisonics
 #ifndef SPATIALIZER_TYPE
 #define SPATIALIZER_TYPE al::Lbap // for playback in Allosphere
 #endif
 
-#define SPEAKER_LAYOUT al::StereoSpeakerLayout(0, 30, 5) // for lap/desktop computer 
+// #define SPEAKER_LAYOUT al::StereoSpeakerLayout(0, 30, 5) // for lap/desktop computer 
 #ifndef SPEAKER_LAYOUT
 #define SPEAKER_LAYOUT al::AlloSphereSpeakerLayoutCompensated() // for playback in Allosphere
 #endif
 
 // AlloLib includes 
 #include "al/app/al_DistributedApp.hpp"
+#include "al/sound/al_Spatializer.hpp"
+#include "al/sound/al_Speaker.hpp"
+#include "al/sound/al_Lbap.hpp"
+#include "al/sphere/al_AlloSphereSpeakerLayout.hpp"
 
 // Gimmel/RTNeural includes
 #include "../Gimmel/include/gimmel.hpp"
