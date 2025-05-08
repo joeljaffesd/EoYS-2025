@@ -6,6 +6,12 @@
 
 // a translation effect
 //need to add inline comments 
+/**
+ * @brief Mesh translation effect for orbiting object around specific point.  
+ * Effect must be created before onCreate (in app public section.)
+ * Effect must be passed into a VFX Chain instance via effectChain.push back in on create
+ * Set params is initialized in onCreate. can be updated in onAnimate.
+ */
 class OrbitEffect : public VertexEffect {
 public:
     float rate = 1.0f;                // orbit speed in hz
