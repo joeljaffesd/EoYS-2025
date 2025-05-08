@@ -1,34 +1,49 @@
 // file for testing loading in shaders onto sphere
 
-#include "al/app/al_App.hpp"
+#include "al/app/al_DistributedApp.hpp"
 #include "src/graphics/shaderToSphere.hpp"
 #include "src/graphics/audioReactor.hpp" 
 
+#include "../../../Gimmel/include/filter.hpp"
+#include "src/graphics/vfxUtility.hpp"
+#include "src/graphics/vfxMain.hpp"
+
 //using namespace al;
 
-struct MyApp : al::App {
+struct MyApp : al::DistributedApp {
     ShaderToSphere shaderSphere;
     double t = 0.0;
     SpectralListener specListen;
   DynamicListener dynListen;
-  float flux = 0.0f;
+  float flux = 0.01f;
   float centroid = 0.0f;
   float smoothCent;
   float rms = 0.0f;
   int frame = 0;
   float newOnset = 0.0f;
+  float smoothFlux;
   SmoothedValue smooth;
+  SmoothedValue smooth2;
+
+  // RippleEffect ripple;;
+  // VertexEffectChain effectChain;
+
+  giml::OnePole<float> mOnePole;
+
 
     void onCreate() override {
         dynListen.setOnsetThresh(0.035);
         dynListen.setSilenceThresh(0.1);
         // *** SET SHADER PATH HERE *** //
         // for shaders folder 1: 
-        shaderSphere.setShaders("../src/shaders/Moving-shaders/moving.vert", "../src/shaders/Reactive-shaders/reactive1.frag");
+        shaderSphere.setShaders("../src/shaders/Moving-shaders/moving.vert", "../src/shaders/Reactive-shaders/fractalTest.frag");
         // for shader folder 2:
         //shaderSphere.setShaders("../src/shaders/Shader-2/shaderToyDefault.vert", "../src/shaders/Shader-2/shader2.frag");
         // *** END SET SHADER PATH *** //
         shaderSphere.setSphere(15.0f, 1000);
+
+        // ripple.setParams(3.0, 2.0, 4.0, 'y');
+        // effectChain.pushBack(&ripple);
 
         nav().pos(0, 0, 6);
         navControl().active(true);
@@ -50,12 +65,17 @@ struct MyApp : al::App {
       // basic onset detection - 
       if (dynListen.detectOnset()) {
         std::cout << "New Onset detected!" << std::endl;
-        if (newOnset == 0.0){
-        newOnset = 1.0f;
-        }
-        else{
-          newOnset = 0.0f;
-        }
+
+        //old logic ->
+        // if (newOnset == 0.0){
+        // newOnset = 1.0f;
+        // }
+        // else{
+        //   newOnset = 0.0f;
+        // }
+        //new logic ->
+        newOnset += 0.1f;
+  
       }
       // else if (dynListen.detectOnset() && newOnset == 0.0f) {
       //   std::cout << "New Onset detected!" << std::endl;
@@ -71,7 +91,7 @@ struct MyApp : al::App {
       centroid = specListen.getCent();
 
       //print every 30 times the loop is run
-      std::cout << "Flux: " << flux << ", Centroid: " << centroid << ", RMS: " << rms << std::endl;
+      //std::cout << "Flux: " << flux << ", Centroid: " << centroid << ", RMS: " << rms << std::endl;
 
     }
   }
@@ -79,8 +99,18 @@ struct MyApp : al::App {
 
     void onAnimate(double dt) override {
         t += dt;
+        smooth.setSmoothingFactor(0.1);
         smoothCent = smooth.smooth(centroid);
-        std::cout << "smooth" << smoothCent << std::endl;
+       std::cout << "flux" << smoothFlux <<  std::endl;
+
+       smooth.setSmoothingFactor(0.05);
+      //smoothFlux = smooth.smooth(flux);
+
+      mOnePole.setCutoff(15000, 60);
+      smoothFlux = mOnePole.lpf(flux);
+
+      // effectChain.process(shaderSphere.shadedMesh.mesh, t);
+
 
     }
 
@@ -95,6 +125,7 @@ struct MyApp : al::App {
         shaderSphere.setUniformFloat("u_time", (float)t);
         shaderSphere.setUniformFloat("onset", newOnset);
         shaderSphere.setUniformFloat("cent", (smoothCent/2500.0f));
+        shaderSphere.setUniformFloat("flux", smoothFlux);
         //For shader 2:
         //shaderSphere.setUniformFloat("iTime", t);
         //shaderSphere.setUniformVec3f("iResolution", Vec3f(width(), (height()), 0.0f)); // this simulates values of a screen size. it gets passed into the vertex shader then converted to normalized spherical coords. should maybe change where this operation happens. 
