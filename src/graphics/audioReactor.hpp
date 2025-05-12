@@ -131,6 +131,17 @@ class DynamicListener {
       onsetThreshMax(0.05), onsetStateOn(false), 
       silenceDuration(44100), silenceThreshold(0.01f) {} // 2048 samples of quiet before reset
 
+      /** 
+* @brief Set threshold for onset (RMS float value). Tweak according to sound check.
+* Currently does not handle different frequency bands
+*/
+  void setOnsetThresh(float threshold) {
+    onsetThreshMax = threshold;
+  }
+  void setSilenceThresh(float thresh){
+    silenceThreshold = thresh;
+  }
+
 // defined first so reset works in process
       void resetRMS(){
     currentRMS = 0.0f;
@@ -155,18 +166,22 @@ class DynamicListener {
       
       //std::cout << "Silence detected — RMS reset" << std::endl;
     }
+    if (sampleCounter > 0){
+       currentRMS = std::sqrt(sumOfSquares / sampleCounter);
+    }
+
   }
 
 /** 
 * @brief call in onSound. returns float of up to date rms
 */
   float getRMS(){
-    if (sampleCounter > 0){
-      currentRMS = std::sqrt(sumOfSquares / sampleCounter);
-    }
-    else{
-      currentRMS = 0.0f;
-    }
+    // if (sampleCounter > 0){
+    //   currentRMS = std::sqrt(sumOfSquares / sampleCounter);
+    // }
+    // else{
+    //   currentRMS = 0.0f;
+    // }
     return currentRMS;
   }
 
@@ -179,16 +194,7 @@ class DynamicListener {
   //   sumOfSquares = 0.0f;
   // }
 
-/** 
-* @brief Set threshold for onset (RMS float value). Tweak according to sound check.
-* Currently does not handle different frequency bands
-*/
-  void setOnsetThresh(float threshold) {
-    onsetThreshMax = threshold;
-  }
-  void setSilenceThresh(float thresh){
-    silenceThreshold = thresh;
-  }
+
 
 /** 
 * @brief Returns true if new onset is detected at / above threshold.
@@ -208,39 +214,47 @@ class DynamicListener {
   }
 };
 
+
+
+
+
+//!!
+//mostly Joel's code, slight modifications
+//!!
+//* use atomic for thread safety?
+
+class FloatReporter {
+private:
+float value = 0.f;
+//bool triggered = false;
+
+public:
+
+// CALL IN AUDIO CALLBACK
+// ** old write version** do we want the triggering logic or constant values?
+// void write(float newValue, float targetValue) {
+//   this->value = newValue;
+//   if (value >= targetValue) {
+//     this->triggered = true;
+//   }
+// }
+void write(float newValue) {
+  this->value = newValue;
+}
+
+// CALL IN ANIMATION / DRAW CALLBACK
+// this report version uses triggering logic but we could maybe leave out. not sure 
+// void report() {
+//   if (this->triggered) {
+//     std::cout << "!!! Triggered !!!" << std::endl;
+//     std::cout << "Value: " << this->value << std::endl;
+//     this->triggered = false; // reset trigger
+//   }
+float reportValue(){
+  return this->value;
+}
+
+};
+
 #endif
 
-
-
-class SmoothedValue {
-public:
-  float smoothingFactor;
-  float smoothedValue;
-  bool initialized;
-
-  SmoothedValue(float factor = 0.1f)
-      : smoothingFactor(factor), smoothedValue(0.0f), initialized(false) {}
-
-  void setSmoothingFactor(float factor) {
-    smoothingFactor = factor;
-  }
-
-  float smooth(float input) {
-    if (!initialized) {
-      smoothedValue = input;
-      initialized = true;
-    } else {
-      smoothedValue = (1.0f - smoothingFactor) * smoothedValue + smoothingFactor * input;
-    }
-    return smoothedValue;
-  }
-
-  float value() const {
-    return smoothedValue;
-  }
-
-  void reset(float value = 0.0f) {
-    smoothedValue = value;
-    initialized = false;
-  }
-};
