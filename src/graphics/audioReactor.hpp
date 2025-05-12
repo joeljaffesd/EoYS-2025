@@ -176,24 +176,8 @@ class DynamicListener {
 * @brief call in onSound. returns float of up to date rms
 */
   float getRMS(){
-    // if (sampleCounter > 0){
-    //   currentRMS = std::sqrt(sumOfSquares / sampleCounter);
-    // }
-    // else{
-    //   currentRMS = 0.0f;
-    // }
     return currentRMS;
   }
-
-/** 
-* @brief Call to reset RMS values - could be useful between songs / scenes?
-*/
-  // void resetRMS(){
-  //   currentRMS = 0.0f;
-  //   sampleCounter = 0;
-  //   sumOfSquares = 0.0f;
-  // }
-
 
 
 /** 
@@ -226,30 +210,16 @@ class DynamicListener {
 class FloatReporter {
 private:
 float value = 0.f;
-//bool triggered = false;
 
 public:
 
 // CALL IN AUDIO CALLBACK
-// ** old write version** do we want the triggering logic or constant values?
-// void write(float newValue, float targetValue) {
-//   this->value = newValue;
-//   if (value >= targetValue) {
-//     this->triggered = true;
-//   }
-// }
 void write(float newValue) {
   this->value = newValue;
 }
 
 // CALL IN ANIMATION / DRAW CALLBACK
-// this report version uses triggering logic but we could maybe leave out. not sure 
-// void report() {
-//   if (this->triggered) {
-//     std::cout << "!!! Triggered !!!" << std::endl;
-//     std::cout << "Value: " << this->value << std::endl;
-//     this->triggered = false; // reset trigger
-//   }
+
 float reportValue(){
   return this->value;
 }
