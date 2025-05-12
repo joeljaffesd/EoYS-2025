@@ -6,6 +6,12 @@
 
 // a translation effect
 //need to add inline comments 
+/**
+ * @brief Mesh translation effect for orbiting object around specific point.  
+ * Effect must be created before onCreate (in app public section.)
+ * Effect must be passed into a VFX Chain instance via effectChain.push back in on create
+ * Set params is initialized in onCreate. can be updated in onAnimate.
+ */
 class OrbitEffect : public VertexEffect {
 public:
     float rate = 1.0f;                // orbit speed in hz
@@ -14,11 +20,9 @@ public:
 
     int xDir = 1;  // direction (-1 or 1)
     int yDir = 1;  // direction (-1 or 1)
-    int zDir = 1;// direction (-1 or 1)
-    
+    int zDir = 1;  // direction (-1 or 1)
 
     int rotationAxes = 0; // 0 = XZ orbit, 1 = XY, 2 = YZ
-
 
     //constructor and initialize members
     OrbitEffect(float r = 1.0f,
@@ -34,9 +38,12 @@ public:
           xDir(xD),
           yDir(yD),
           zDir(zD),
-          rotationAxes(axes) {}  
+          rotationAxes(axes) {}
 
-    void process(std::vector<al::Vec3f>& verts, float t) override {
+    void process(al::VAOMesh& mesh, float t) override {
+        //reference to vertices
+        auto& verts = mesh.vertices(); 
+
         // Compute angular position on orbit path
         float angle = t * rate * M_2PI;  // 2π means 1Hz = one full loop per second
 
@@ -67,7 +74,33 @@ public:
 
         // shift amount for each vertex. 
         al::Vec3f shift = targetCenter - meshCenter;
-        for (auto& v : verts) v += shift;
+        mesh.translate(shift); // use built-in translate for VAOMesh
+    }
+ /**
+     * @brief Set effect parameters using named interface
+     * 
+     * @param rate           orbit frequency (Hz)
+     * @param radius         orbit radius
+     * @param orbitCenter    center point to orbit around
+     * @param rotationAxes   plane of orbit (0 = XZ, 1 = XY, 2 = YZ)
+     * @param xDir           direction along X (-1 or 1)
+     * @param yDir           direction along Y (-1 or 1)
+     * @param zDir           direction along Z (-1 or 1)
+     */
+    void setParams(float rate,
+                   float radius,
+                   al::Vec3f orbitCenter,
+                   int rotationAxes = 0,
+                   int xDir = 1,
+                   int yDir = 1,
+                   int zDir = 1) {
+        this->rate = rate;
+        this->radius = radius;
+        this->orbitCenter = orbitCenter;
+        this->rotationAxes = rotationAxes;
+        this->xDir = xDir;
+        this->yDir = yDir;
+        this->zDir = zDir;
     }
 };
 
