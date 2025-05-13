@@ -95,8 +95,8 @@ struct State {
 
 class MainApp : public al::DistributedAppWithState<State> {
 private:
-  ModelWeights mModelWeights;
-  giml::AmpModeler<float, Layer1, Layer2> mAmpModeler;
+  // ModelWeights mModelWeights;
+  // giml::AmpModeler<float, Layer1, Layer2> mAmpModeler;
 
   al::ParameterBool mDetuneToggle{"DetuneToggle", "", false};
   al::Parameter mDetunePitchRatio{"DetunePitchRatio", "", 0.995, 0.0, 1.0};
@@ -133,10 +133,10 @@ public:
 
       mChannelStrip.init();
 
-      // mAmpModeler = std::make_unique<giml::AmpModeler<float, Layer1, Layer2>>(SAMPLE_RATE);
-      mAmpModeler.toggle(true);
-      mAmpModeler.loadModel(mModelWeights.weights);
-      mChannelStrip.getEffectsLine().pushBack(&mAmpModeler);
+      //mAmpModeler = std::make_unique<giml::AmpModeler<float, Layer1, Layer2>>(SAMPLE_RATE);
+      // mAmpModeler.toggle(true);
+      // mAmpModeler.loadModel(mModelWeights.weights);
+      // mChannelStrip.getEffectsLine().pushBack(&mAmpModeler);
 
       mDetune = std::make_unique<giml::Detune<float>>(SAMPLE_RATE);
       mDetune->toggle(mDetuneToggle);

@@ -9,7 +9,7 @@ using namespace al;
 
 struct ImageSphereLoader {
   VAOMesh mMesh;
-  File file = File::currentPath() + "../assets/imgWrap.png";
+  File file = File::currentPath() + "../assets/images/imgWrap.png";
   Image image;
   ParameterBool imageShow{"imageShow", "", true};
   Parameter sphereRadius = {
