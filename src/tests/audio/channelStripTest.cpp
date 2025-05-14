@@ -13,7 +13,7 @@
 #define SPATIALIZER_TYPE al::Lbap // for playback in Allosphere
 #endif
 
-#define SPEAKER_LAYOUT al::StereoSpeakerLayout() // for lap/desktop computer 
+#define SPEAKER_LAYOUT al::StereoSpeakerLayout(0, 30, 5) // for lap/desktop computer 
 #ifndef SPEAKER_LAYOUT
 #define SPEAKER_LAYOUT al::AlloSphereSpeakerLayoutCompensated() // for playback in Allosphere
 #endif
@@ -47,7 +47,7 @@ namespace giml {
 class ChannelStripTestApp : public al::DistributedApp {
 private:
   // Audio engine, handles spatialization and distribution over network
-  AudioManager mAudioManager;
+  AudioManager<ChannelStrip> mAudioManager;
 
   gam::SamplePlayer<float, gam::ipl::Cubic, gam::phsInc::Loop> player[8];
   std::vector<std::string> names;
@@ -79,8 +79,7 @@ public:
     // TODO: encapsulate this in a function
     auto speakers = SPEAKER_LAYOUT; 
     mAudioManager.scene()->setSpatializer<SPATIALIZER_TYPE>(speakers);
-    mAudioManager.scene()->distanceAttenuation().law(al::ATTEN_NONE);
-    mAudioManager.scene()->registerSynthClass<ChannelStrip>();
+    mAudioManager.scene()->distanceAttenuation().law(al::ATTEN_INVERSE_SQUARE);
     registerDynamicScene(*mAudioManager.scene());
     mAudioManager.scene()->verbose(true);
     
@@ -109,6 +108,8 @@ public:
     std::cout << "  1. Click on a sound source to show its control panel" << std::endl;
     std::cout << "  2. Click and drag objects to move them in space" << std::endl;
     std::cout << "  3. Camera can be moved with arrow keys (view only, doesn't affect audio)" << std::endl;
+
+    mAudioManager.scene()->print();
   }
 
   void onSound(al::AudioIOData& io) override {  

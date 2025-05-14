@@ -3,7 +3,7 @@
 #define SPATIALIZER_TYPE al::Lbap // for playback in Allosphere
 #endif
 
-#define AUDIO_CONFIG 48000, 128, 2, 1 // for lap/desktop computer 
+#define AUDIO_CONFIG 48000, 128, 2, 0 // for lap/desktop computer 
 #ifndef AUDIO_CONFIG
 #define AUDIO_CONFIG 44100, 256, 60, 0 // for playback in Allosphere
 #endif
@@ -18,30 +18,28 @@
 #include "../../audio/audioManager.hpp"
 
 struct MyApp : public al::DistributedApp {
-  AudioManager mAudioManager;
+  AudioManager<ChannelStrip> mAudioManager;
 
   void onInit() override {
-    // TODO
-    // mAudioManager.scene()->registerSynthClass<SpatialAgent>();
 
     // TODO: encapsulate this in a function
     auto speakers = SPEAKER_LAYOUT; 
     mAudioManager.scene()->setSpatializer<SPATIALIZER_TYPE>(speakers);
-    mAudioManager.scene()->distanceAttenuation().law(al::ATTEN_NONE);
+    mAudioManager.scene()->distanceAttenuation().law(al::ATTEN_INVERSE_SQUARE);
+    registerDynamicScene(*mAudioManager.scene());
+    mAudioManager.scene()->verbose(true);
     
     // Set fixed listener pose at origin (0,0,0)
     mAudioManager.setListenerPose(al::Pose(al::Vec3f(0, 0, 0)));
 
     // Add sound agents
     for (unsigned i = 0; i < 3; i++) {
-      mAudioManager.addAgent();
+      mAudioManager.addAgent("Spatial Agent");
     }
 
     // prepare audio engine
     mAudioManager.prepare(audioIO());
 
-    // TODO
-    // registerDynamicScene(*mAudioManager.scene()); 
   }
 
   void onCreate() override {
