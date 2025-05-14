@@ -13,7 +13,7 @@ uniform float flux;
 
 void main() {
     vec2 uv = 0.275 * vPos.xy;
-    float t = (u_time * (0.001*(flux*3 )))+onset; //+ (cent);
+    float t = (u_time * (0.001*(flux*2)))+onset; //+ (cent);
     //t += flux;
     //t +=cent;
     float k = cos(t);
@@ -36,4 +36,4 @@ void main() {
     fragColor = .5 + .5*cos(6.28318*(40.0*length(uv))*vec4(-1,2,3+flux,1));
 
 }
- 
+
