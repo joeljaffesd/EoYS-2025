@@ -2,6 +2,7 @@
 #include "al/app/al_DistributedApp.hpp"
 #include "al/scene/al_DistributedScene.hpp"
 #include "al_ext/statedistribution/al_CuttleboneStateSimulationDomain.hpp"
+#include "al/ui/al_ControlGUI.hpp"
 
 // Gimmel/RTNeural includes
 #include "../Gimmel/include/gimmel.hpp"
@@ -30,7 +31,7 @@ class GraphicsVoice : public al::PositionedVoice {
 private:
   ImageSphereLoader mImageSphereLoader;
   AssetEngine mAssetEngine;
-  al::ParameterBool showScope{"showScope", "", true};
+  al::ParameterBool showScope{"showScope", "", false};
   
 public:
 
@@ -39,7 +40,6 @@ public:
 
   virtual void init() override {
     mImageSphereLoader.init();
-    mImageSphereLoader.createSphere();
     mAssetEngine.loadAsset("../assets/3dModels/eye/eye.obj",
                            "../assets/3dModels/eye/eye.png");
     mScope.init(SAMPLE_RATE);
@@ -56,7 +56,7 @@ public:
   }
 
   virtual void update(double dt = 0) override {
-    mImageSphereLoader.update();
+    // mImageSphereLoader.update();
     mScope.update();
   }
 

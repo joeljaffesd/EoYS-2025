@@ -24,9 +24,9 @@ public:
   void onCreate() override {
     // Initialize the image sphere loader
     imageSphereLoader.init();
-    imageSphereLoader.createSphere();
     sphereMesh.primitive(Mesh::POINTS);
 
+    // better if this function took the mesh itself as the arg
     pulse.setBaseMesh(imageSphereLoader.mMesh.vertices());
 
     // effects on image mesh
@@ -46,7 +46,6 @@ public:
     // for seeing perspective
     addSphere(sphereMesh, 0.2, 16, 16);
     sphereMesh.colorFill({1, 1, 1});
-    // sphereMesh.translate(0.2, 0.2, 0.2);
     sphereMesh.update();
   }
   double t;
@@ -59,10 +58,8 @@ public:
   void onDraw(Graphics &g) override {
     g.clear(0); // Clear the screen
     g.meshColor();
-    g.pointSize(imageSphereLoader.pointSize); // play with
-    g.draw(imageSphereLoader.mMesh);
+    imageSphereLoader.draw(g);
     g.draw(sphereMesh);
-    // imageSphereLoader.draw(g); // Draw the sphere - old way
   }
 };
 
