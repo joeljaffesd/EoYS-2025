@@ -1,6 +1,6 @@
 # Blender v3.5.1 OBJ File: 'daEye4.blend'
 # www.blender.org
-mtllib daEyeLegacyExport.mtl
+mtllib eye.mtl
 v 3.509242 0.000000 -2.344800
 v 2.344800 0.000000 -3.509242
 v 0.823384 0.000000 -4.139433

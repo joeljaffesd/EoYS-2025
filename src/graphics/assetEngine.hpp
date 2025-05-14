@@ -13,13 +13,10 @@ struct AssetEngine {
   al::ParameterBool assetShow{"assetShow", "", true};
   al::Parameter scale{"scale", "", 1.f, 0.f, 10.f};
 
-  void loadAssets() {
-    //std::string fileName = "../assets/3dModels/sphereEye.obj";
-    std::string fileName = "../assets/3dModels/daEyeLegacyExport.obj";
-    // std::string fileName = "../assets/3dModels/skel-size-test-10.obj";
-    ascene = al::Scene::import(fileName);
+  void loadAsset(std::string objPath, std::string imagePath) {
+    ascene = al::Scene::import(objPath);
     if (!ascene) {
-      printf("error reading %s\n", fileName.c_str());
+      printf("error reading %s\n", objPath.c_str());
       return;
     }
 
@@ -35,19 +32,12 @@ struct AssetEngine {
 
     // load texture
     al::Image img;
-    if (img.load("../assets/3dModels/bakeshiz.png")) {
-      // tex.create2D(img.width(), img.height(), GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
-      // tex.submit(img.array().data(), GL_RGBA, GL_UNSIGNED_BYTE);
-      // tex.filterMin(Texture::LINEAR_MIPMAP_LINEAR);
-      // tex.filterMag(Texture::LINEAR);
-      // tex.generateMipmap();
-
+    if (img.load(imagePath)) {
       tex.create2D(img.width(), img.height());
       tex.filter(al::Texture::LINEAR);
       tex.submit(img.array().data(), GL_RGBA, GL_UNSIGNED_BYTE);
-      
     } else {
-      printf("Failed to load texture: bakeshiz.png\n");
+      printf("Failed to load texture from %s\n", imagePath.c_str());
     }
   }
 

@@ -1,6 +1,6 @@
 #include "al/app/al_DistributedApp.hpp"
 #include "al/ui/al_ControlGUI.hpp"
-#include "../../graphics/objImport.hpp"
+#include "../../graphics/assetEngine.hpp"
 
 class AssetTestApp : public al::DistributedApp {
 public:
@@ -9,8 +9,9 @@ public:
   al::ParameterBool rotate{"Rotate", "", true}; // Toggle rotation
 
   void onCreate() override {
-    // Load the 3D assets
-    assetEngine.loadAssets();
+    // Load the 3D asset
+    assetEngine.loadAsset("../assets/3dModels/eye/eye.obj",
+                          "../assets/3dModels/eye/eye.png");
 
     // Initialize GUI
     gui.init();
