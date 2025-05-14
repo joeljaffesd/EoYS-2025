@@ -4,23 +4,20 @@
 #include <vector>
 #include <algorithm>
 
-using namespace al;
-using namespace std;
-
 struct AssetEngine {
-  Scene *ascene{nullptr};
-  Vec3f scene_min, scene_max, scene_center;
-  Texture tex;
-  vector<Mesh> meshes;
+  al::Scene* ascene{nullptr};
+  al::Vec3f scene_min, scene_max, scene_center;
+  al::Texture tex;
+  std::vector<al::Mesh> meshes;
   float a = 0.f, b = 0.f, c = 0.f;
-  ParameterBool assetShow{"assetShow", "", true};
-  Parameter scale{"scale", "", 1.f, 0.f, 10.f};
+  al::ParameterBool assetShow{"assetShow", "", true};
+  al::Parameter scale{"scale", "", 1.f, 0.f, 10.f};
 
   void loadAssets() {
     //std::string fileName = "../assets/3dModels/sphereEye.obj";
     std::string fileName = "../assets/3dModels/daEyeLegacyExport.obj";
     // std::string fileName = "../assets/3dModels/skel-size-test-10.obj";
-    ascene = Scene::import(fileName);
+    ascene = al::Scene::import(fileName);
     if (!ascene) {
       printf("error reading %s\n", fileName.c_str());
       return;
@@ -37,7 +34,7 @@ struct AssetEngine {
     }
 
     // load texture
-    Image img;
+    al::Image img;
     if (img.load("../assets/3dModels/bakeshiz.png")) {
       // tex.create2D(img.width(), img.height(), GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
       // tex.submit(img.array().data(), GL_RGBA, GL_UNSIGNED_BYTE);
@@ -46,7 +43,7 @@ struct AssetEngine {
       // tex.generateMipmap();
 
       tex.create2D(img.width(), img.height());
-      tex.filter(Texture::LINEAR);
+      tex.filter(al::Texture::LINEAR);
       tex.submit(img.array().data(), GL_RGBA, GL_UNSIGNED_BYTE);
       
     } else {
@@ -54,10 +51,10 @@ struct AssetEngine {
     }
   }
 
-  void draw(Graphics &g) {
+  void draw(al::Graphics &g) {
     if (!assetShow) return;
 
-    gl::depthTesting(true);
+    al::gl::depthTesting(true);
     g.lighting(true);
     g.pushMatrix();
 
