@@ -38,7 +38,7 @@ private:
 public:
 
   AudioManager() {
-    mDistributedScene.setVoiceMaxInputChannels(8);
+    mDistributedScene.setVoiceMaxInputChannels(8); // TODO don't hardcode this lol
     mDistributedScene.registerSynthClass<TSynthVoice>(); 
   }
 
@@ -49,9 +49,6 @@ public:
   std::vector<TSynthVoice*>* agents() {
     return &mAgents;
   }
-
-  // TODO
-  // void setSpatializer() {}
 
   void setListenerPose(const al::Pose& pose) {
     fixedListenerPose = pose;
