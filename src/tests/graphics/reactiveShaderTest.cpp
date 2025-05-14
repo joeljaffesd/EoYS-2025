@@ -33,25 +33,33 @@ struct MyApp : al::DistributedApp {
   giml::OnePole<float> mOnePole;
   giml::OnePole<float> mOnePoleCent;
 
+  void onInit() override {
+    this->parameterServer().registerParameter(flux);
+    this->parameterServer().registerParameter(centroid);
+    this->parameterServer().registerParameter(rms);
+    this->parameterServer().registerParameter(onsetIncrement);
+  }
 
-    void onCreate() override {
-      dynListen.setOnsetThresh(0.03);
-      dynListen.setSilenceThresh(0.1);
-      // *** SET SHADER PATH HERE *** //
-      // for shaders folder 1: 
-      shaderSphere.setShaders("../src/shaders/Moving-shaders/moving.vert", "../src/shaders/Reactive-shaders/fractalTest.frag");
-      // for shader folder 2:
-      //shaderSphere.setShaders("../src/shaders/Shader-2/shaderToyDefault.vert", "../src/shaders/Shader-2/shader2.frag");
-      // *** END SET SHADER PATH *** //
-      shaderSphere.setSphere(15.0f, 1000);
 
-      nav().pos(0, 0, 0);
-      navControl().active(true);
-    }
+  void onCreate() override {
+    dynListen.setOnsetThresh(0.03);
+    dynListen.setSilenceThresh(0.1);
+    // *** SET SHADER PATH HERE *** //
+    // for shaders folder 1: 
+    shaderSphere.setShaders("../src/shaders/Moving-shaders/moving.vert", 
+                            "../src/shaders/Reactive-shaders/fractalTest.frag");
+    // for shader folder 2:
+    //shaderSphere.setShaders("../src/shaders/Shader-2/shaderToyDefault.vert", "../src/shaders/Shader-2/shader2.frag");
+    // *** END SET SHADER PATH *** //
+    shaderSphere.setSphere(15.0f, 1000);
 
-    void onSound(al::AudioIOData &io) override {
-      if (isPrimary()) {
-        while (io()) {
+    nav().pos(0, 0, 0);
+    navControl().active(true);
+  }
+
+  void onSound(al::AudioIOData &io) override {
+    if (isPrimary()) {
+      while (io()) {
         float in = io.in(0); // mono for now
         specListen.process(in);
         dynListen.process(in);
@@ -66,40 +74,38 @@ struct MyApp : al::DistributedApp {
   }
 
 
-    void onAnimate(double dt) override {
+  void onAnimate(double dt) override {
 
-      t += dt;
-    
-      if (isPrimary()) {
-        mOnePoleCent.setCutoff(15000, 60);
-        centroid = mOnePoleCent.lpf(centroidReporter.reportValue());
-        mOnePole.setCutoff(1000, 60);
-        flux = mOnePole.lpf(fluxReporter.reportValue());
-        if (dynListen.detectOnset()) {
-          std::cout << "NEW ONSET" << std::endl;
-          onsetIncrement = onsetIncrement + 0.1f;
-        }
+    t += dt;
+  
+    if (isPrimary()) {
 
+      mOnePoleCent.setCutoff(15000, 60);
+      centroid = mOnePoleCent.lpf(centroidReporter.reportValue());
+
+      mOnePole.setCutoff(1000, 60);
+      flux = mOnePole.lpf(fluxReporter.reportValue());
+
+      if (dynListen.detectOnset()) {
+        std::cout << "NEW ONSET" << std::endl;
+        onsetIncrement = onsetIncrement + 0.1f;
       }
 
     }
 
-    void onDraw(al::Graphics& g) override {
-      g.clear(0);
-      shaderSphere.setMatrices(view().viewMatrix(), view().projMatrix(width(), height()));
-      shaderSphere.shadedMesh.shader.use();
+  }
 
+  void onDraw(al::Graphics& g) override {
+    g.clear(0);
+    g.shader(shaderSphere.shadedMesh.shader);
 
-      shaderSphere.setUniformFloat("u_time", t);
-      shaderSphere.setUniformFloat("onset", onsetIncrement);
-      shaderSphere.setUniformFloat("cent", centroid);
-      shaderSphere.setUniformFloat("flux", flux);
-      // std::cout << "flux: " << flux << "cent: " << centroid << std::endl;
-    
-
-
-      shaderSphere.draw(g);
-    }
+    shaderSphere.setUniformFloat("u_time", t);
+    shaderSphere.setUniformFloat("onset", onsetIncrement);
+    shaderSphere.setUniformFloat("cent", centroid);
+    shaderSphere.setUniformFloat("flux", flux);
+  
+    shaderSphere.draw(g);
+  }
 };
 
 int main() {
