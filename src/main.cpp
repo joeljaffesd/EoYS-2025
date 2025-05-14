@@ -5,13 +5,12 @@
 
 // Gimmel/RTNeural includes
 #include "../Gimmel/include/gimmel.hpp"
-#include "../assets/MarshallModel.h"
+#include "../assets/namModels/MarshallModel.h"
 
 // EoYS includes
-#include "channelStrip.hpp"
 #include "graphics/sphereScope.hpp"
 #include "graphics/imageToSphere.hpp"
-#include "graphics/objImport.hpp"
+#include "graphics/assetEngine.hpp"
 
 #define SAMPLE_RATE 44100
 
@@ -41,7 +40,8 @@ public:
   virtual void init() override {
     mImageSphereLoader.init();
     mImageSphereLoader.createSphere();
-    mAssetEngine.loadAssets();
+    mAssetEngine.loadAsset("../assets/3dModels/eye/eye.obj",
+                           "../assets/3dModels/eye/eye.png");
     mScope.init(SAMPLE_RATE);
     mBundle << mImageSphereLoader.sphereRadius;
     mBundle << mImageSphereLoader.pointSize;
@@ -60,7 +60,7 @@ public:
     mScope.update();
   }
 
-  virtual void onProcess(Graphics& g) override {
+  virtual void onProcess(al::Graphics& g) override {
     mAssetEngine.draw(g); // Draw the 3D object
     g.meshColor();
     if (showScope) {
@@ -95,23 +95,6 @@ struct State {
 
 class MainApp : public al::DistributedAppWithState<State> {
 private:
-  // ModelWeights mModelWeights;
-  // giml::AmpModeler<float, Layer1, Layer2> mAmpModeler;
-
-  al::ParameterBool mDetuneToggle{"DetuneToggle", "", false};
-  al::Parameter mDetunePitchRatio{"DetunePitchRatio", "", 0.995, 0.0, 1.0};
-  al::Parameter mDetuneBlend{"DetuneBlend", "", 0.24, 0.0, 1.0};
-  al::ParameterBundle mDetuneBundle{"Detune"};
-  std::unique_ptr<giml::Detune<float>> mDetune;
-
-  al::ParameterBool mDelayToggle{"DelayToggle", "", true};
-  al::Parameter mDelayTime{"DelayTime", "", 398, 0, 1000};
-  al::Parameter mDelayFeedback{"DelayFeedback", "", 0.30, 0.0, 1.0};
-  al::Parameter mDelayBlend{"DelayBlend", "", 0.24, 0.0, 1.0};
-  al::ParameterBundle mDelayBundle{"Delay"};
-  std::unique_ptr<giml::Delay<float>> mDelay;
-
-  ChannelStrip mChannelStrip;
   GraphicsVoice* mGraphicsVoice; // TODO: use a smart pointer
   al::DistributedScene mDistributedScene;
 
@@ -128,49 +111,6 @@ public:
     registerDynamicScene(mDistributedScene);
     mDistributedScene.verbose(true);
 
-    // only do audio stuff on primary
-    if (isPrimary()) { 
-
-      mChannelStrip.init();
-
-      //mAmpModeler = std::make_unique<giml::AmpModeler<float, Layer1, Layer2>>(SAMPLE_RATE);
-      // mAmpModeler.toggle(true);
-      // mAmpModeler.loadModel(mModelWeights.weights);
-      // mChannelStrip.getEffectsLine().pushBack(&mAmpModeler);
-
-      mDetune = std::make_unique<giml::Detune<float>>(SAMPLE_RATE);
-      mDetune->toggle(mDetuneToggle);
-      mDetune->setPitchRatio(mDetunePitchRatio);
-      mDetune->setBlend(mDetuneBlend);
-      mDetuneBundle << mDetuneToggle << mDetunePitchRatio << mDetuneBlend;
-      mChannelStrip.addBundle(mDetuneBundle);
-      mChannelStrip.getEffectsLine().pushBack(mDetune.get());
-  
-      mDelay = std::make_unique<giml::Delay<float>>(SAMPLE_RATE);
-      mDelay->toggle(mDelayToggle);
-      mDelay->setDelayTime(mDelayTime);
-      mDelay->setFeedback(mDelayFeedback);
-      mDelay->setBlend(mDelayBlend);
-      mDelayBundle << mDelayToggle << mDelayTime << mDelayFeedback << mDelayBlend;
-      mChannelStrip.addBundle(mDelayBundle);
-      mChannelStrip.getEffectsLine().pushBack(mDelay.get());
-    }
-  }
-
-  void onSound(al::AudioIOData& io) override {
-    if (isPrimary()) { // only do audio for primary
-      for (int sample = 0; sample < io.framesPerBuffer(); sample++) {
-        float input = io.in(0, sample);
-        float output = mChannelStrip.getEffectsLine().processSample(input);
-        for (int channel = 0; channel < io.channelsOut(); channel++) {
-          io.out(channel, sample) = output;
-        }
-        // write output to scope
-        if (mGraphicsVoice != nullptr) {
-          mGraphicsVoice->writeSample(output);
-        }
-      }
-    }  
   }
 
   void onAnimate(double dt) override {
@@ -178,16 +118,6 @@ public:
     mDistributedScene.update();
 
     if (isPrimary()) {
-      mDetune->setPitchRatio(mDetunePitchRatio);
-      mDetune->setBlend(mDetuneBlend);
-      mDetune->toggle(mDetuneToggle);
-
-      mDelay->setDelayTime(mDelayTime);
-      mDelay->setFeedback(mDelayFeedback);
-      mDelay->setBlend(mDelayBlend);
-      mDelay->toggle(mDelayToggle);
-
-      mChannelStrip.update();
 
       if (mGraphicsVoice != nullptr) {
         state().sphereRadius = mGraphicsVoice->mBundle.parameters()[0]->toFloat();
@@ -221,7 +151,6 @@ public:
         if (mGraphicsVoice == nullptr) {
           mGraphicsVoice = mDistributedScene.getVoice<GraphicsVoice>();
           mDistributedScene.triggerOn(mGraphicsVoice);
-          mChannelStrip.addBundle(mGraphicsVoice->mBundle);
         }
       }
     }
@@ -232,9 +161,6 @@ public:
     g.lens().eyeSep(0.0); // disable stereo rendering
     g.clear(0.1);
     mDistributedScene.render(g);
-    if (isPrimary()) {
-      mChannelStrip.draw(g);
-    }
   }
 
 };
