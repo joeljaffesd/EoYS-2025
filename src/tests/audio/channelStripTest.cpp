@@ -17,6 +17,10 @@
 
 // AlloLib includes 
 #include "al/app/al_DistributedApp.hpp"
+#include "al/sound/al_Speaker.hpp"
+#include "al/sound/al_Spatializer.hpp"
+#include "al/sound/al_Ambisonics.hpp"
+#include "al/sound/al_Dbap.hpp"
 
 // Gimmel/RTNeural includes
 #include "../Gimmel/include/gimmel.hpp"
@@ -25,21 +29,10 @@
 // EoYS includes
 #include "../../audio/channelStrip.hpp"
 #include "../../audio/audioManager.hpp"
+#include "../../audio/ampModeler.hpp"
 
 // Gamma ig for now
 #include "Gamma/SamplePlayer.h"
-
-// Add NAM compatibility to giml
-namespace giml {
-  template<typename T, typename Layer1, typename Layer2>
-  class AmpModeler : public Effect<T>, public wavenet::RTWavenet<1, 1, Layer1, Layer2> {
-  public:
-    T processSample(const T& input) override {
-      if (!this->enabled) { return input; }
-      return this->model.forward(input);
-    }
-  };
-}
 
 class ChannelStripTestApp : public al::DistributedApp {
 private:

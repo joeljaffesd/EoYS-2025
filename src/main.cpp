@@ -11,20 +11,9 @@
 #include "graphics/sphereScope.hpp"
 #include "graphics/imageToSphere.hpp"
 #include "graphics/assetEngine.hpp"
+#include "audio/ampModeler.hpp"
 
 #define SAMPLE_RATE 44100
-
-// Add NAM compatibility to giml
-namespace giml {
-  template<typename T, typename Layer1, typename Layer2>
-  class AmpModeler : public Effect<T>, public wavenet::RTWavenet<1, 1, Layer1, Layer2> {
-  public:
-    T processSample(const T& input) override {
-      if (!this->enabled) { return input; }
-      return this->model.forward(input);
-    }
-  };
-}
 
 class GraphicsVoice : public al::PositionedVoice {
 private:
@@ -56,7 +45,7 @@ public:
   }
 
   virtual void update(double dt = 0) override {
-    mImageSphereLoader.update();
+    //mImageSphereLoader.update();
     mScope.update();
   }
 
