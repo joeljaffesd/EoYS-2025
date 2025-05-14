@@ -110,4 +110,5 @@ private:
   float dTheta; //precalculated increment as we wrap around the sphere
   float startAngle; //offset from 0 radians on unit circle where new audio should come from and old audio should leave
 };
+
 #endif

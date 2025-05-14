@@ -5,28 +5,23 @@
 #include "al/io/al_File.hpp"
 #include "al/ui/al_Parameter.hpp"
 
-using namespace al;
-
 struct ImageSphereLoader {
-  VAOMesh mMesh;
-  File file = File::currentPath() + "../assets/images/imgWrap.png";
-  Image image;
-  ParameterBool imageShow{"imageShow", "", true};
-  Parameter sphereRadius = {
-      "sphereRadius", "", 3.f, 0.f,
-      10.f}; // You can adjust this value to make the sphere larger
-  Parameter pointSize = {"pointSize", "", 10.f, 0.f,
-                         100.f}; // Point size for the mesh
+  al::VAOMesh mMesh;
+  al::File file = al::File::currentPath() + "../assets/images/imgWrap.png";
+  al::Image image;
+  al::ParameterBool imageShow{"imageShow", "", true};
+  al::Parameter sphereRadius = { "sphereRadius", "", 3.f, 0.f,10.f}; 
+  al::Parameter pointSize = {"pointSize", "", 10.f, 0.f, 100.f};
 
   void init() {
 
-    image = Image(file.path());
+    image = al::Image(file.path());
     if (!image.loaded()) {
       std::cerr << "Failed to load image: " << file.path() << std::endl;
       return;
     }
 
-    mMesh.primitive(Mesh::POINTS);
+    mMesh.primitive(al::Mesh::POINTS);
     for (int j = 0; j < image.height(); j++) {
       for (int i = 0; i < image.width(); i++) {
         auto pixel = image.at(i, j);
@@ -39,9 +34,11 @@ struct ImageSphereLoader {
     mMesh.update();
   }
 
-  void update() { this->createSphere(); }
+  void update() { 
+    this->createSphere(); 
+  }
 
-  void draw(Graphics &g) {
+  void draw(al::Graphics &g) {
     // this may need to be changed to handle mesh manipulations and shader..
     // manipulations
     if (!imageShow)
@@ -53,11 +50,9 @@ struct ImageSphereLoader {
   }
 
   void createSphere() {
-    // Reset targetMesh
-    mMesh.reset();
-    // Map image onto a sphere
     for (int j = 0; j < image.height(); j++) {
       for (int i = 0; i < image.width(); i++) {
+        // Get the pixel color at position (i, j)
         auto pixel = image.at(i, j);
 
         // Convert 2D image pixel to spherical coordinates
@@ -79,16 +74,14 @@ struct ImageSphereLoader {
     }
 
     // Center the mesh on the origin
-    Vec3f center(0.0f, 0.0f, 0.0f);
-    for (auto &vertex : mMesh.vertices()) {
+    al::Vec3f center(0.0f, 0.0f, 0.0f);
+    for (auto& vertex : mMesh.vertices()) {
       center += vertex;
     }
     center /= mMesh.vertices().size();
-    for (auto &vertex : mMesh.vertices()) {
+    for (auto& vertex : mMesh.vertices()) {
       vertex -= center;
     }
     mMesh.update();
-
-    // std::cout << "Displaying Image Wrapped Around a Sphere." << std::endl;
   }
 };

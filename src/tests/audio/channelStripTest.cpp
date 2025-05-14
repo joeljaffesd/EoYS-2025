@@ -1,21 +1,18 @@
-#define SAMPLE_RATE 48000 // for lap/desktop computer
-#ifndef SAMPLE_RATE
-#define SAMPLE_RATE 44100 // for playback in Allosphere
-#endif
+// Single macro to switch between desktop and Allosphere configurations
+#define DESKTOP
 
-#define AUDIO_CONFIG SAMPLE_RATE, 128, 2, 8 // for lap/desktop computer 
-#ifndef AUDIO_CONFIG
-#define AUDIO_CONFIG SAMPLE_RATE, 256, 60, 8 // for playback in Allosphere
-#endif
-
-#define SPATIALIZER_TYPE al::AmbisonicsSpatializer // for Ambisonics
-#ifndef SPATIALIZER_TYPE
-#define SPATIALIZER_TYPE al::Lbap // for playback in Allosphere
-#endif
-
-#define SPEAKER_LAYOUT al::StereoSpeakerLayout(0, 30, 5) // for lap/desktop computer 
-#ifndef SPEAKER_LAYOUT
-#define SPEAKER_LAYOUT al::AlloSphereSpeakerLayoutCompensated() // for playback in Allosphere
+#ifdef DESKTOP
+  // Desktop configuration
+  #define SAMPLE_RATE 48000
+  #define AUDIO_CONFIG SAMPLE_RATE, 128, 2, 8
+  #define SPATIALIZER_TYPE al::AmbisonicsSpatializer
+  #define SPEAKER_LAYOUT al::StereoSpeakerLayout()
+#else
+  // Allosphere configuration
+  #define SAMPLE_RATE 44100
+  #define AUDIO_CONFIG SAMPLE_RATE, 256, 60, 8
+  #define SPATIALIZER_TYPE al::Dbap
+  #define SPEAKER_LAYOUT al::AlloSphereSpeakerLayoutCompensated()
 #endif
 
 // AlloLib includes 
@@ -58,6 +55,9 @@ private:
 public:
   void onInit() override {
 
+    this->nav().set(al::Nav(10.f));
+    this->nav().faceToward(al::Vec3d(0, 0, 0));
+
     player[0].load("../assets/wavFiles/vocals.wav");
     player[1].load("../assets/wavFiles/guitar.wav");
     player[2].load("../assets/wavFiles/bass.wav");
@@ -79,7 +79,8 @@ public:
     // TODO: encapsulate this in a function
     auto speakers = SPEAKER_LAYOUT; 
     mAudioManager.scene()->setSpatializer<SPATIALIZER_TYPE>(speakers);
-    mAudioManager.scene()->distanceAttenuation().law(al::ATTEN_INVERSE_SQUARE);
+    mAudioManager.scene()->distanceAttenuation().law(al::ATTEN_NONE);
+    mAudioManager.scene()->registerSynthClass<ChannelStrip>();
     registerDynamicScene(*mAudioManager.scene());
     mAudioManager.scene()->verbose(true);
     
@@ -108,8 +109,6 @@ public:
     std::cout << "  1. Click on a sound source to show its control panel" << std::endl;
     std::cout << "  2. Click and drag objects to move them in space" << std::endl;
     std::cout << "  3. Camera can be moved with arrow keys (view only, doesn't affect audio)" << std::endl;
-
-    mAudioManager.scene()->print();
   }
 
   void onSound(al::AudioIOData& io) override {  

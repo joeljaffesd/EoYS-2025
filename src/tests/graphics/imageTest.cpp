@@ -2,11 +2,11 @@
 #include "al/graphics/al_Shapes.hpp"
 #include "al/graphics/al_VAOMesh.hpp"
 #include "al/ui/al_ControlGUI.hpp"
-#include "graphics/imageToSphere.hpp"
-#include "graphics/vfxMain.hpp"
-#include "src/graphics/autoPulse.hpp"
-#include "src/graphics/orbit.hpp"
-#include "src/graphics/vfxUtility.hpp"
+#include "../../graphics/imageToSphere.hpp"
+#include "../../graphics/vfxMain.hpp"
+#include "../../graphics/autoPulse.hpp"
+#include "../../graphics/orbit.hpp"
+#include "../../graphics/vfxUtility.hpp"
 
 using namespace al;
 
