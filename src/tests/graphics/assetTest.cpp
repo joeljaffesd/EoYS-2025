@@ -1,18 +1,17 @@
-#include "al/app/al_App.hpp"
+#include "al/app/al_DistributedApp.hpp"
 #include "al/ui/al_ControlGUI.hpp"
-#include "graphics/objImport.hpp"
+#include "../../graphics/assetEngine.hpp"
 
-using namespace al;
-
-class AssetTestApp : public App {
+class AssetTestApp : public al::DistributedApp {
 public:
   AssetEngine assetEngine;
-  ControlGUI gui;
-  ParameterBool rotate{"Rotate", "", true}; // Toggle rotation
+  al::ControlGUI gui;
+  al::ParameterBool rotate{"Rotate", "", true}; // Toggle rotation
 
   void onCreate() override {
-    // Load the 3D assets
-    assetEngine.loadAssets();
+    // Load the 3D asset
+    assetEngine.loadAsset("../assets/3dModels/eye/eye.obj",
+                          "../assets/3dModels/eye/eye.png");
 
     // Initialize GUI
     gui.init();
@@ -26,7 +25,7 @@ public:
     }
   }
 
-  void onDraw(Graphics &g) override {
+  void onDraw(al::Graphics &g) override {
     g.clear(0.1); // Clear the screen with a dark gray background
     assetEngine.draw(g); // Draw the 3D object
     gui.draw(g); // Draw the GUI

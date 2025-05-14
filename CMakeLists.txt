@@ -14,11 +14,11 @@ if(MSVC)
 endif()
 
 # add source files to executable
-add_executable(${APP_NAME} src/tests/graphics/reactiveShaderTest.cpp)
+add_executable(${APP_NAME} src/tests/graphics/assetTest.cpp)
 
 # add allolib to project & link
 add_subdirectory(allolib)
-target_link_libraries(${APP_NAME} PRIVATE al)
+target_link_libraries(${APP_NAME} PRIVATE alapp)
 
 # add RTNeural to project & link
 add_subdirectory(RTNeural)
