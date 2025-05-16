@@ -6,6 +6,7 @@
 #include <vector>
 #include <iostream>
 #include <chrono>
+#include <memory>
 
 using namespace al;
 
@@ -14,6 +15,9 @@ private:
   Mesh mMesh;
   AlloOpenCV mVideo;
   std::string mVideoFilePath;
+  
+  // Vector to store all preloaded frames
+  std::vector<cv::Mat> mFrames;
   
   // Video properties
   int mVideoWidth = 0;
@@ -33,24 +37,55 @@ private:
   al::ParameterBundle mParams{"VideoSphereLoaderCV"};
 
 public:
+  // Update the displayed frame based on the current frame index
+  void updateDisplayFrame() {
+    if (mCurrentFrame < 0 || mCurrentFrame >= mFrames.size()) {
+      std::cerr << "Invalid frame index: " << mCurrentFrame << std::endl;
+      return;
+    }
+    
+    // Make sure we have a valid texture before continuing
+    if (!mVideo.videoTexture.created()) {
+      std::cerr << "Texture not created in updateDisplayFrame" << std::endl;
+      return;
+    }
+    
+    // Make sure the frame is valid
+    if (mFrames[mCurrentFrame].empty()) {
+      std::cerr << "Empty frame at index " << mCurrentFrame << std::endl;
+      return;
+    }
+    
+    try {
+      mVideo.videoImage = mFrames[mCurrentFrame];
+      mVideo.videoTexture.submit(mVideo.videoImage.ptr());
+    } catch (const std::exception& e) {
+      std::cerr << "Exception in updateDisplayFrame: " << e.what() << std::endl;
+    } catch (...) {
+      std::cerr << "Unknown exception in updateDisplayFrame" << std::endl;
+    }
+  }
+
   VideoSphereLoaderCV() {
     mParams << mPlaying << mLooping << mRestarted << mFrameNumber;
     
     // Register a callback for the restart parameter
     mRestarted.registerChangeCallback([this](bool value) {
-      if (mVideo.videoCapture) {
-        mVideo.videoCapture->set(cv::CAP_PROP_POS_FRAMES, 0);
-        mCurrentFrame = 0;
-        mCurrentTime = 0.0;
-      }
+      if (mFrames.empty()) return; // Don't process if frames aren't loaded yet
+      
+      mCurrentFrame = 0;
+      mCurrentTime = 0.0;
+      updateDisplayFrame();
     });
     
     // Register a callback for frame number changes
     mFrameNumber.registerChangeCallback([this](int value) {
-      if (mVideo.videoCapture && value >= 0 && value < mFrameCount) {
-        mVideo.videoCapture->set(cv::CAP_PROP_POS_FRAMES, value);
+      if (mFrames.empty()) return; // Don't process if frames aren't loaded yet
+      
+      if (value >= 0 && value < mFrameCount) {
         mCurrentFrame = value;
         mCurrentTime = value * mFrameTime;
+        updateDisplayFrame();
       }
     });
   }
@@ -95,18 +130,66 @@ public:
     mVideo.videoTexture.filter(Texture::LINEAR);
     mVideo.videoTexture.wrap(Texture::REPEAT, Texture::CLAMP_TO_EDGE, Texture::CLAMP_TO_EDGE);
     
-    // Capture the first frame
-    mVideo.captureFrame();
+    // Preload all frames into memory
+    std::cout << "Preloading all " << mFrameCount << " frames..." << std::endl;
+    mFrames.clear();
+    mFrames.reserve(mFrameCount);
     
-    if (mVideo.videoImage.empty()) {
-      std::cerr << "Failed to capture first frame" << std::endl;
+    // Set to the beginning of the video
+    mVideo.videoCapture->set(cv::CAP_PROP_POS_FRAMES, 0);
+    
+    // Read all frames
+    cv::Mat frame;
+    int frameCount = 0;
+    
+    try {
+      while (frameCount < mFrameCount && mVideo.videoCapture->isOpened()) {
+        bool success = mVideo.videoCapture->read(frame);
+        if (!success || frame.empty()) {
+          std::cerr << "Warning: Failed to read frame " << frameCount << std::endl;
+          break;
+        }
+        
+        // Create a deep copy of the frame and store it
+        cv::Mat frameCopy = frame.clone();
+        if (frameCopy.empty()) {
+          std::cerr << "Warning: Failed to clone frame " << frameCount << std::endl;
+          break;
+        }
+        
+        mFrames.push_back(frameCopy);
+        frameCount++;
+        
+        // Display progress
+        if (frameCount % 100 == 0 || frameCount == mFrameCount) {
+          std::cout << "  Loaded " << frameCount << " of " << mFrameCount << " frames" << std::endl;
+        }
+      }
+    } catch (const cv::Exception& e) {
+      std::cerr << "OpenCV exception while loading frames: " << e.what() << std::endl;
+    } catch (const std::exception& e) {
+      std::cerr << "Exception while loading frames: " << e.what() << std::endl;
+    } catch (...) {
+      std::cerr << "Unknown exception while loading frames" << std::endl;
+    }
+    
+    std::cout << "Preloaded " << mFrames.size() << " frames" << std::endl;
+    
+    // Verify we got all frames
+    if (mFrames.empty()) {
+      std::cerr << "Failed to preload frames" << std::endl;
       return false;
     }
     
-    std::cout << "First frame captured: " << mVideo.videoImage.cols << "x" << mVideo.videoImage.rows << std::endl;
+    // We can now close the video file since we have all frames in memory
+    mVideo.cleanupVideoCapture();
     
-    // Submit the first frame to the texture
-    mVideo.videoTexture.submit(mVideo.videoImage.ptr());
+    // Set the first frame
+    if (!mFrames.empty()) {
+      mVideo.videoImage = mFrames[0];
+      mVideo.videoTexture.submit(mVideo.videoImage.ptr());
+      std::cout << "First frame set: " << mVideo.videoImage.cols << "x" << mVideo.videoImage.rows << std::endl;
+    }
     
     // Start playback
     mPlaying = true;
@@ -115,8 +198,8 @@ public:
   }
   
   void update(double dt) {
-    if (!mVideo.videoCapture || !mVideo.videoCapture->isOpened()) {
-      std::cerr << "Video capture not opened in update" << std::endl;
+    if (mFrames.empty()) {
+      std::cerr << "No frames available in update" << std::endl;
       return;
     }
     
@@ -135,33 +218,20 @@ public:
         // Loop back to the beginning
         mCurrentTime = 0;
         targetFrame = 0;
-        mVideo.videoCapture->set(cv::CAP_PROP_POS_FRAMES, 0);
         std::cout << "Looping video back to start" << std::endl;
       } else {
         // Stop at the end
         mPlaying = false;
         targetFrame = mFrameCount - 1;
-        mVideo.videoCapture->set(cv::CAP_PROP_POS_FRAMES, targetFrame);
         std::cout << "Reached end of video" << std::endl;
       }
     }
     
     // If we need to jump to a different frame
     if (targetFrame != mCurrentFrame) {
-      mVideo.videoCapture->set(cv::CAP_PROP_POS_FRAMES, targetFrame);
       mCurrentFrame = targetFrame;
       mFrameNumber = targetFrame;
-    }
-    
-    // Capture the current frame
-    mVideo.captureFrame();
-    
-    // Check if we got a valid frame
-    if (mVideo.videoImage.empty()) {
-      std::cerr << "Empty frame captured at time " << mCurrentTime << ", frame " << mCurrentFrame << std::endl;
-    } else {
-      // Submit to texture
-      mVideo.videoTexture.submit(mVideo.videoImage.ptr());
+      updateDisplayFrame();
     }
   }
 
@@ -196,10 +266,8 @@ public:
 
   // Seek to a specific time (in seconds)
   void seek(double timeInSeconds) {
-    if (mVideo.videoCapture) {
-      int frame = timeInSeconds * mFrameRate;
-      mFrameNumber = frame;
-    }
+    int frame = timeInSeconds * mFrameRate;
+    mFrameNumber = frame;
   }
   
   // Seek to a specific frame
@@ -215,6 +283,8 @@ public:
   int getCurrentFrame() const { return mCurrentFrame; }
   
   void cleanup() {
+    // Clear all preloaded frames to free memory
+    mFrames.clear();
     mVideo.cleanupVideoCapture();
     mPlaying = false;
   }

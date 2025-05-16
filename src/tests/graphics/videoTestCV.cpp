@@ -12,13 +12,17 @@ public:
   ParameterBundle mBundle;
   ControlGUI mGUI;
 
+  // void onInit() override {
+  //   mGUI.init();
+  //   this->parameterServer().registerParameterBundle(loader.params());
+  //   mGUI.registerParameterBundle(loader.params());
+  // }
+
   void onInit() override {
     mGUI.init();
-    this->parameterServer().registerParameterBundle(loader.params());
-    mGUI.registerParameterBundle(loader.params());
-  }
+    // this->parameterServer().registerParameterBundle(loader.params());
+    // mGUI.registerParameterBundle(loader.params());
 
-  void onCreate() override {
     // Print working directory for debugging
     char cwd[1024];
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
@@ -77,9 +81,7 @@ public:
   void onDraw(Graphics &g) override {
     g.clear(0.1f);
     loader.draw(g);
-    if (isPrimary()) {
-      mGUI.draw(g);
-    }
+    if (isPrimary()) { mGUI.draw(g); }
   }
 };
 
