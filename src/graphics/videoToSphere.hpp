@@ -20,20 +20,31 @@ private:
   // Video properties
   int mVideoWidth = 0;
   int mVideoHeight = 0;
-  // double mFrameRate = 30.0;
   double aspectRatio = 1.0;
   
   // Playback control
-  bool mPlaying;
-  bool mLooping;
-  int mFrameCount;
-  bool mShowFrameCount;
+  al::ParameterBool mPlaying {"mPlaying", "", false};
+  al::ParameterBool mLooping {"mLooping", "", false};
+  al::ParameterBool mRestarted {"mRestart", "", false};
+  al::ParameterInt mFrameNumber {"mFrameNumber", "", 0, 0, std::numeric_limits<int>::max()};
+  al::ParameterBundle mParams{"VideoSphereLoader"};
 
 public:
-  VideoSphereLoader() : mPlaying(false), mLooping(true), mFrameCount(0), mShowFrameCount(true) {}
+  VideoSphereLoader()  {
+    mParams << mPlaying << mLooping << mRestarted << mFrameNumber;
+    
+    // Register a callback for the restart parameter
+    mRestarted.registerChangeCallback([this](bool value) {
+        videoDecoder.seek(0);  // Seek to the beginning of the video
+    });
+  }
 
   ~VideoSphereLoader() {
     this->cleanup();
+  }
+
+  al::ParameterBundle& params() {
+    return this->mParams;
   }
   
   bool loadVideo(const std::string& videoFilePath) {
@@ -56,7 +67,6 @@ public:
     // Set video playback parameters
     mVideoWidth = videoDecoder.width();
     mVideoHeight = videoDecoder.height();
-    // mFrameRate = videoDecoder.fps();
     aspectRatio = mVideoWidth / (double)mVideoHeight;
     
     // Allocate an RGBA buffer for the converted frame
@@ -71,33 +81,23 @@ public:
     return true;
   }
   
-  void update(al_sec dt) {
-    if (mPlaying) {
-      // Get a new frame from the video decoder
-      MediaFrame* frame = videoDecoder.getVideoFrame(dt);
+  void update(double dt) {
+    videoDecoder.pause(!mPlaying);
+    videoDecoder.loop(mLooping);
+
+    // Get a new frame from the video decoder
+    MediaFrame* frame = videoDecoder.getVideoFrame(dt);
+    
+    if (frame) {
+      // Convert YUV to RGBA
+      convertYUVToRGBA(frame, mRgbaBuffer.data(), mVideoWidth, mVideoHeight);
       
-      if (frame) {
-        // Convert YUV to RGBA
-        convertYUVToRGBA(frame, mRgbaBuffer.data(), mVideoWidth, mVideoHeight);
-        
-        // Submit the converted RGBA data to the texture
-        tex.submit(mRgbaBuffer.data());
-        
-        // Tell the decoder we're done with this frame
-        videoDecoder.gotVideoFrame();
-        
-        // Update frame counter
-        mFrameCount++;
-      }
-      else if (videoDecoder.finished()) {
-        // Video has reached the end
-        if (mLooping) {
-          // Reset to beginning if looping is enabled
-          videoDecoder.seek(0);
-        } else {
-          mPlaying = false;
-        }
-      }
+      // Submit the converted RGBA data to the texture
+      tex.submit(mRgbaBuffer.data());
+      
+      // Tell the decoder we're done with this frame
+      videoDecoder.gotVideoFrame();
+      
     }
   }
 
@@ -110,21 +110,27 @@ public:
     g.popMatrix();
   }
   
+  // Play
   void play() { mPlaying = true; }
+
+  // Pause
   void pause() { mPlaying = false; }
+
+  // Toggle play/pause
   void togglePlayPause() { mPlaying = !mPlaying; }
-  void restart() {
-    videoDecoder.seek(0);
-    mPlaying = true;
-  }
+
+  // Restart the video
+  void restart() { mRestarted = !mRestarted; }
+
+  // Toggle looping FIXME
   void toggleLooping() { mLooping = !mLooping; }
-  bool isPlaying() const { return mPlaying; }
-  bool isLooping() const { return mLooping; }
   
+  // Getters for video properties
   double getAspectRatio() const { return aspectRatio; }
   
   void cleanup() {
     videoDecoder.stop();
+    videoDecoder.cleanup();
   }
   
   // YUV to RGB conversion function
