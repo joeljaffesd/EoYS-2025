@@ -14,7 +14,7 @@ if(MSVC)
 endif()
 
 # add source files to executable
-add_executable(${APP_NAME} src/tests/graphics/openCVTest.cpp)
+add_executable(${APP_NAME} src/tests/graphics/videoTestCV.cpp)
 
 # add allolib to project & link
 add_subdirectory(allolib)
