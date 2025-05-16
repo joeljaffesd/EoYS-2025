@@ -10,10 +10,10 @@
 #include <iostream>
 
 struct MyApp : al::DistributedApp {
-  ShaderToSphere shaderSphere;
+  ShadedSphere shaderSphere;
   SpectralListener specListen;
   DynamicListener dynListen;
-  
+
   al::Parameter now {"now", "", 0.f, 0.f, std::numeric_limits<float>::max()};
   al::Parameter flux {"flux", "", 0.01f, 0.f, 1.f};
   al::Parameter centroid = {"centroid", "", 1.f, 0.f, 20000.f};
@@ -31,7 +31,6 @@ struct MyApp : al::DistributedApp {
     mParams << now << flux << centroid << rms << onsetIncrement;
     this->parameterServer().registerParameterBundle(mParams);
   }
-
 
   void onCreate() override {
     dynListen.setOnsetThresh(0.03);
@@ -85,7 +84,7 @@ struct MyApp : al::DistributedApp {
 
   void onDraw(al::Graphics& g) override {
     g.clear(0);
-    g.shader(shaderSphere.shadedMesh.shader);
+    g.shader(shaderSphere.shader());
 
     shaderSphere.setUniformFloat("u_time", now);
     shaderSphere.setUniformFloat("onset", onsetIncrement);
