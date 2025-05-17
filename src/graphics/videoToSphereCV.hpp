@@ -25,15 +25,15 @@ private:
   double aspectRatio = 1.0;
   double mFrameRate = 30.0;
   double mFrameTime = 1.0 / 30.0;
-  double mCurrentTime = 0.0;
   int mFrameCount = 0;
   int mCurrentFrame = 0;
   
   // Playback control
   al::ParameterBool mPlaying {"mPlaying", "", false};
   al::ParameterBool mLooping {"mLooping", "", false};
-  al::ParameterBool mRestarted {"mRestart", "", false};
-  al::ParameterInt mFrameNumber {"mFrameNumber", "", 0, 0, std::numeric_limits<int>::max()};
+  al::ParameterBool mRestarted {"mRestarted", "", false};
+  bool restartFlag = false; // hack for networked restart
+  al::Parameter mCurrentTime {"mCurrentTime", "", 0, 0, std::numeric_limits<int>::max()};
   al::ParameterBundle mParams{"VideoSphereLoaderCV"};
 
 public:
@@ -58,7 +58,7 @@ public:
     
     try {
       mVideo.videoImage = mFrames[mCurrentFrame];
-      mVideo.videoTexture.submit(mVideo.videoImage.ptr());
+      mVideo.videoTexture.submit(mVideo.videoImage.ptr()); // seg faults here
     } catch (const std::exception& e) {
       std::cerr << "Exception in updateDisplayFrame: " << e.what() << std::endl;
     } catch (...) {
@@ -67,27 +67,7 @@ public:
   }
 
   VideoSphereLoaderCV() {
-    mParams << mPlaying << mLooping << mRestarted << mFrameNumber;
-    
-    // Register a callback for the restart parameter
-    mRestarted.registerChangeCallback([this](bool value) {
-      if (mFrames.empty()) return; // Don't process if frames aren't loaded yet
-      
-      mCurrentFrame = 0;
-      mCurrentTime = 0.0;
-      updateDisplayFrame();
-    });
-    
-    // Register a callback for frame number changes
-    mFrameNumber.registerChangeCallback([this](int value) {
-      if (mFrames.empty()) return; // Don't process if frames aren't loaded yet
-      
-      if (value >= 0 && value < mFrameCount) {
-        mCurrentFrame = value;
-        mCurrentTime = value * mFrameTime;
-        updateDisplayFrame();
-      }
-    });
+    mParams << mPlaying << mLooping << mRestarted << mCurrentTime;
   }
 
   ~VideoSphereLoaderCV() {
@@ -205,9 +185,16 @@ public:
     
     // Handle pause state
     if (!mPlaying) return;
+
+    if (mRestarted != restartFlag) {
+      mCurrentFrame = 0;
+      mCurrentTime = 0.0;
+      updateDisplayFrame();
+      restartFlag = !restartFlag;
+    }
     
     // Update current time
-    mCurrentTime += dt;
+    mCurrentTime = mCurrentTime + dt;
     
     // Calculate the frame to display based on current time
     int targetFrame = mCurrentTime * mFrameRate;
@@ -230,7 +217,7 @@ public:
     // If we need to jump to a different frame
     if (targetFrame != mCurrentFrame) {
       mCurrentFrame = targetFrame;
-      mFrameNumber = targetFrame;
+      //mFrameNumber = targetFrame;
       updateDisplayFrame();
     }
   }
@@ -264,22 +251,24 @@ public:
   // Toggle looping
   void toggleLooping() { mLooping = !mLooping; }
 
-  // Seek to a specific time (in seconds)
-  void seek(double timeInSeconds) {
-    int frame = timeInSeconds * mFrameRate;
-    mFrameNumber = frame;
-  }
+  // not networked yet
+  // // Seek to a specific time (in seconds)
+  // void seek(double timeInSeconds) {
+  //   int frame = timeInSeconds * mFrameRate;
+  //   //mFrameNumber = frame;
+  // }
   
-  // Seek to a specific frame
-  void seekFrame(int frame) {
-    mFrameNumber = frame;
-  }
+  // not networked yet
+  // // Seek to a specific frame
+  // void seekFrame(int frame) {
+  //   //mFrameNumber = frame;
+  // }
   
   // Getters for video properties
   double getAspectRatio() const { return aspectRatio; }
   double getDuration() const { return mFrameCount / mFrameRate; }
   int getFrameCount() const { return mFrameCount; }
-  double getCurrentTime() const { return mCurrentTime; }
+  //double getCurrentTime() const { return mCurrentTime; }
   int getCurrentFrame() const { return mCurrentFrame; }
   
   void cleanup() {

@@ -12,16 +12,12 @@ public:
   ParameterBundle mBundle;
   ControlGUI mGUI;
 
-  // void onInit() override {
-  //   mGUI.init();
-  //   this->parameterServer().registerParameterBundle(loader.params());
-  //   mGUI.registerParameterBundle(loader.params());
-  // }
-
   void onInit() override {
     mGUI.init();
-    // this->parameterServer().registerParameterBundle(loader.params());
-    // mGUI.registerParameterBundle(loader.params());
+
+    // breaks shit rn
+    this->parameterServer().registerParameterBundle(loader.params());
+    mGUI.registerParameterBundle(loader.params());
 
     // Print working directory for debugging
     char cwd[1024];
@@ -68,13 +64,7 @@ public:
       loader.restart();
     } else if (k.key() == 'l') {  // 'l' to toggle looping
       loader.toggleLooping();
-    } else if (k.key() == '0') {  // '0' to seek to beginning
-      loader.seek(0);
-    } else if (k.key() == 'n') {  // 'n' to skip ahead 5 seconds
-      loader.seek(loader.getCurrentTime() + 5.0);
-    } else if (k.key() == 'p') {  // 'p' to go back 5 seconds
-      loader.seek(std::max(0.0, loader.getCurrentTime() - 5.0));
-    }
+    } 
     return true;
   }
 
