@@ -6,6 +6,6 @@ bin
 
 .DS_Store
 
-assets/*.h
+assets/namModels/*.h
 
 debug/

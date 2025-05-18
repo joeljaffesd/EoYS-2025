@@ -24,7 +24,6 @@
 
 // Gimmel/RTNeural includes
 #include "../Gimmel/include/gimmel.hpp"
-#include "../assets/namModels/MarshallModel.h"
 
 // EoYS includes
 #include "../../audio/channelStrip.hpp"
