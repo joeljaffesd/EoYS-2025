@@ -2,6 +2,9 @@
 #define EOYS_CHANNEL_STRIP
 
 #include "../../Gimmel/include/gimmel.hpp"
+#include "ampModeler.hpp"
+// #include "../../assets/namModels/MarshallModel.h"
+#include "../../assets/namModels/BassModel.h"
 
 #include "effectsEngine.hpp"
 #include "spatialAgent.hpp"
@@ -27,6 +30,10 @@ public:
     // this is wrought with bugs...
     // seems that a break occurs, but stuff added after the break works
     // this break may be.. 3 fx that all have a "depth" param?
+    this->addAmp<float, 
+                 BassModelLayer1, 
+                 BassModelLayer2, 
+                 BassModelWeights>();
     this->addEffect<giml::Compressor<float>, 48000>(); // shows nothing
     this->addEffect<giml::Phaser<float>, 48000>(); // seg faults
     this->addEffect<giml::Chorus<float>, 48000>(); // seg faults

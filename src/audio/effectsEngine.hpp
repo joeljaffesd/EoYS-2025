@@ -12,6 +12,7 @@
 
 // giml includes
 #include "../Gimmel/include/gimmel.hpp"
+#include "ampModeler.hpp"
 
 /**
  * @brief Basic encapsulation of the an fx chain / inserts, using `Gimmel`
@@ -30,14 +31,37 @@ public:
     mParamBundles.push_back(al::ParameterBundle("Effects"));
   }
 
+  template <typename T, typename Layer1, typename Layer2, class TWeights>
+  void addAmp() {
+    mEffects.push_back(std::make_unique<giml::AmpModeler<T, Layer1, Layer2>>());
+    mEffectsLine.pushBack(mEffects.back().get());
+    auto* amp = dynamic_cast<giml::AmpModeler<T, Layer1, Layer2>*>(mEffects.back().get());
+    TWeights mWeights;
+    amp->loadModel(mWeights.weights);
+
+    mParams.push_back(std::make_shared<al::ParameterBool>("Amp Enabled", "", false));
+    // Get a pointer to the ParameterBool
+    auto* theToggle = dynamic_cast<al::ParameterBool*>(mParams.back().get());
+    if (theToggle) {
+      auto* effectPtr = mEffects.back().get(); // Get pointer to current effect
+      theToggle->registerChangeCallback([effectPtr](float value) {
+        bool enabled = value > 0.5f;
+        effectPtr->toggle(enabled);
+      });
+    }
+    mParamBundles.back().addParameter(mParams.back().get());
+
+  }
+
   template<class TEffect, int SampleRate>
   void addEffect() {
     mEffects.push_back(std::make_unique<TEffect>(SampleRate));
     mEffectsLine.pushBack(mEffects.back().get());
+    auto effectName = al::demangle(typeid(TEffect).name());
 
     // TODO programmatic attach of effect params to GUI
     size_t indexStart = mParams.size();
-    mParams.push_back(std::make_shared<al::ParameterBool>("Enabled", "", false));
+    mParams.push_back(std::make_shared<al::ParameterBool>(effectName + "Enabled", "", false));
     // Get a pointer to the ParameterBool
     auto* theToggle = dynamic_cast<al::ParameterBool*>(mParams.back().get());
     if (theToggle) {
@@ -52,17 +76,17 @@ public:
       switch (param->type) {
         case giml::Param<float>::TYPE::CONTINUOUS:
           mParams.push_back(std::make_shared<al::Parameter>(
-            param->name, "", param->def, param->min, param->max
+            effectName + param->name, "", param->def, param->min, param->max
           ));
           break;
         case giml::Param<float>::TYPE::CHOICE:
           mParams.push_back(std::make_shared<al::ParameterInt>(
-            param->name, "", (int)param->def, (int)param->min, (int)param->max
+            effectName + param->name, "", (int)param->def, (int)param->min, (int)param->max
           ));
           break;
         case giml::Param<float>::TYPE::BOOL:
           mParams.push_back(std::make_shared<al::ParameterBool>(
-            param->name, "", (bool)param->def
+            effectName + param->name, "", (bool)param->def
           ));
           break;
       }
@@ -79,11 +103,11 @@ public:
       
     }
 
-    mParamBundles.push_back(al::ParameterBundle());
+    // mParamBundles.push_back(al::ParameterBundle());
     for (size_t i = indexStart; i < mParams.size(); i++) {
       mParamBundles.back().addParameter(mParams[i].get());
     }
-    mParamBundles[0].addBundle(mParamBundles.back(), " " + al::demangle(typeid(TEffect).name()));
+    //mParamBundles[0].addBundle(mParamBundles.back(), " " + al::demangle(typeid(TEffect).name()));
   }
 
   giml::EffectsLine<float>& getEffectsLine() {
