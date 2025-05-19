@@ -15,7 +15,7 @@
  */
 class ChannelStrip : public EffectsEngine, public SpatialAgent {
 public:
-  al::ParameterBool enabled { "Enabled", "", false };
+  al::ParameterBool enabled { "Enabled", "", true };
   al::ParameterInt mInputChannel { "Input Channel", "", 0, 0, 7 };
   al::Parameter mGain { "Gain", "", 0.f, -96.f, 12.f };
   al::Parameter mVolume { "Volume", "", 0.f, -96.f, 12.f };
