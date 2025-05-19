@@ -30,17 +30,19 @@ public:
     // this is wrought with bugs...
     // seems that a break occurs, but stuff added after the break works
     // this break may be.. 3 fx that all have a "depth" param?
-    this->addAmp<float, 
-                 BassModelLayer1, 
-                 BassModelLayer2, 
-                 BassModelWeights>();
-    this->addEffect<giml::Compressor<float>, 48000>(); // shows nothing
-    this->addEffect<giml::Phaser<float>, 48000>(); // seg faults
-    this->addEffect<giml::Chorus<float>, 48000>(); // seg faults
-    this->addEffect<giml::Saturation<float>, 48000>(); // works
-    this->addEffect<giml::Delay<float>, 48000>(); // works
-    this->addEffect<giml::Reverb<float>, 48000>(); // works
-    this->addEffect<giml::Detune<float>, 48000>(); // works
+    this->addEffect<giml::Detune<float>, 48000>();                 
+    this->addEffect<giml::Chorus<float>, 48000>(); // depth breaks at 20+ms rn
+    this->addEffect<giml::Flanger<float>, 48000>();
+    this->addEffect<giml::Expander<float>, 48000>();
+    this->addEffect<giml::Tremolo<float>, 48000>();
+    this->addAmp<float, BassModelLayer1, BassModelLayer2, BassModelWeights>();
+    this->addEffect<giml::Phaser<float>, 48000>();
+    this->addEffect<giml::Compressor<float>, 48000>();
+    this->addEffect<giml::Delay<float>, 48000>();
+    this->addEffect<giml::Reverb<float>, 48000>();
+    //auto* reverb = dynamic_cast<giml::Reverb<float>*>(this->mEffects.back().get());
+    //reverb->setParams(0.1f, 0.3f, 0.9f, 0.5f, 50.f, 0.9f, giml::Reverb<float>::RoomType::SPHERE);
+    
     mGui << this->mParamBundles[0]; // can add effects after this is called... sometimes.
 
     SpatialAgent::init();

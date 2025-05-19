@@ -94,10 +94,16 @@ public:
       // param callback
       auto* theParam = dynamic_cast<al::Parameter*>(mParams.back().get());
       if (theParam) {
-        std::string paramName = theParam->getName();
-        auto* effectPtr = mEffects.back().get(); // Get pointer to current effect
+        std::string fullParamName = theParam->getName(); // e.g. "giml::Detune<float>pitchRatio"
+        
+        // Extract just the parameter name without the effect prefix
+        std::string effectPrefix = effectName; // e.g. "giml::Detune<float>"
+        std::string paramName = fullParamName.substr(effectPrefix.length()); // "pitchRatio"
+        
+        auto* effectPtr = mEffects.back().get();
         theParam->registerChangeCallback([effectPtr, paramName](float value) {
           effectPtr->setParam(paramName, value);
+          effectPtr->updateParams();
         });
       }
       
