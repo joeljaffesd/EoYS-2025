@@ -3,18 +3,18 @@
 
 #include "al/graphics/al_Shapes.hpp"
 #include "al_ext/opencv/al_OpenCV.hpp"
+#include "al/ui/al_ControlGUI.hpp"
 #include <vector>
 #include <iostream>
 #include <chrono>
 #include <memory>
 
-using namespace al;
-
-class VideoSphereLoaderCV {
+class VideoSphereLoaderCV : public al::PositionedVoice {
 private:
-  Mesh mMesh;
-  AlloOpenCV mVideo;
+  al::Mesh mMesh;
+  al::AlloOpenCV mVideo;
   std::string mVideoFilePath;
+  al::ControlGUI mGUI;
   
   // Vector to store all preloaded frames
   std::vector<cv::Mat> mFrames;
@@ -30,7 +30,7 @@ private:
   
   // Playback control
   al::ParameterBool mPlaying {"mPlaying", "", false};
-  al::ParameterBool mLooping {"mLooping", "", false};
+  al::ParameterBool mLooping {"mLooping", "", true};
   al::ParameterBool mRestarted {"mRestarted", "", false};
   bool restartFlag = false; // hack for networked restart
   al::Parameter mCurrentTime {"mCurrentTime", "", 0, 0, std::numeric_limits<int>::max()};
@@ -77,6 +77,17 @@ public:
   al::ParameterBundle& params() {
     return this->mParams;
   }
+
+  void init() override {
+    // plz tell me there's a better way to do this
+    for (auto& param : mParams.parameters()) {
+      auto pp = static_cast<al::Parameter*>(param);
+      this->registerParameter(*pp);
+    }
+
+    mGUI.registerParameterBundle(this->params());
+    this->loadVideo("../assets/videos/vid.mp4");
+  }
   
   bool loadVideo(const std::string& videoFilePath) {
     std::cout << "Loading video: " << videoFilePath << std::endl;
@@ -107,8 +118,8 @@ public:
     std::cout << "  Duration: " << mFrameCount / mFrameRate << " seconds" << std::endl;
     
     // Configure texture
-    mVideo.videoTexture.filter(Texture::LINEAR);
-    mVideo.videoTexture.wrap(Texture::REPEAT, Texture::CLAMP_TO_EDGE, Texture::CLAMP_TO_EDGE);
+    mVideo.videoTexture.filter(al::Texture::LINEAR);
+    mVideo.videoTexture.wrap(al::Texture::REPEAT, al::Texture::CLAMP_TO_EDGE, al::Texture::CLAMP_TO_EDGE);
     
     // Preload all frames into memory
     std::cout << "Preloading all " << mFrameCount << " frames..." << std::endl;
@@ -177,7 +188,7 @@ public:
     return true;
   }
   
-  void update(double dt) {
+  void update(double dt) override {
     if (mFrames.empty()) {
       std::cerr << "No frames available in update" << std::endl;
       return;
@@ -222,18 +233,22 @@ public:
     }
   }
 
-  void draw(Graphics& g) {
+  void onProcess(al::Graphics& g) {
     if (!mVideo.videoTexture.created()) {
       std::cerr << "Texture not created in draw" << std::endl;
       return;
     }
-    
+
+
     g.pushMatrix();
     mVideo.videoTexture.bind(0);
     g.texture();
     g.draw(mMesh);
     mVideo.videoTexture.unbind(0);
     g.popMatrix();
+    if (!mIsReplica) {
+      mGUI.draw(g);
+    }
   }
   
   // Play
