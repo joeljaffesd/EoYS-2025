@@ -5,14 +5,14 @@
 #include "al/io/al_File.hpp"
 #include "al/ui/al_Parameter.hpp"
 
-struct ImageSphereLoader {
+struct ImageSphereLoader : public al::PositionedVoice {
   al::VAOMesh mMesh;
   al::Texture tex;
   al::ParameterBool imageShow{"imageShow", "", true};
   al::Parameter sphereRadius = { "sphereRadius", "", 3.f, 0.f,10.f}; 
   al::Parameter pointSize = {"pointSize", "", 10.f, 0.f, 100.f};
 
-  void init() {
+  void init() override {
     addTexSphere(mMesh, 15, 250, true);
     this->loadImage();
   }
@@ -64,7 +64,7 @@ struct ImageSphereLoader {
 
   } 
 
-  void draw(al::Graphics &g) {
+  void onProcess(al::Graphics &g) {
     // this may need to be changed to handle mesh manipulations and shader..
     // manipulations
     if (!imageShow) { return; }

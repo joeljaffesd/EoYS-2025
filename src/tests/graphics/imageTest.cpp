@@ -1,4 +1,4 @@
-#include "al/app/al_App.hpp"
+#include "al/app/al_DistributedApp.hpp"
 #include "al/graphics/al_Shapes.hpp"
 #include "al/graphics/al_VAOMesh.hpp"
 #include "al/ui/al_ControlGUI.hpp"
@@ -8,26 +8,33 @@
 #include "../../graphics/orbit.hpp"
 #include "../../graphics/vfxUtility.hpp"
 
+#include "al/scene/al_DistributedScene.hpp"
+
 using namespace al;
 
-class ImageTestApp : public App {
+class ImageTestApp : public DistributedApp {
 public:
-  ImageSphereLoader imageSphereLoader;
+  al::DistributedScene mDistributedScene;
+  ImageSphereLoader* mImageSphereLoader;
   RippleEffect rippleZ;
   RippleEffect rippleY;
   AutoPulseEffect pulse;
   OrbitEffect orbit;
   VertexEffectChain vEffectChain;
   VertexEffectChain vEffectChain2;
-  VAOMesh sphereMesh;
+
+  void onInit() override {
+    mDistributedScene.verbose(true);
+    mDistributedScene.registerSynthClass<ImageSphereLoader>();
+    registerDynamicScene(mDistributedScene);
+    mImageSphereLoader = mDistributedScene.getVoice<ImageSphereLoader>();
+    mDistributedScene.triggerOn(mImageSphereLoader);
+  }
 
   void onCreate() override {
-    // Initialize the image sphere loader
-    imageSphereLoader.init();
-    sphereMesh.primitive(Mesh::POINTS);
 
     // better if this function took the mesh itself as the arg
-    pulse.setBaseMesh(imageSphereLoader.mMesh.vertices());
+    pulse.setBaseMesh(mImageSphereLoader->mMesh.vertices());
 
     // effects on image mesh
     rippleZ.setParams(1.0, 0.5, 4.0, 'z');
@@ -42,24 +49,19 @@ public:
     // effect on test ball
     orbit.setParams(0.7, 1.0, al::Vec3f{0, 0, 0}, 1);
     vEffectChain2.pushBack(&orbit);
-
-    // for seeing perspective
-    addSphere(sphereMesh, 0.2, 16, 16);
-    sphereMesh.colorFill({1, 1, 1});
-    sphereMesh.update();
   }
+
   double t;
   void onAnimate(double dt) override {
     t += dt;
-    vEffectChain.process(imageSphereLoader.mMesh, t);
-    vEffectChain2.process(sphereMesh, t);
+    vEffectChain.process(mImageSphereLoader->mMesh, t);
+    mDistributedScene.update();
   }
 
   void onDraw(Graphics &g) override {
     g.clear(0); // Clear the screen
     g.meshColor();
-    imageSphereLoader.draw(g);
-    g.draw(sphereMesh);
+    mDistributedScene.render(g);
   }
 };
 
