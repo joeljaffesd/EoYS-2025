@@ -14,7 +14,7 @@ if(MSVC)
 endif()
 
 # add source files to executable
-add_executable(${APP_NAME} src/tests/graphics/imageTest.cpp)
+add_executable(${APP_NAME} src/tests/graphics/assetTest.cpp)
 
 # add allolib to project & link
 add_subdirectory(allolib)
