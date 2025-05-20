@@ -9,7 +9,6 @@
 class MegaLoader : public al::DistributedApp {
 public:
   std::vector<al::PositionedVoice*> voices;
-  // std::vector<int> voiceIDs;
   int activeVoiceId;
   DistributedSceneWithInput mDistributedScene;
   al::ParameterBundle mBundle;

@@ -119,9 +119,9 @@ public:
   giml::OnePole<float> airFilter;
   al::FontRenderer mFontRenderer;
 
-  al::Parameter mAzimuth{ "Azimuth", "", 90.0, "", -180.0, 180.0 };
-  al::Parameter mElevation{ "Elevation", "", 30.0, "", -90.0, 90.0 };
-  al::Parameter mDistance{ "Distance", "", 8.0, "", 0.1, 20.0 };
+  al::Parameter mAzimuth{ "Azimuth", "", 0.0, "", -180.0, 180.0 };
+  al::Parameter mElevation{ "Elevation", "", 0.0, "", -90.0, 90.0 };
+  al::Parameter mDistance{ "Distance", "", 1.0, "", 0.1, 20.0 };
   al::ParameterBundle mSpatializationParams{ "Spatialization" };
   TabbedGUI mGui;
 
@@ -165,7 +165,8 @@ public:
            float sizeVal, unsigned int sampleRate) {
             
     al::Vec3f position = sphericalToCartesian(azimuthDeg, elevationDeg, distanceVal);
-    setPose(al::Pose(position));
+    this->setPose(al::Pose(position));
+    mPickableMesh.pose = al::Pose(position);
     distance = distanceVal;
     size = sizeVal;
 
