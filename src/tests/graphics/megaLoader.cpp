@@ -8,7 +8,8 @@
 
 class MegaLoader : public al::DistributedApp {
 public:
-  al::PositionedVoice* activeVoice;
+  std::vector<al::PositionedVoice*> voices;
+  // std::vector<int> voiceIDs;
   int activeVoiceId;
   DistributedSceneWithInput mDistributedScene;
   al::ParameterBundle mBundle;
@@ -27,6 +28,12 @@ public:
     // Setup camera for 3D viewing
     nav().pos(0, 0, 0);  // Position the camera
     nav().faceToward(al::Vec3f(0, 0, 0));  // Face toward origin
+
+    voices.push_back(mDistributedScene.getVoice<ImageSphereLoader>());
+    voices.push_back(mDistributedScene.getVoice<AssetEngine>());
+    voices.push_back(mDistributedScene.getVoice<ShaderEngine>());
+    voices.push_back(mDistributedScene.getVoice<VideoSphereLoaderCV>());
+    
   }
 
   void onSound(al::AudioIOData& io) override {
@@ -44,26 +51,22 @@ public:
       mDistributedScene.triggerOff(activeVoiceId);
       switch (phase) {
         case 0: {
-          activeVoice = mDistributedScene.getVoice<ImageSphereLoader>();
-          activeVoiceId = mDistributedScene.triggerOn(activeVoice);
+          activeVoiceId = mDistributedScene.triggerOn(voices[0]);
           phase++;
           break;
         }
         case 1: {
-          activeVoice = mDistributedScene.getVoice<AssetEngine>();
-          activeVoiceId = mDistributedScene.triggerOn(activeVoice);
+          activeVoiceId = mDistributedScene.triggerOn(voices[1]);
           phase++;
           break;
         }
         case 2: {
-          activeVoice = mDistributedScene.getVoice<ShaderEngine>();
-          activeVoiceId = mDistributedScene.triggerOn(activeVoice);
+          activeVoiceId = mDistributedScene.triggerOn(voices[2]);
           phase++;
           break;
         }
         case 3: {
-          activeVoice = mDistributedScene.getVoice<VideoSphereLoaderCV>();
-          activeVoiceId = mDistributedScene.triggerOn(activeVoice);
+          activeVoiceId = mDistributedScene.triggerOn(voices[3]);
           phase++;
           break;
         }
