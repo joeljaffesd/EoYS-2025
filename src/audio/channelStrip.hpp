@@ -1,6 +1,10 @@
 #ifndef EOYS_CHANNEL_STRIP
 #define EOYS_CHANNEL_STRIP
 
+#ifndef SAMPLE_RATE
+#define SAMPLE_RATE 48000
+#endif
+
 #include "../../Gimmel/include/gimmel.hpp"
 #include "ampModeler.hpp"
 // #include "../../assets/namModels/MarshallModel.h"
@@ -30,16 +34,16 @@ public:
     // this is wrought with bugs...
     // seems that a break occurs, but stuff added after the break works
     // this break may be.. 3 fx that all have a "depth" param?
-    this->addEffect<giml::Detune<float>, 48000>();                 
-    this->addEffect<giml::Chorus<float>, 48000>(); // depth breaks at 20+ms rn
-    this->addEffect<giml::Flanger<float>, 48000>();
-    this->addEffect<giml::Expander<float>, 48000>();
-    this->addEffect<giml::Tremolo<float>, 48000>();
+    this->addEffect<giml::Detune<float>, SAMPLE_RATE>();                 
+    this->addEffect<giml::Chorus<float>, SAMPLE_RATE>(); // depth breaks at 20+ms rn
+    this->addEffect<giml::Flanger<float>, SAMPLE_RATE>();
+    this->addEffect<giml::Expander<float>, SAMPLE_RATE>();
+    this->addEffect<giml::Tremolo<float>, SAMPLE_RATE>();
     this->addAmp<float, BassModelLayer1, BassModelLayer2, BassModelWeights>();
-    this->addEffect<giml::Phaser<float>, 48000>();
-    this->addEffect<giml::Compressor<float>, 48000>();
-    this->addEffect<giml::Delay<float>, 48000>();
-    this->addEffect<giml::Reverb<float>, 48000>();
+    this->addEffect<giml::Phaser<float>, SAMPLE_RATE>();
+    this->addEffect<giml::Compressor<float>, SAMPLE_RATE>();
+    this->addEffect<giml::Delay<float>, SAMPLE_RATE>();
+    this->addEffect<giml::Reverb<float>, SAMPLE_RATE>();
     //auto* reverb = dynamic_cast<giml::Reverb<float>*>(this->mEffects.back().get());
     //reverb->setParams(0.1f, 0.3f, 0.9f, 0.5f, 50.f, 0.9f, giml::Reverb<float>::RoomType::SPHERE);
     

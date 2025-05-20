@@ -21,6 +21,7 @@
 #include "al/sound/al_Spatializer.hpp"
 #include "al/sound/al_Ambisonics.hpp"
 #include "al/sound/al_Dbap.hpp"
+#include "al/sphere/al_AlloSphereSpeakerLayout.hpp"
 
 // Gimmel/RTNeural includes
 #include "../Gimmel/include/gimmel.hpp"
