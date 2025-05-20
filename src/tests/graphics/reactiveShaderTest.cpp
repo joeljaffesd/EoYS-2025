@@ -37,8 +37,8 @@ struct MyApp : al::DistributedApp {
     dynListen.setSilenceThresh(0.1);
     // *** SET SHADER PATH HERE *** //
     // for shaders folder 1: 
-    shaderSphere.setShaders("../src/shaders/Moving-shaders/moving.vert", 
-                            "../src/shaders/Reactive-shaders/fractalTest.frag");
+    shaderSphere.setShaders("../src/shaders/Reactive-shaders/standard.vert", 
+                            "../src/shaders/Reactive-shaders/FractalNoise2.frag");
     // for shader folder 2:
     //shaderSphere.setShaders("../src/shaders/Shader-2/shaderToyDefault.vert", "../src/shaders/Shader-2/shader2.frag");
     // *** END SET SHADER PATH *** //
