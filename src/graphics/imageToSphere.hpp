@@ -15,6 +15,10 @@ struct ImageSphereLoader : public al::PositionedVoice {
   void init() override {
     addTexSphere(mMesh, 15, 250, true);
     this->loadImage();
+    
+    if (ImGui::GetCurrentContext() == nullptr) {
+      al::imguiInit();
+    }
   }
 
   void loadImage(std::string imagePath = "../assets/images/imgWrap.png") {

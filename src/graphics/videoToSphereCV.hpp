@@ -87,6 +87,10 @@ public:
 
     mGUI.registerParameterBundle(this->params());
     this->loadVideo("../assets/videos/vid.mp4");
+
+    if (ImGui::GetCurrentContext() == nullptr) {
+      al::imguiInit();
+    }
   }
   
   bool loadVideo(const std::string& videoFilePath) {

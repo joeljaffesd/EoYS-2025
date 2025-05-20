@@ -2,30 +2,35 @@
 #include "../../graphics/videoToSphereCV.hpp"
 #include "../../graphics/imageToSphere.hpp"
 #include "../../graphics/assetEngine.hpp"
+#include "../../graphics/shaderEngine.hpp"
 #include "al/ui/al_ControlGUI.hpp"
-#include <iostream>
-#include <vector>
-#include <unistd.h> // For getcwd
+#include "../../audio/audioManager.hpp"
 
 class MegaLoader : public al::DistributedApp {
 public:
   al::PositionedVoice* activeVoice;
   int activeVoiceId;
-  al::DistributedScene mDistributedScene;
+  DistributedSceneWithInput mDistributedScene;
   al::ParameterBundle mBundle;
 
   void onInit() override {
-    al::imguiInit();
+
+    mDistributedScene.setVoiceMaxInputChannels(8);
 
     mDistributedScene.verbose(true);
-    mDistributedScene.registerSynthClass<VideoSphereLoaderCV>();
     mDistributedScene.registerSynthClass<ImageSphereLoader>();
     mDistributedScene.registerSynthClass<AssetEngine>();
+    mDistributedScene.registerSynthClass<ShaderEngine>();
+    mDistributedScene.registerSynthClass<VideoSphereLoaderCV>();
     this->registerDynamicScene(mDistributedScene);
     
     // Setup camera for 3D viewing
     nav().pos(0, 0, 0);  // Position the camera
     nav().faceToward(al::Vec3f(0, 0, 0));  // Face toward origin
+  }
+
+  void onSound(al::AudioIOData& io) override {
+    mDistributedScene.render(io);
   }
 
   void onAnimate(double dt) override {
@@ -51,6 +56,12 @@ public:
           break;
         }
         case 2: {
+          activeVoice = mDistributedScene.getVoice<ShaderEngine>();
+          activeVoiceId = mDistributedScene.triggerOn(activeVoice);
+          phase++;
+          break;
+        }
+        case 3: {
           activeVoice = mDistributedScene.getVoice<VideoSphereLoaderCV>();
           activeVoiceId = mDistributedScene.triggerOn(activeVoice);
           phase++;
@@ -72,7 +83,7 @@ public:
 
 int main() {
   MegaLoader app;
-  app.configureAudio(0, 0, 0, 0); // Disable audio
+  app.configureAudio(48000, 128, 2, 1);
   app.start();
   return 0;
 }

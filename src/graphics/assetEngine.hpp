@@ -28,6 +28,10 @@ public:
                     "../assets/3dModels/eye/eye.png");
     gui << rotate << scale << assetShow;
     this->registerParameters(rotate, scale, assetShow);
+
+    if (ImGui::GetCurrentContext() == nullptr) {
+      al::imguiInit();
+    }
   }
 
   void loadAsset(std::string objPath, std::string imagePath) {
@@ -67,39 +71,43 @@ public:
 
   void onProcess(al::Graphics& g) {
 
-    if (!mIsReplica) {
-      gui.draw(g); // draw gui regardless
+    if (!assetShow) {
+      if (!mIsReplica) {
+        gui.draw(g); // draw gui regardless
+      }
+    } else {
+      al::gl::depthTesting(true);
+      g.lighting(true);
+      g.pushMatrix();
+
+      // animate rotation
+      g.rotate(a, b, c, 0.f);
+      a -= 0.2f;
+      b += 0.2f;
+      c += 0.2f;
+
+      // center and scale the model
+      float tmp = std::max({scene_max[0] - scene_min[0], scene_max[1] - scene_min[1], scene_max[2] - scene_min[2]});
+      tmp = 2.f / tmp;
+      g.scale(tmp);
+      g.scale(scale);
+      g.translate(-scene_center);
+
+      // bind and draw with texture
+      tex.bind(0);
+      g.texture();  // enables texture usage
+      for (auto &m : meshes) {
+        g.draw(m);
+      }
+      tex.unbind(0);
+
+      g.popMatrix();
+      g.lighting(false);
+
+      if (!mIsReplica) {
+        gui.draw(g); // draw gui regardless
+      }
     }
-
-    if (!assetShow) return;
-
-    al::gl::depthTesting(true);
-    g.lighting(true);
-    g.pushMatrix();
-
-    // animate rotation
-    g.rotate(a, b, c, 0.f);
-    a -= 0.2f;
-    b += 0.2f;
-    c += 0.2f;
-
-    // center and scale the model
-    float tmp = std::max({scene_max[0] - scene_min[0], scene_max[1] - scene_min[1], scene_max[2] - scene_min[2]});
-    tmp = 2.f / tmp;
-    g.scale(tmp);
-    g.scale(scale);
-    g.translate(-scene_center);
-
-    // bind and draw with texture
-    tex.bind(0);
-    g.texture();  // enables texture usage
-    for (auto &m : meshes) {
-      g.draw(m);
-    }
-    tex.unbind(0);
-
-    g.popMatrix();
-    g.lighting(false);
   }
 
   ~AssetEngine() {
