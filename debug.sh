@@ -15,6 +15,7 @@
 
 result=$?
 if [ ${result} == 0 ]; then
-  lldb -o run ./bin/EoYS-2025
+  cd ./bin
+  lldb -o run ./EoYS-2025
 fi
 fi
