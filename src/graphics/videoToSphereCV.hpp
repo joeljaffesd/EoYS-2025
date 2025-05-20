@@ -8,6 +8,7 @@
 #include <iostream>
 #include <chrono>
 #include <memory>
+#include <algorithm> // For std::min
 
 class VideoSphereLoaderCV : public al::PositionedVoice {
 private:
@@ -16,8 +17,10 @@ private:
   std::string mVideoFilePath;
   al::ControlGUI mGUI;
   
-  // Vector to store all preloaded frames
-  std::vector<cv::Mat> mFrames;
+  // Frame cache - we'll keep a small buffer of recent frames
+  static const int FRAME_CACHE_SIZE = 30; // Cache about 1 second of video
+  std::vector<cv::Mat> mFrameCache;
+  std::vector<int> mCachedFrameIndices; // To track which frames are in the cache
   
   // Video properties
   int mVideoWidth = 0;
@@ -27,6 +30,7 @@ private:
   double mFrameTime = 1.0 / 30.0;
   int mFrameCount = 0;
   int mCurrentFrame = 0;
+  int mLastRequestedFrame = -1;
   
   // Playback control
   al::ParameterBool mPlaying {"mPlaying", "", false};
@@ -37,28 +41,72 @@ private:
   al::ParameterBundle mParams{"VideoSphereLoaderCV"};
 
 public:
+  // Get a frame from cache or load it from disk if needed
+  cv::Mat getFrame(int frameIndex) {
+    // Check if the requested frame is in cache
+    for (size_t i = 0; i < mCachedFrameIndices.size(); i++) {
+      if (mCachedFrameIndices[i] == frameIndex) {
+        return mFrameCache[i];
+      }
+    }
+    
+    // Frame not in cache, need to load it from disk
+    if (!mVideo.videoCapture || !mVideo.videoCapture->isOpened()) {
+      std::cerr << "Video capture not open in getFrame" << std::endl;
+      return cv::Mat(); // Return empty frame
+    }
+    
+    // Seek to the requested frame
+    mVideo.videoCapture->set(cv::CAP_PROP_POS_FRAMES, frameIndex);
+    
+    // Read the frame
+    cv::Mat frame;
+    bool success = mVideo.videoCapture->read(frame);
+    if (!success || frame.empty()) {
+      std::cerr << "Failed to read frame " << frameIndex << std::endl;
+      return cv::Mat();
+    }
+    
+    // Add to cache (using simple FIFO)
+    if (mFrameCache.size() >= FRAME_CACHE_SIZE) {
+      // Remove oldest frame
+      mFrameCache.erase(mFrameCache.begin());
+      mCachedFrameIndices.erase(mCachedFrameIndices.begin());
+    }
+    
+    // Add new frame to cache
+    mFrameCache.push_back(frame.clone());
+    mCachedFrameIndices.push_back(frameIndex);
+    
+    return frame;
+  }
+  
   // Update the displayed frame based on the current frame index
   void updateDisplayFrame() {
-    if (mCurrentFrame < 0 || mCurrentFrame >= mFrames.size()) {
+    if (mCurrentFrame < 0 || mCurrentFrame >= mFrameCount) {
       std::cerr << "Invalid frame index: " << mCurrentFrame << std::endl;
       return;
     }
     
-    // Make sure we have a valid texture before continuing
-    if (!mVideo.videoTexture.created()) {
-      std::cerr << "Texture not created in updateDisplayFrame" << std::endl;
-      return;
-    }
+    // Get the frame (from cache or disk)
+    cv::Mat frame = getFrame(mCurrentFrame);
     
-    // Make sure the frame is valid
-    if (mFrames[mCurrentFrame].empty()) {
+    if (frame.empty()) {
       std::cerr << "Empty frame at index " << mCurrentFrame << std::endl;
       return;
     }
     
     try {
-      mVideo.videoImage = mFrames[mCurrentFrame];
-      mVideo.videoTexture.submit(mVideo.videoImage.ptr()); // seg faults here
+      // Make sure we have a valid texture
+      if (!mVideo.videoTexture.created()) {
+        mVideo.videoTexture.create2D(frame.cols, frame.rows);
+        mVideo.videoTexture.filter(al::Texture::LINEAR);
+        mVideo.videoTexture.wrap(al::Texture::REPEAT, al::Texture::CLAMP_TO_EDGE, al::Texture::CLAMP_TO_EDGE);
+      }
+      
+      mVideo.videoImage = frame;
+      mVideo.videoTexture.submit(mVideo.videoImage.ptr());
+      mLastRequestedFrame = mCurrentFrame;
     } catch (const std::exception& e) {
       std::cerr << "Exception in updateDisplayFrame: " << e.what() << std::endl;
     } catch (...) {
@@ -71,6 +119,7 @@ public:
   }
 
   ~VideoSphereLoaderCV() {
+    // Make sure to clean up resources when this object is destroyed
     this->cleanup();
   }
 
@@ -121,70 +170,22 @@ public:
     std::cout << "  Frame count: " << mFrameCount << std::endl;
     std::cout << "  Duration: " << mFrameCount / mFrameRate << " seconds" << std::endl;
     
-    // Configure texture
-    mVideo.videoTexture.filter(al::Texture::LINEAR);
-    mVideo.videoTexture.wrap(al::Texture::REPEAT, al::Texture::CLAMP_TO_EDGE, al::Texture::CLAMP_TO_EDGE);
+    // Initialize the frame cache
+    mFrameCache.clear();
+    mCachedFrameIndices.clear();
     
-    // Preload all frames into memory
-    std::cout << "Preloading all " << mFrameCount << " frames..." << std::endl;
-    mFrames.clear();
-    mFrames.reserve(mFrameCount);
-    
-    // Set to the beginning of the video
-    mVideo.videoCapture->set(cv::CAP_PROP_POS_FRAMES, 0);
-    
-    // Read all frames
-    cv::Mat frame;
-    int frameCount = 0;
-    
-    try {
-      while (frameCount < mFrameCount && mVideo.videoCapture->isOpened()) {
-        bool success = mVideo.videoCapture->read(frame);
-        if (!success || frame.empty()) {
-          std::cerr << "Warning: Failed to read frame " << frameCount << std::endl;
-          break;
-        }
-        
-        // Create a deep copy of the frame and store it
-        cv::Mat frameCopy = frame.clone();
-        if (frameCopy.empty()) {
-          std::cerr << "Warning: Failed to clone frame " << frameCount << std::endl;
-          break;
-        }
-        
-        mFrames.push_back(frameCopy);
-        frameCount++;
-        
-        // Display progress
-        if (frameCount % 100 == 0 || frameCount == mFrameCount) {
-          std::cout << "  Loaded " << frameCount << " of " << mFrameCount << " frames" << std::endl;
-        }
+    // Pre-cache first few frames for smoother start
+    for (int i = 0; i < std::min(10, mFrameCount); i++) {
+      cv::Mat frame = getFrame(i);
+      if (frame.empty()) {
+        std::cerr << "Warning: Failed to pre-cache frame " << i << std::endl;
       }
-    } catch (const cv::Exception& e) {
-      std::cerr << "OpenCV exception while loading frames: " << e.what() << std::endl;
-    } catch (const std::exception& e) {
-      std::cerr << "Exception while loading frames: " << e.what() << std::endl;
-    } catch (...) {
-      std::cerr << "Unknown exception while loading frames" << std::endl;
     }
-    
-    std::cout << "Preloaded " << mFrames.size() << " frames" << std::endl;
-    
-    // Verify we got all frames
-    if (mFrames.empty()) {
-      std::cerr << "Failed to preload frames" << std::endl;
-      return false;
-    }
-    
-    // We can now close the video file since we have all frames in memory
-    mVideo.cleanupVideoCapture();
     
     // Set the first frame
-    if (!mFrames.empty()) {
-      mVideo.videoImage = mFrames[0];
-      mVideo.videoTexture.submit(mVideo.videoImage.ptr());
-      std::cout << "First frame set: " << mVideo.videoImage.cols << "x" << mVideo.videoImage.rows << std::endl;
-    }
+    mCurrentFrame = 0;
+    mLastRequestedFrame = -1;
+    updateDisplayFrame();
     
     // Start playback
     mPlaying = true;
@@ -193,11 +194,6 @@ public:
   }
   
   void update(double dt) override {
-    if (mFrames.empty()) {
-      std::cerr << "No frames available in update" << std::endl;
-      return;
-    }
-    
     // Handle pause state
     if (!mPlaying) return;
 
@@ -231,9 +227,20 @@ public:
     
     // If we need to jump to a different frame
     if (targetFrame != mCurrentFrame) {
+      // For large jumps, clear the cache to avoid filling it with unnecessary frames
+      if (std::abs(targetFrame - mCurrentFrame) > FRAME_CACHE_SIZE) {
+        mFrameCache.clear();
+        mCachedFrameIndices.clear();
+      }
+      
       mCurrentFrame = targetFrame;
-      //mFrameNumber = targetFrame;
       updateDisplayFrame();
+    }
+    
+    // Predict and pre-cache upcoming frames for smoother playback
+    if (mPlaying && targetFrame + 1 < mFrameCount && targetFrame + 1 != mLastRequestedFrame) {
+      // Asynchronous pre-caching could be implemented here for even better performance
+      getFrame(targetFrame + 1);
     }
   }
 
@@ -291,8 +298,11 @@ public:
   int getCurrentFrame() const { return mCurrentFrame; }
   
   void cleanup() {
-    // Clear all preloaded frames to free memory
-    mFrames.clear();
+    // Clear the frame cache
+    mFrameCache.clear();
+    mCachedFrameIndices.clear();
+    
+    // Close the video file
     mVideo.cleanupVideoCapture();
     mPlaying = false;
   }
