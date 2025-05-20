@@ -159,6 +159,9 @@ public:
     g.color(this->color);
     g.draw(mPickableMesh);
     mFontRenderer.renderAt(g, al::Vec3d(0.0));
+
+    // TODO: PR this into FontRenderer
+    g.blending(false); // to undo blending call from FontRenderer 
   }
 
   void set(float azimuthDeg, float elevationDeg, float distanceVal, 

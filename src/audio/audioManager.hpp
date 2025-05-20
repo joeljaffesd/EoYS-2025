@@ -94,7 +94,7 @@ public:
     }
   }
 
-  void update() {
+  void update(double dt = 0) {
     bool any = false;
     for (auto agent : mAgents) {
       if (agent->mPickableMesh.selected && agent->mGui.usingInput()) {
@@ -120,7 +120,7 @@ public:
     // Always update agents
     updateAgents();
     updatePickablePositions();
-    mDistributedScene.update();
+    mDistributedScene.update(dt);
     
     // When clicking a new object, deselect all others - mutually exclusive selection
     for (auto pickable : mPickableManager.pickables()) {
