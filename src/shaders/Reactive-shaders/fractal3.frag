@@ -41,5 +41,5 @@ void main() {
 
     float x = .5 + .5*cos(t*(40.0*length(uv)));
 
-    fragColor = .5 + .5*cos(6.28318*(300.0*length(uv.x))*vec4(0,3,3+flux,1)); // u time makes it grainy over time
+    fragColor = .5 + .5*cos(6.28318*(300.0*length(uv.x))*vec4(3,3,30+flux,1)); // u time makes it grainy over time
 }

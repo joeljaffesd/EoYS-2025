@@ -16,6 +16,7 @@ uniform float flux;
 //https://www.shadertoy.com/view/wd3SzS
 
 
+
 struct MetaBall{
 	float r;
     vec2 pos;
