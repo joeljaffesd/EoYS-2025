@@ -18,7 +18,7 @@ public:
     mDistributedScene.registerSynthClass<VideoSphereLoaderCV>();
     this->registerDynamicScene(mDistributedScene);
     mVideoSphereLoaderCV = mDistributedScene.getVoice<VideoSphereLoaderCV>();
-    mVideoSphereLoaderCV->loadVideo("../assets/videos/alloEgg2.mp4");
+    mVideoSphereLoaderCV->loadVideo("../assets/videos/alloEgg.mp4");
     mDistributedScene.triggerOn(mVideoSphereLoaderCV);
     
     // Setup camera for 3D viewing
