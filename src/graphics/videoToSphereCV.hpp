@@ -220,7 +220,7 @@ public:
         // Loop back to the beginning
         mCurrentTime = 0;
         targetFrame = 0;
-        std::cout << "Looping video back to start" << std::endl;
+        // std::cout << "Looping video back to start" << std::endl;
       } else {
         // Stop at the end
         mPlaying = false;
@@ -238,11 +238,11 @@ public:
   }
 
   void onProcess(al::Graphics& g) {
+    
     if (!mVideo.videoTexture.created()) {
       std::cerr << "Texture not created in draw" << std::endl;
       return;
     }
-
 
     g.pushMatrix();
     mVideo.videoTexture.bind(0);
