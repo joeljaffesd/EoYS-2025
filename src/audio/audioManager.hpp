@@ -38,7 +38,7 @@ private:
 public:
 
   AudioManager() {
-    mDistributedScene.setVoiceMaxInputChannels(8);
+    mDistributedScene.setVoiceMaxInputChannels(8); // TODO don't hardcode this lol
     mDistributedScene.registerSynthClass<TSynthVoice>(); 
   }
 
@@ -49,9 +49,6 @@ public:
   std::vector<TSynthVoice*>* agents() {
     return &mAgents;
   }
-
-  // TODO
-  // void setSpatializer() {}
 
   void setListenerPose(const al::Pose& pose) {
     fixedListenerPose = pose;
@@ -97,7 +94,7 @@ public:
     }
   }
 
-  void update() {
+  void update(double dt = 0) {
     bool any = false;
     for (auto agent : mAgents) {
       if (agent->mPickableMesh.selected && agent->mGui.usingInput()) {
@@ -123,7 +120,7 @@ public:
     // Always update agents
     updateAgents();
     updatePickablePositions();
-    mDistributedScene.update();
+    mDistributedScene.update(dt);
     
     // When clicking a new object, deselect all others - mutually exclusive selection
     for (auto pickable : mPickableManager.pickables()) {

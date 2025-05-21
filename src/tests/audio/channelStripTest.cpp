@@ -17,29 +17,22 @@
 
 // AlloLib includes 
 #include "al/app/al_DistributedApp.hpp"
+#include "al/sound/al_Speaker.hpp"
+#include "al/sound/al_Spatializer.hpp"
+#include "al/sound/al_Ambisonics.hpp"
+#include "al/sound/al_Dbap.hpp"
+#include "al/sphere/al_AlloSphereSpeakerLayout.hpp"
 
 // Gimmel/RTNeural includes
 #include "../Gimmel/include/gimmel.hpp"
-#include "../assets/namModels/MarshallModel.h"
 
 // EoYS includes
 #include "../../audio/channelStrip.hpp"
 #include "../../audio/audioManager.hpp"
+#include "../../audio/ampModeler.hpp"
 
 // Gamma ig for now
 #include "Gamma/SamplePlayer.h"
-
-// Add NAM compatibility to giml
-namespace giml {
-  template<typename T, typename Layer1, typename Layer2>
-  class AmpModeler : public Effect<T>, public wavenet::RTWavenet<1, 1, Layer1, Layer2> {
-  public:
-    T processSample(const T& input) override {
-      if (!this->enabled) { return input; }
-      return this->model.forward(input);
-    }
-  };
-}
 
 class ChannelStripTestApp : public al::DistributedApp {
 private:
@@ -93,6 +86,16 @@ public:
       mAudioManager.agents()->at(i)->mInputChannel = i;
     }
 
+    // todo make this not suck
+    mAudioManager.agents()->at(0)->set(0.0, 90.0, 7.5, 1.0, SAMPLE_RATE);
+    mAudioManager.agents()->at(1)->set(0.0, 90.0, 5.0, 1.0, SAMPLE_RATE);
+    mAudioManager.agents()->at(2)->set(0.0, -90.0, 5.0, 1.0, SAMPLE_RATE);
+    mAudioManager.agents()->at(3)->set(0.0, -90.0, 1.0, 1.0, SAMPLE_RATE);
+    mAudioManager.agents()->at(4)->set(0.0, 90.0, 3.5, 1.0, SAMPLE_RATE);
+    mAudioManager.agents()->at(5)->set(0.0, 30.0, 8.0, 1.0, SAMPLE_RATE);    // 0 degrees
+    mAudioManager.agents()->at(6)->set(120.0, 30.0, 8.0, 1.0, SAMPLE_RATE);  // 120 degrees
+    mAudioManager.agents()->at(7)->set(240.0, 30.0, 8.0, 1.0, SAMPLE_RATE);  // 240 degrees
+
     // prepare audio engine
     mAudioManager.prepare(audioIO());
 
@@ -104,6 +107,10 @@ public:
   void onCreate() override {
     // Set up GUI windows
     al::imguiInit();
+
+    // Set camera position and orientation
+    nav().pos(al::Vec3d(35, 0.000000, 49));
+    nav().quat(al::Quatd(1.0, 0.000000, 0.325568, 0.000000));
     
     std::cout << "3D Sound Spatialization with GUI and Pickable Objects:" << std::endl;
     std::cout << "  1. Click on a sound source to show its control panel" << std::endl;

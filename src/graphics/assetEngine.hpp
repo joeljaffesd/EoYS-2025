@@ -1,10 +1,17 @@
+#ifndef EOYS_ASSET_ENGINE_HPP
+#define EOYS_ASSET_ENGINE_HPP
+
+// Al includes
 #include "al/app/al_App.hpp"
 #include "al_ext/assets3d/al_Asset.hpp"
 #include "al/graphics/al_Image.hpp"
+
+// std includes 
 #include <vector>
 #include <algorithm>
 
-struct AssetEngine {
+class AssetEngine : public al::PositionedVoice {
+private:
   al::Scene* ascene{nullptr};
   al::Vec3f scene_min, scene_max, scene_center;
   al::Texture tex;
@@ -12,6 +19,20 @@ struct AssetEngine {
   float a = 0.f, b = 0.f, c = 0.f;
   al::ParameterBool assetShow{"assetShow", "", true};
   al::Parameter scale{"scale", "", 1.f, 0.f, 10.f};
+  al::ParameterBool rotate{"Rotate", "", true}; // Toggle rotation
+  al::ControlGUI gui;
+
+public:
+  void init() override {
+    this->loadAsset("../assets/3dModels/eye/eye.obj",
+                    "../assets/3dModels/eye/eye.png");
+    gui << rotate << scale << assetShow;
+    this->registerParameters(rotate, scale, assetShow);
+
+    if (ImGui::GetCurrentContext() == nullptr) {
+      al::imguiInit();
+    }
+  }
 
   void loadAsset(std::string objPath, std::string imagePath) {
     ascene = al::Scene::import(objPath);
@@ -41,38 +62,57 @@ struct AssetEngine {
     }
   }
 
-  void draw(al::Graphics &g) {
-    if (!assetShow) return;
-
-    al::gl::depthTesting(true);
-    g.lighting(true);
-    g.pushMatrix();
-
-    // animate rotation
-    g.rotate(a, b, c, 0.f);
-    a -= 0.2f;
-    b += 0.2f;
-    c += 0.2f;
-
-    // center and scale the model
-    float tmp = std::max({scene_max[0] - scene_min[0], scene_max[1] - scene_min[1], scene_max[2] - scene_min[2]});
-    tmp = 2.f / tmp;
-    g.scale(tmp);
-    g.scale(scale);
-    g.translate(-scene_center);
-
-    // bind and draw with texture
-    tex.bind(0);
-    g.texture();  // enables texture usage
-
-    for (auto &m : meshes) {
-      g.draw(m);
+  void update(double dt) override {
+    // Enable or disable rotation based on the GUI toggle
+    if (!this->rotate) {
+      this->a = 0.0f; // Stop rotation
     }
+  }
 
-    tex.unbind(0);
-    // g.noTexture();  // ❌ Removed: not defined in al::Graphics
+  void onProcess(al::Graphics& g) {
 
-    g.popMatrix();
-    g.lighting(false);
+    if (!assetShow) {
+      if (!mIsReplica) {
+        gui.draw(g); // draw gui regardless
+      }
+    } else {
+      al::gl::depthTesting(true);
+      g.lighting(true);
+      g.pushMatrix();
+
+      // animate rotation
+      g.rotate(a, b, c, 0.f);
+      a -= 0.2f;
+      b += 0.2f;
+      c += 0.2f;
+
+      // center and scale the model
+      float tmp = std::max({scene_max[0] - scene_min[0], scene_max[1] - scene_min[1], scene_max[2] - scene_min[2]});
+      tmp = 2.f / tmp;
+      g.scale(tmp);
+      g.scale(scale);
+      g.translate(-scene_center);
+
+      // bind and draw with texture
+      tex.bind(0);
+      g.texture();  // enables texture usage
+      for (auto &m : meshes) {
+        g.draw(m);
+      }
+      tex.unbind(0);
+
+      g.popMatrix();
+      g.lighting(false);
+
+      if (!mIsReplica) {
+        gui.draw(g); // draw gui regardless
+      }
+    }
+  }
+
+  ~AssetEngine() {
+    gui.cleanup();
   }
 };
+
+#endif // EOYS_ASSET_ENGINE_HPP

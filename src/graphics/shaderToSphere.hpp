@@ -11,90 +11,39 @@ uses shadedMesh to wrap a shader to a sphere -- EXAMPLE USAGE AT BOTTOM OF THIS 
     to prevent Metal driver from freezing uniform updates.
 */
 
-struct ShaderToSphere {
-    ShadedMesh shadedMesh;
-    float radius = 1.0f;
-    int subdivisions = 100; // smoothness of sphere
-    float pointSize = 10.0f;
+class ShadedSphere : public ShadedMesh {
+private:
+  float radius = 1.0f;
+  int subdivisions = 100; // smoothness of sphere
+  float pointSize = 10.0f;
 
-    /// Initialize shaders
-    /// @param vertPath Path to vertex shader
-    /// @param fragPath Path to fragment shader
-    bool setShaders(const std::string& vertPath, const std::string& fragPath) {
-        return shadedMesh.setShaders(vertPath, fragPath);
-    }
+public:
+  /// Initialize shaders
+  /// @param vertPath Path to vertex shader
+  /// @param fragPath Path to fragment shader
 
-    /// sphere vertices
-    /// @param r sphere radius
-    /// @param subdiv number of subdivisions
-    void setSphere(float r, int subdiv = 100) {
-        radius = r;
-        subdivisions = subdiv;
-        shadedMesh.mesh.reset();
-        shadedMesh.mesh.primitive(al::Mesh::TRIANGLE_FAN);
-        al::addTexSphere(shadedMesh.mesh, 15, 250, true);
-        // shadedMesh.mesh.primitive(al::Mesh::POINTS);
+  /// sphere vertices
+  /// @param r sphere radius
+  /// @param subdiv number of subdivisions
+  void setSphere(float r, int subdiv = 100) {
+    radius = r;
+    subdivisions = subdiv;
+    this->reset();
+    this->primitive(al::Mesh::TRIANGLE_FAN);
+    al::addTexSphere(*this, 15, 250, true);
+    this->update(); // 🔥 Push to GPU
+  }
 
-        // for (int j = 0; j <= subdivisions; ++j) {
-        //     float v = float(j) / subdivisions;
-        //     float theta = v * M_PI;
+  /// Update view/projection matrices - should leave 
+  void setMatrices(const al::Mat4f& view, const al::Mat4f& proj) {
+    this->setMatrices(view, proj);
+  }
 
-        //     for (int i = 0; i <= subdivisions; ++i) {
-        //         float u = float(i) / subdivisions;
-        //         float phi = u * M_2PI;
-
-        //         float x = radius * sin(theta) * cos(phi);
-        //         float y = radius * cos(theta);
-        //         float z = radius * sin(theta) * sin(phi);
-
-        //         shadedMesh.mesh.vertex(al::Vec3f(x, y, z));
-        //     }
-        // }
-        shadedMesh.mesh.update(); // 🔥 Push to GPU
-    }
-
-    /// Set uniforms
-    void setUniformFloat(const std::string& name, float value) {
-        shadedMesh.setUniformFloat(name, value);
-    }
-
-    /// Update view/projection matrices - should leave 
-    void setMatrices(const al::Mat4f& view, const al::Mat4f& proj) {
-        shadedMesh.setMatrices(view, proj);
-    }
-
-    /// Draw the sphere
-    void draw(al::Graphics& g) {
-        shadedMesh.shader.use();
-        g.pointSize(pointSize);
-        g.depthTesting(true);
-        g.draw(shadedMesh.mesh);
-    }
+  /// Draw the sphere
+  void draw(al::Graphics& g) {
+    this->mShader.use();
+    g.pointSize(pointSize);
+    g.depthTesting(true);
+    g.draw(*this);
+  }
 };
-
-
-
-//EXAMPLE IMPLEMENTATION 
-
-/*DECLARE: 
-ShaderToSphere shaderSphere;
-etc
-void onCreate() override {
-        shaderSphere.setShaders("../src/shaders/fullscreen.vert", "../src/shaders/static_color.frag");
-        shaderSphere.setSphere(15.0f, 1000);
-
-        etc
-        }
-etc
-
-  void onDraw(Graphics& g) override {
-        g.clear(0);
-        shaderSphere.setMatrices(view().viewMatrix(), view().projMatrix(width(), height())); -- this is pretty boiler plate should leave
-        shaderSphere.setUniformFloat("u_time", (float)t);
-        //more uniforms etc
-        shaderSphere.draw(g);
-
-        etc
-    }
-
-*/

@@ -5,51 +5,33 @@
 #include "al/io/al_File.hpp"
 #include "al/ui/al_Parameter.hpp"
 
-struct ImageSphereLoader {
+struct ImageSphereLoader : public al::PositionedVoice {
   al::VAOMesh mMesh;
-  al::File file = al::File::currentPath() + "../assets/images/imgWrap.png";
-  al::Image image;
+  al::Texture tex;
   al::ParameterBool imageShow{"imageShow", "", true};
   al::Parameter sphereRadius = { "sphereRadius", "", 3.f, 0.f,10.f}; 
   al::Parameter pointSize = {"pointSize", "", 10.f, 0.f, 100.f};
 
-  void init() {
+  void init() override {
+    addTexSphere(mMesh, 15, 250, true);
+    this->loadImage();
+    
+    if (ImGui::GetCurrentContext() == nullptr) {
+      al::imguiInit();
+    }
+  }
 
-    image = al::Image(file.path());
-    if (!image.loaded()) {
-      std::cerr << "Failed to load image: " << file.path() << std::endl;
-      return;
+  void loadImage(std::string imagePath = "../assets/images/imgWrap.png") {
+    // load texture
+    al::Image image;
+    if (image.load(imagePath)) {
+      tex.create2D(image.width(), image.height());
+      tex.filter(al::Texture::LINEAR);
+      tex.submit(image.array().data(), GL_RGBA, GL_UNSIGNED_BYTE);
+    } else {
+      printf("Failed to load texture from %s\n", imagePath.c_str());
     }
 
-    mMesh.primitive(al::Mesh::POINTS);
-    for (int j = 0; j < image.height(); j++) {
-      for (int i = 0; i < image.width(); i++) {
-        auto pixel = image.at(i, j);
-        mMesh.vertex((1.0 * i) / image.width(),
-                     (1.0 * (image.height() - 1 - j)) / image.height(),
-                     0); // Flip the y-axis
-        mMesh.color(pixel.r / 255.0, pixel.g / 255.0, pixel.b / 255.0);
-      }
-    }
-    mMesh.update();
-  }
-
-  void update() { 
-    this->createSphere(); 
-  }
-
-  void draw(al::Graphics &g) {
-    // this may need to be changed to handle mesh manipulations and shader..
-    // manipulations
-    if (!imageShow)
-      return;
-    g.meshColor();
-    g.pointSize(pointSize); // play with
-
-    g.draw(mMesh);
-  }
-
-  void createSphere() {
     for (int j = 0; j < image.height(); j++) {
       for (int i = 0; i < image.width(); i++) {
         // Get the pixel color at position (i, j)
@@ -83,5 +65,24 @@ struct ImageSphereLoader {
       vertex -= center;
     }
     mMesh.update();
+
+  } 
+
+  void onProcess(al::Graphics &g) {
+    // this may need to be changed to handle mesh manipulations and shader..
+    // manipulations
+    if (!imageShow) { return; }
+
+    al::gl::depthTesting(true);
+    //g.lighting(true);
+    g.pushMatrix();
+
+    tex.bind(0);
+    g.texture();
+    g.draw(mMesh);
+    tex.unbind(0);
+
+    g.popMatrix();
+    //g.lighting(false);
   }
 };
