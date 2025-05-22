@@ -253,7 +253,7 @@ public:
     mVideo.videoTexture.unbind(0);
     g.popMatrix();
     if (!mIsReplica) {
-      mGUI.draw(g);
+      //mGUI.draw(g);
     }
   }
   

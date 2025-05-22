@@ -70,7 +70,7 @@ public:
 
     if (!assetShow) {
       if (!mIsReplica) {
-        gui.draw(g); // draw gui regardless
+        //gui.draw(g); // draw gui regardless
       }
     } else {
       al::gl::depthTesting(true);
@@ -105,7 +105,7 @@ public:
       g.lighting(false);
 
       if (!mIsReplica) {
-        gui.draw(g); // draw gui regardless
+        //gui.draw(g); // draw gui regardless
       }
     }
   }

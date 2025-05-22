@@ -109,7 +109,7 @@ public:
 
     // draw GUI 
     if (!mIsReplica) {
-      mGUI.draw(g); 
+      //mGUI.draw(g); 
     }
   }
 
