@@ -8,7 +8,6 @@
 
 class MegaLoader : public al::DistributedApp {
 public:
-  std::vector<al::PositionedVoice*> voices;
   int activeVoiceId;
   DistributedSceneWithInput mDistributedScene;
   al::ParameterBundle mBundle;
@@ -23,16 +22,6 @@ public:
     mDistributedScene.registerSynthClass<ShaderEngine>();
     mDistributedScene.registerSynthClass<VideoSphereLoaderCV>();
     this->registerDynamicScene(mDistributedScene);
-    
-    // Setup camera for 3D viewing
-    nav().pos(0, 0, 0);  // Position the camera
-    nav().faceToward(al::Vec3f(0, 0, 0));  // Face toward origin
-
-    voices.push_back(mDistributedScene.getVoice<ImageSphereLoader>());
-    voices.push_back(mDistributedScene.getVoice<AssetEngine>());
-    voices.push_back(mDistributedScene.getVoice<ShaderEngine>());
-    voices.push_back(mDistributedScene.getVoice<VideoSphereLoaderCV>());
-    
   }
 
   void onSound(al::AudioIOData& io) override {
@@ -40,7 +29,6 @@ public:
   }
 
   void onAnimate(double dt) override {
-    // Update the video sphere loader with the elapsed time
     mDistributedScene.update(dt);
   }
 
@@ -50,22 +38,26 @@ public:
       mDistributedScene.triggerOff(activeVoiceId);
       switch (phase) {
         case 0: {
-          activeVoiceId = mDistributedScene.triggerOn(voices[0]);
+          auto* bruh = mDistributedScene.getVoice<ImageSphereLoader>();
+          activeVoiceId = mDistributedScene.triggerOn(bruh);
           phase++;
           break;
         }
         case 1: {
-          activeVoiceId = mDistributedScene.triggerOn(voices[1]);
+          auto* bruh = mDistributedScene.getVoice<AssetEngine>();
+          activeVoiceId = mDistributedScene.triggerOn(bruh);
           phase++;
           break;
         }
         case 2: {
-          activeVoiceId = mDistributedScene.triggerOn(voices[2]);
+          auto* bruh = mDistributedScene.getVoice<ShaderEngine>();
+          activeVoiceId = mDistributedScene.triggerOn(bruh);
           phase++;
           break;
-        }
+        } 
         case 3: {
-          activeVoiceId = mDistributedScene.triggerOn(voices[3]);
+          auto* bruh = mDistributedScene.getVoice<VideoSphereLoaderCV>();
+          activeVoiceId = mDistributedScene.triggerOn(bruh);
           phase++;
           break;
         }
