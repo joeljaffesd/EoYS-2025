@@ -4,20 +4,24 @@
 
 class AssetTestApp : public al::DistributedApp {
 public:
-  AssetEngine assetEngine;
-  AssetEngine* mAssetEngine;
   al::DistributedScene mDistributedScene;
+  AssetEngine* mAssetEngine = nullptr;
 
   void onInit() override {
+    al::imguiInit();
     mDistributedScene.verbose(true);
     mDistributedScene.registerSynthClass<AssetEngine>();
     this->registerDynamicScene(mDistributedScene);
-    mAssetEngine = mDistributedScene.getVoice<AssetEngine>();
-    mDistributedScene.triggerOn(mAssetEngine);
   }
 
-  void onCreate() override {
-    al::imguiInit();
+  bool onKeyDown(const al::Keyboard& k) override {
+    if (isPrimary() && k.key() == ' ') {
+      if (mAssetEngine == nullptr) {
+        mAssetEngine = mDistributedScene.getVoice<AssetEngine>();
+        mDistributedScene.triggerOn(mAssetEngine);
+      }
+    }
+    return true;
   }
 
   void onAnimate(double dt) override {
