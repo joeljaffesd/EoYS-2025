@@ -15,7 +15,7 @@
 #include "vfxUtility.hpp"
 #include "vfxMain.hpp"
 
-class ShaderEngine : public al::PositionedVoice {
+class ShaderEngine {
 private:
   ShadedSphere shaderSphere;
   SpectralListener specListen;
@@ -37,7 +37,11 @@ private:
   giml::OnePole<float> mOnePoleCent;
 
 public:
-  void init() override {
+  al::ParameterBundle& params() {
+    return mParams;
+  }
+
+  void init() {
 
     if (ImGui::GetCurrentContext() == nullptr) {
       al::imguiInit();
@@ -47,10 +51,10 @@ public:
     mGUI << now << flux << centroid << rms << onsetIncrement << mChannel;
     mParams << now << flux << centroid << rms << onsetIncrement << mChannel;
     // plz tell me there's a better way to do this
-    for (auto& param : mParams.parameters()) {
-      auto pp = static_cast<al::Parameter*>(param);
-      this->registerParameter(*pp);
-    }
+    // for (auto& param : mParams.parameters()) {
+    //   auto pp = static_cast<al::Parameter*>(param);
+    //   this->registerParameter(*pp);
+    // }
     shaderSphere.setSphere(15.f, 1000);
     this->shader();
   }
@@ -59,38 +63,33 @@ public:
     shaderSphere.setShaders("../src/shaders/Reactive-shaders/standard.vert", shaderPath);
   }
 
-  void update(double dt = 0) override {
-    if (!mIsReplica) {
+  void update(double dt = 0) {
+    now = now + float(dt);
 
-      now = now + float(dt);
+    mOnePoleCent.setCutoff(15000, 60);
+    centroid = mOnePoleCent.lpf(centroidReporter.reportValue());
 
-      mOnePoleCent.setCutoff(15000, 60);
-      centroid = mOnePoleCent.lpf(centroidReporter.reportValue());
+    mOnePole.setCutoff(1000, 60);
+    flux = mOnePole.lpf(fluxReporter.reportValue());
 
-      mOnePole.setCutoff(1000, 60);
-      flux = mOnePole.lpf(fluxReporter.reportValue());
-
-      if (dynListen.detectOnset()) {
-        std::cout << "NEW ONSET" << std::endl;
-        onsetIncrement = onsetIncrement + 0.1f;
-      }
+    if (dynListen.detectOnset()) {
+      std::cout << "NEW ONSET" << std::endl;
+      onsetIncrement = onsetIncrement + 0.1f;
     }
   }
 
-  void onProcess(al::AudioIOData& io) override {
-    if (!mIsReplica) {
-      for (auto sample = 0; sample < io.framesPerBuffer(); sample++) {
-        const float in = io.in(mChannel, sample);
-        specListen.process(in);
-        dynListen.process(in);
-        centroidReporter.write(in);
-        fluxReporter.write(in);
-        rmsReporter.write(in);
-      }
+  void onProcess(al::AudioIOData& io) {
+    for (auto sample = 0; sample < io.framesPerBuffer(); sample++) {
+      const float in = io.in(mChannel, sample);
+      specListen.process(in);
+      dynListen.process(in);
+      centroidReporter.write(in);
+      fluxReporter.write(in);
+      rmsReporter.write(in);
     }
   }
 
-  void onProcess(al::Graphics& g) override {
+  void onProcess(al::Graphics& g) {
     // activate shader mode
     g.shader(shaderSphere.shader());
 
@@ -104,9 +103,7 @@ public:
     shaderSphere.draw(g);
 
     // draw GUI 
-    if (!mIsReplica) {
-      mGUI.draw(g); 
-    }
+    mGUI.draw(g); 
   }
 
 };

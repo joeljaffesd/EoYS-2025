@@ -1,3 +1,6 @@
+#ifndef EOYS_IMAGE_TO_SPHERE
+#define EOYS_IMAGE_TO_SPHERE
+
 #include "al/graphics/al_Graphics.hpp"
 #include "al/graphics/al_Image.hpp"
 #include "al/graphics/al_Mesh.hpp"
@@ -5,14 +8,14 @@
 #include "al/io/al_File.hpp"
 #include "al/ui/al_Parameter.hpp"
 
-struct ImageSphereLoader : public al::PositionedVoice {
+struct ImageSphereLoader {
   al::VAOMesh mMesh;
   al::Texture tex;
   al::ParameterBool imageShow{"imageShow", "", true};
   al::Parameter sphereRadius = { "sphereRadius", "", 3.f, 0.f,10.f}; 
   al::Parameter pointSize = {"pointSize", "", 10.f, 0.f, 100.f};
 
-  void init() override {
+  void init() {
     addTexSphere(mMesh, 15, 250, true);
     this->loadImage();
     
@@ -73,7 +76,7 @@ struct ImageSphereLoader : public al::PositionedVoice {
     // manipulations
     if (!imageShow) { return; }
 
-    al::gl::depthTesting(true);
+    //al::gl::depthTesting(true);
     //g.lighting(true);
     g.pushMatrix();
 
@@ -86,3 +89,5 @@ struct ImageSphereLoader : public al::PositionedVoice {
     //g.lighting(false);
   }
 };
+
+#endif

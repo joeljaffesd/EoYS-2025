@@ -43,7 +43,8 @@ public:
   void draw(al::Graphics& g) {
     this->mShader.use();
     g.pointSize(pointSize);
-    g.depthTesting(true);
+    // g.depthTesting(true);
     g.draw(*this);
+    // g.depthTesting(false);
   }
 };

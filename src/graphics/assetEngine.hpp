@@ -10,7 +10,7 @@
 #include <vector>
 #include <algorithm>
 
-class AssetEngine : public al::PositionedVoice {
+class AssetEngine {
 private:
   al::Scene* ascene{nullptr};
   al::Vec3f scene_min, scene_max, scene_center;
@@ -23,11 +23,11 @@ private:
   al::ControlGUI gui;
 
 public:
-  void init() override {
+  void init() {
     this->loadAsset("../assets/3dModels/eye/eye.obj",
                     "../assets/3dModels/eye/eye.png");
     gui << rotate << scale << assetShow;
-    this->registerParameters(rotate, scale, assetShow);
+    // this->registerParameters(rotate, scale, assetShow);
 
     if (ImGui::GetCurrentContext() == nullptr) {
       al::imguiInit();
@@ -62,7 +62,7 @@ public:
     }
   }
 
-  void update(double dt) override {
+  void update(double dt) {
     // Enable or disable rotation based on the GUI toggle
     if (!this->rotate) {
       this->a = 0.0f; // Stop rotation
@@ -72,11 +72,9 @@ public:
   void onProcess(al::Graphics& g) {
 
     if (!assetShow) {
-      if (!mIsReplica) {
-        gui.draw(g); // draw gui regardless
-      }
+      gui.draw(g); // draw gui regardless
     } else {
-      al::gl::depthTesting(true);
+      //al::gl::depthTesting(true);
       g.lighting(true);
       g.pushMatrix();
 
@@ -104,9 +102,7 @@ public:
       g.popMatrix();
       g.lighting(false);
 
-      if (!mIsReplica) {
-        gui.draw(g); // draw gui regardless
-      }
+      gui.draw(g); // draw gui regardless
     }
   }
 
