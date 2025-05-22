@@ -24,18 +24,19 @@ public:
   VertexEffectChain vEffectChain2;
 
   void onInit() override {
+    al::imguiInit();
     mDistributedScene.verbose(true);
     mDistributedScene.registerSynthClass<ImageSphereLoader>();
     registerDynamicScene(mDistributedScene);
-    mImageSphereLoader = mDistributedScene.getVoice<ImageSphereLoader>();
-    mDistributedScene.triggerOn(mImageSphereLoader);
   }
 
   void onCreate() override {
 
     // better if this function took the mesh itself as the arg
-    pulse.setBaseMesh(mImageSphereLoader->mMesh.vertices());
-
+    if (mImageSphereLoader != nullptr) {
+      pulse.setBaseMesh(mImageSphereLoader->mMesh.vertices());
+    }
+    
     // effects on image mesh
     rippleZ.setParams(1.0, 0.5, 4.0, 'z');
     rippleY.setParams(2.0, 0.1, 6.0, 'y');
@@ -51,11 +52,28 @@ public:
     vEffectChain2.pushBack(&orbit);
   }
 
+  bool onKeyDown(const Keyboard& k) override {
+    if (isPrimary() && k.key() == ' ') {
+      if (mImageSphereLoader == nullptr) {
+        mImageSphereLoader = mDistributedScene.getVoice<ImageSphereLoader>();
+        mDistributedScene.triggerOn(mImageSphereLoader);
+      }
+    }
+  }
+
   double t;
+  bool initFlag = true;
   void onAnimate(double dt) override {
+    if (mImageSphereLoader != nullptr && initFlag) {
+      pulse.setBaseMesh(mImageSphereLoader->mMesh.vertices());
+      initFlag = false;
+    }
+
     t += dt;
-    vEffectChain.process(mImageSphereLoader->mMesh, t);
-    mDistributedScene.update();
+    if (mImageSphereLoader != nullptr) {
+      vEffectChain.process(mImageSphereLoader->mMesh, t);
+    }
+    mDistributedScene.update(dt);
   }
 
   void onDraw(Graphics &g) override {
