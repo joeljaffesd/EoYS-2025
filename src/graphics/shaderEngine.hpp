@@ -29,6 +29,7 @@ private:
   al::ParameterInt mChannel = {"mChannel", "", 0, 0, 8};
   al::ParameterBundle mParams {"Uniforms"};
   al::ControlGUI mGUI;
+  bool initFlag = true;
 
   FloatReporter fluxReporter;
   FloatReporter centroidReporter;
@@ -37,12 +38,9 @@ private:
   giml::OnePole<float> mOnePoleCent;
 
 public:
+
+  // make sure al::imguiInit() is called before this
   void init() override {
-
-    if (ImGui::GetCurrentContext() == nullptr) {
-      al::imguiInit();
-    }
-
     dynListen.setSilenceThresh(0.1);
     mGUI << now << flux << centroid << rms << onsetIncrement << mChannel;
     mParams << now << flux << centroid << rms << onsetIncrement << mChannel;
@@ -51,8 +49,8 @@ public:
       auto pp = static_cast<al::Parameter*>(param);
       this->registerParameter(*pp);
     }
-    shaderSphere.setSphere(15.f, 1000);
-    this->shader();
+    shaderSphere.setSphere(15.f, 1000); // see VAOMesh::update(), moved to draw function
+    //this->shader(); // moved to draw function, triggered by flag.
   }
 
   void shader(std::string shaderPath = "../src/shaders/Reactive-shaders/fractal1.frag") {
@@ -91,6 +89,12 @@ public:
   }
 
   void onProcess(al::Graphics& g) override {
+
+    if (this->initFlag) {
+      this->shader();
+      this->initFlag = false;
+    }
+
     // activate shader mode
     g.shader(shaderSphere.shader());
 

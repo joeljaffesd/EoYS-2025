@@ -5,24 +5,33 @@
 #include "src/audio/audioManager.hpp"
 
 struct MyApp : al::DistributedApp {
-  DistributedSceneWithInput mScene;
+  al::DistributedScene mScene;
+  ShaderEngine* mShaderEngine = nullptr;
 
   void onInit() override {
+    al::imguiInit();
 
-    mScene.setVoiceMaxInputChannels(8);
     mScene.prepare(this->audioIO());
 
     mScene.verbose(true);
     mScene.registerSynthClass<ShaderEngine>();
     registerDynamicScene(mScene);
-    auto* bruh = mScene.getVoice<ShaderEngine>();
-    mScene.triggerOn(bruh);
   }
 
   void onSound(al::AudioIOData &io) override {
     if (isPrimary()) {
       mScene.render(io);
     }
+  }
+
+  bool onKeyDown(const al::Keyboard& k) override {
+    if (isPrimary() && k.key() == ' ') {
+      if (mShaderEngine == nullptr) {
+        mShaderEngine = mScene.getVoice<ShaderEngine>();
+        mScene.triggerOn(mShaderEngine);
+      }
+    }
+    return true;
   }
 
   void onAnimate(double dt) override {
