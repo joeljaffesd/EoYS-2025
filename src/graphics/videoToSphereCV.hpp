@@ -35,6 +35,7 @@ private:
   bool restartFlag = false; // hack for networked restart
   al::Parameter mCurrentTime {"mCurrentTime", "", 0, 0, std::numeric_limits<int>::max()};
   al::ParameterBundle mParams{"VideoSphereLoaderCV"};
+  bool initFlag = true;
 
 public:
   // Update the displayed frame based on the current frame index
@@ -86,14 +87,10 @@ public:
     }
 
     mGUI.registerParameterBundle(this->params());
-    this->loadVideo("../assets/videos/vid.mp4");
-
-    if (ImGui::GetCurrentContext() == nullptr) {
-      al::imguiInit();
-    }
+    //this->loadVideo(); // moved to flag
   }
   
-  bool loadVideo(const std::string& videoFilePath) {
+  bool loadVideo(const std::string& videoFilePath = "../assets/videos/vid.mp4") {
     std::cout << "Loading video: " << videoFilePath << std::endl;
     // Create a sphere mesh for rendering
     addTexSphere(mMesh, 15.0, 24, true);
@@ -238,6 +235,11 @@ public:
   }
 
   void onProcess(al::Graphics& g) {
+    if (this->initFlag) {
+      this->loadVideo();
+      this->initFlag = false;
+    }
+
     
     if (!mVideo.videoTexture.created()) {
       std::cerr << "Texture not created in draw" << std::endl;
