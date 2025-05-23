@@ -23,7 +23,6 @@ public:
     // callback on index change
     this->index.registerChangeCallback([this](int value){ 
       std::cout << "Index at: " << value << std::endl;
-      //mVideoLoader.loadVideo();
     });
 
   }
@@ -33,14 +32,10 @@ public:
   void registerParameters(al::ParameterServer& server) {
     server.registerParameter(index);
     // TODO 
-    //server.registerParameterBundle(mShaderEngine.params());
-
-    // plz tell me there's a better way to do this
-    for (auto& param : mShaderEngine.params().parameters()) {
-      server.registerParameter(*param);
-      // auto pp = static_cast<al::Parameter*>(param);
-      // this->registerParameter(*pp);
-    }
+    server.registerParameterBundle(mShaderEngine.params());
+    server.registerParameterBundle(mImageLoader.params());
+    server.registerParameterBundle(mAssetEngine.params());
+    server.registerParameterBundle(mVideoLoader.params());
   }
 
   /**
@@ -57,7 +52,7 @@ public:
    * @brief TODO
    */
   void update(double dt = 0) {
-    // mImageLoader.update(dt);
+    mImageLoader.update(dt);
     mAssetEngine.update(dt);
     mShaderEngine.update(dt);
     mVideoLoader.update(dt);
@@ -67,10 +62,22 @@ public:
    * @brief TODO
    */
   void render(al::Graphics& g) {
-    // mImageLoader.onProcess(g);
-    // mAssetEngine.onProcess(g);
-    mShaderEngine.onProcess(g);
-    // mVideoLoader.onProcess(g);
+    switch (index % 4) {
+      case 0:
+        mImageLoader.onProcess(g);
+        break;
+      case 1:
+        mAssetEngine.onProcess(g);
+        break;
+      case 2:
+        mShaderEngine.onProcess(g);
+        break;
+      case 3:
+        mVideoLoader.onProcess(g);
+        break;
+      default:
+        std::cout << "Invalid index" << std::endl;
+    }
   }
 
   /**

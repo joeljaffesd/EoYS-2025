@@ -15,7 +15,9 @@
 #include "vfxUtility.hpp"
 #include "vfxMain.hpp"
 
-class ShaderEngine {
+#include "graphicsVoice.hpp"
+
+class ShaderEngine : public GraphicsVoice {
 private:
   ShadedSphere shaderSphere;
   SpectralListener specListen;
@@ -37,11 +39,13 @@ private:
   giml::OnePole<float> mOnePoleCent;
 
 public:
+
   al::ParameterBundle& params() {
     return mParams;
   }
 
-  void init() {
+  void init(bool isReplica = false) override {
+    this->GraphicsVoice::init(isReplica); // call base class init
 
     if (ImGui::GetCurrentContext() == nullptr) {
       al::imguiInit();
@@ -50,11 +54,6 @@ public:
     dynListen.setSilenceThresh(0.1);
     mGUI << now << flux << centroid << rms << onsetIncrement << mChannel;
     mParams << now << flux << centroid << rms << onsetIncrement << mChannel;
-    // plz tell me there's a better way to do this
-    // for (auto& param : mParams.parameters()) {
-    //   auto pp = static_cast<al::Parameter*>(param);
-    //   this->registerParameter(*pp);
-    // }
     shaderSphere.setSphere(15.f, 1000);
     this->shader();
   }
@@ -63,7 +62,8 @@ public:
     shaderSphere.setShaders("../src/shaders/Reactive-shaders/standard.vert", shaderPath);
   }
 
-  void update(double dt = 0) {
+  void update(double dt = 0) override {
+    if (isReplica) { return; }// skip update for replicas
     now = now + float(dt);
 
     mOnePoleCent.setCutoff(15000, 60);
@@ -79,6 +79,7 @@ public:
   }
 
   void onProcess(al::AudioIOData& io) {
+    if (isReplica) { return; }// skip update for replicas
     for (auto sample = 0; sample < io.framesPerBuffer(); sample++) {
       const float in = io.in(mChannel, sample);
       specListen.process(in);
@@ -89,7 +90,7 @@ public:
     }
   }
 
-  void onProcess(al::Graphics& g) {
+  void onProcess(al::Graphics& g) override {
     // activate shader mode
     g.shader(shaderSphere.shader());
 

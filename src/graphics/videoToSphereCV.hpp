@@ -9,7 +9,9 @@
 #include <chrono>
 #include <memory>
 
-class VideoSphereLoaderCV {
+#include "graphicsVoice.hpp"
+
+class VideoSphereLoaderCV : public GraphicsVoice {
 private:
   al::Mesh mMesh;
   al::AlloOpenCV mVideo;
@@ -78,12 +80,8 @@ public:
     return this->mParams;
   }
 
-  void init() {
-    // plz tell me there's a better way to do this
-    // for (auto& param : mParams.parameters()) {
-    //   auto pp = static_cast<al::Parameter*>(param);
-    //   this->registerParameter(*pp);
-    // }
+  void init(bool isReplica = false) override {
+    this->GraphicsVoice::init(isReplica); // call base class init
 
     mGUI.registerParameterBundle(this->params());
     this->loadVideo();
@@ -192,7 +190,9 @@ public:
     return true;
   }
   
-  void update(double dt) {
+  void update(double dt = 0) override {
+    if (isReplica) { return; }// skip update for replicas
+
     if (mFrames.empty()) {
       std::cerr << "No frames available in update" << std::endl;
       return;
@@ -237,7 +237,7 @@ public:
     }
   }
 
-  void onProcess(al::Graphics& g) {
+  void onProcess(al::Graphics& g) override {
     
     if (!mVideo.videoTexture.created()) {
       std::cerr << "Texture not created in draw" << std::endl;

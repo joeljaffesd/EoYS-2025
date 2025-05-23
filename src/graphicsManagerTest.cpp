@@ -7,12 +7,10 @@ private:
   GraphicsManager mManager;
 
 public:
-  void onInit() override {
-    mManager.registerParameters(this->parameterServer());
-  }
 
   void onCreate() override {
     mManager.init();
+    mManager.registerParameters(this->parameterServer());
   }
 
   bool onKeyDown(const al::Keyboard& k) override {
@@ -34,6 +32,7 @@ public:
   }
 
   void onDraw(al::Graphics& g) override {
+    g.clear(0);
     mManager.render(g);
   }
 

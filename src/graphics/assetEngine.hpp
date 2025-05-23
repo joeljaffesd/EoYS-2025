@@ -10,7 +10,9 @@
 #include <vector>
 #include <algorithm>
 
-class AssetEngine {
+#include "graphicsVoice.hpp"
+
+class AssetEngine : public GraphicsVoice {
 private:
   al::Scene* ascene{nullptr};
   al::Vec3f scene_min, scene_max, scene_center;
@@ -21,12 +23,20 @@ private:
   al::Parameter scale{"scale", "", 1.f, 0.f, 10.f};
   al::ParameterBool rotate{"Rotate", "", true}; // Toggle rotation
   al::ControlGUI gui;
+  al::ParameterBundle mParams{"AssetEngine"};
 
 public:
-  void init() {
+
+  al::ParameterBundle& params() {
+    return mParams;
+  }
+
+  void init(bool isReplica = false) override {
+    this->GraphicsVoice::init(isReplica); // call base class init
     this->loadAsset("../assets/3dModels/eye/eye.obj",
                     "../assets/3dModels/eye/eye.png");
     gui << rotate << scale << assetShow;
+    mParams << rotate << scale << assetShow;
     // this->registerParameters(rotate, scale, assetShow);
 
     if (ImGui::GetCurrentContext() == nullptr) {
@@ -62,14 +72,15 @@ public:
     }
   }
 
-  void update(double dt) {
+  void update(double dt = 0) override {
+    if (this->isReplica) { return; }
     // Enable or disable rotation based on the GUI toggle
     if (!this->rotate) {
       this->a = 0.0f; // Stop rotation
     }
   }
 
-  void onProcess(al::Graphics& g) {
+  void onProcess(al::Graphics& g) override {
 
     if (!assetShow) {
       gui.draw(g); // draw gui regardless
