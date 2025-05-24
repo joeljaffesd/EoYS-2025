@@ -11,8 +11,29 @@ public:
   int activeVoiceId;
   DistributedSceneWithInput mDistributedScene;
   al::ParameterBundle mBundle;
+  std::vector<std::function<void()>> loaderCalbacks;
 
   void onInit() override {
+
+    loaderCalbacks.push_back([this]() {
+      auto* voice = mDistributedScene.getVoice<ImageSphereLoader>();
+      activeVoiceId = mDistributedScene.triggerOn(voice);
+    });
+
+    loaderCalbacks.push_back([this]() {
+      auto* voice = mDistributedScene.getVoice<AssetEngine>();
+      activeVoiceId = mDistributedScene.triggerOn(voice);
+    });
+
+    loaderCalbacks.push_back([this]() {
+      auto* voice = mDistributedScene.getVoice<ShaderEngine>();
+      activeVoiceId = mDistributedScene.triggerOn(voice);
+    });
+    
+    loaderCalbacks.push_back([this]() {
+      auto* voice = mDistributedScene.getVoice<VideoSphereLoaderCV>();
+      activeVoiceId = mDistributedScene.triggerOn(voice);
+    });
 
     mDistributedScene.setVoiceMaxInputChannels(8);
 
@@ -36,34 +57,11 @@ public:
   bool onKeyDown(const al::Keyboard& k) override {
     if (k.key() == ' ') {
       mDistributedScene.triggerOff(activeVoiceId);
-      switch (phase) {
-        case 0: {
-          auto* bruh = mDistributedScene.getVoice<ImageSphereLoader>();
-          activeVoiceId = mDistributedScene.triggerOn(bruh);
-          phase++;
-          break;
-        }
-        case 1: {
-          auto* bruh = mDistributedScene.getVoice<AssetEngine>();
-          activeVoiceId = mDistributedScene.triggerOn(bruh);
-          phase++;
-          break;
-        }
-        case 2: {
-          auto* bruh = mDistributedScene.getVoice<ShaderEngine>();
-          activeVoiceId = mDistributedScene.triggerOn(bruh);
-          phase++;
-          break;
-        } 
-        case 3: {
-          auto* bruh = mDistributedScene.getVoice<VideoSphereLoaderCV>();
-          activeVoiceId = mDistributedScene.triggerOn(bruh);
-          phase++;
-          break;
-        }
-        default:
-          phase = 0;
-          break;
+      if (phase < loaderCalbacks.size()) {
+        loaderCalbacks[phase]();
+        phase++;
+      } else {
+        phase = 0;
       }
     }
     return true;
