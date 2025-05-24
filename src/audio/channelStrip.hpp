@@ -30,6 +30,7 @@ public:
   void init() {
     mBasics << enabled << mInputChannel << mGain << mVolume;
     mGui << mBasics;
+    this->registerParameters(enabled, mInputChannel, mGain, mVolume);
 
     // this is wrought with bugs...
     // seems that a break occurs, but stuff added after the break works
@@ -48,6 +49,11 @@ public:
     //reverb->setParams(0.1f, 0.3f, 0.9f, 0.5f, 50.f, 0.9f, giml::Reverb<float>::RoomType::SPHERE);
     
     mGui << this->mParamBundles[0]; // can add effects after this is called... sometimes.
+
+    for (auto& param : mParamBundles[0].parameters()) {
+      auto paramPtr = static_cast<al::Parameter*>(param);
+      this->registerParameter(*paramPtr);
+    }
 
     SpatialAgent::init();
     registerParameters(this->mPose); // need for distributed.

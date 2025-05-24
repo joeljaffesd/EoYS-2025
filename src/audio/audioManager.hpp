@@ -50,6 +50,18 @@ public:
     return &mAgents;
   }
 
+  /**
+   * @brief Register a PresetHandler to handle the parameters of the agents.
+   * Call after adding all agents.
+   */
+  void registerPresetHandler(al::PresetHandler& presetHandler) {
+    for (auto agent : mAgents) {
+      for (auto paramPtr : agent->parameters()) {
+        presetHandler.registerParameter(*paramPtr);  // Dereference the pointer
+      }
+    }
+  }
+
   void setListenerPose(const al::Pose& pose) {
     fixedListenerPose = pose;
   }
