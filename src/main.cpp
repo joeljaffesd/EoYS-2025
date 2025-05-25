@@ -34,9 +34,9 @@
 
 class Main : public al::DistributedApp {
 public:
-  std::vector<al::PositionedVoice*> voices;
   int activeVoiceId;
   AudioManager<ChannelStrip> mManager;
+  al::PresetHandler mPresetHandler{"presets", true};;
   al::ParameterBool mAudioMode {"mAudioMode", "", false};
   al::ParameterBool mMute {"mMute", "", false};
 
@@ -45,6 +45,8 @@ public:
 
   void onInit() override {
 
+    al::imguiInit();
+
     mManager.scene()->verbose(true);
     mManager.scene()->registerSynthClass<ChannelStrip>();
     mManager.scene()->registerSynthClass<ImageSphereLoader>();
@@ -52,65 +54,67 @@ public:
     mManager.scene()->registerSynthClass<ShaderEngine>();
     mManager.scene()->registerSynthClass<VideoSphereLoaderCV>();
     this->registerDynamicScene(*mManager.scene());
-    
-    // Setup camera for 3D viewing
-    nav().pos(0, 0, 0);  // Position the camera
-    nav().faceToward(al::Vec3f(0, 0, 0));  // Face toward origin
 
-    voices.push_back(mManager.scene()->getVoice<ImageSphereLoader>());
-    voices.push_back(mManager.scene()->getVoice<AssetEngine>());
-    voices.push_back(mManager.scene()->getVoice<ShaderEngine>());
-    voices.push_back(mManager.scene()->getVoice<VideoSphereLoaderCV>());
+    player[0].load("../assets/wavFiles/vocals.wav");
+    player[1].load("../assets/wavFiles/guitar.wav");
+    player[2].load("../assets/wavFiles/bass.wav");
+    player[3].load("../assets/wavFiles/kick.wav");
+    player[4].load("../assets/wavFiles/snare.wav");
+    player[5].load("../assets/wavFiles/floorTom.wav");
+    player[6].load("../assets/wavFiles/midTom.wav");
+    player[7].load("../assets/wavFiles/highTom.wav");
 
-    // if (isPrimary()) {
-      player[0].load("../assets/wavFiles/vocals.wav");
-      player[1].load("../assets/wavFiles/guitar.wav");
-      player[2].load("../assets/wavFiles/bass.wav");
-      player[3].load("../assets/wavFiles/kick.wav");
-      player[4].load("../assets/wavFiles/snare.wav");
-      player[5].load("../assets/wavFiles/floorTom.wav");
-      player[6].load("../assets/wavFiles/midTom.wav");
-      player[7].load("../assets/wavFiles/highTom.wav");
+    names.push_back("Vocals");
+    names.push_back("Guitar1");
+    names.push_back("Guitar2");
+    names.push_back("Guitar3");
+    names.push_back("Bass");
+    names.push_back("Kick");
+    names.push_back("Snare");
+    names.push_back("Floor Tom");
+    names.push_back("Mid Tom");
+    names.push_back("High Tom");
 
-      names.push_back("Vocals");
-      names.push_back("Guitar");
-      names.push_back("Bass");
-      names.push_back("Kick");
-      names.push_back("Snare");
-      names.push_back("Floor Tom");
-      names.push_back("Mid Tom");
-      names.push_back("High Tom");
-
-      // Add sound agents
-      for (unsigned i = 0; i < 8; i++) {
-        mManager.addAgent(names[i].c_str());
-        mManager.agents()->at(i)->mInputChannel = i;
+    // Add sound agents
+    for (unsigned i = 0; i < 10; i++) {
+      mManager.addAgent(names[i].c_str());
+      if (i < 2) { 
+        mManager.agents()->at(i)->mInputChannel = i; 
+      } else if (i == 2) {
+        mManager.agents()->at(i)->mInputChannel = i - 1;
+      } else {
+        mManager.agents()->at(i)->mInputChannel = i - 2;
       }
+    }
 
-      // todo make this not suck
-      mManager.agents()->at(0)->set(0.0, 90.0, 7.5, 1.0, SAMPLE_RATE);
-      mManager.agents()->at(1)->set(0.0, 90.0, 5.0, 1.0, SAMPLE_RATE);
-      mManager.agents()->at(2)->set(0.0, -90.0, 5.0, 1.0, SAMPLE_RATE);
-      mManager.agents()->at(3)->set(0.0, -90.0, 1.0, 1.0, SAMPLE_RATE);
-      mManager.agents()->at(4)->set(0.0, 90.0, 3.5, 1.0, SAMPLE_RATE);
-      mManager.agents()->at(5)->set(0.0, 30.0, 8.0, 1.0, SAMPLE_RATE);    // 0 degrees
-      mManager.agents()->at(6)->set(120.0, 30.0, 8.0, 1.0, SAMPLE_RATE);  // 120 degrees
-      mManager.agents()->at(7)->set(240.0, 30.0, 8.0, 1.0, SAMPLE_RATE);  // 240 degrees
+    // todo make this not suck
+    mManager.agents()->at(0)->set(0.0, 90.0, 7.5, 1.0);
+    mManager.agents()->at(1)->set(-60, 0.0, 5.0, 1.0);
+    mManager.agents()->at(2)->set(60, 0.0, 5.0, 1.0); 
+    mManager.agents()->at(3)->set(180, 0.0, 5.0, 1.0);  
+    mManager.agents()->at(4)->set(0.0, -90.0, 5.0, 1.0);
+    mManager.agents()->at(5)->set(0.0, -90.0, 1.0, 1.0);
+    mManager.agents()->at(6)->set(0.0, 90.0, 3.5, 1.0);
+    mManager.agents()->at(7)->set(0.0, 30.0, 8.0, 1.0);    // 0 degrees
+    mManager.agents()->at(8)->set(120.0, 30.0, 8.0, 1.0);  // 120 degrees
+    mManager.agents()->at(9)->set(240.0, 30.0, 8.0, 1.0);  // 240 degrees
 
-      // TODO: encapsulate this in a function
-      auto speakers = SPEAKER_LAYOUT; 
-      mManager.scene()->setSpatializer<SPATIALIZER_TYPE>(speakers);
-      mManager.scene()->distanceAttenuation().law(al::ATTEN_NONE);
+    mManager.initPresetHandlers();
+    mManager.recallPresets();
 
-      // prepare audio engine
-      mManager.prepare(audioIO());
+    // TODO: encapsulate this in a function
+    auto speakers = SPEAKER_LAYOUT; 
+    mManager.scene()->setSpatializer<SPATIALIZER_TYPE>(speakers);
+    mManager.scene()->distanceAttenuation().law(al::ATTEN_NONE);
 
-      // Set camera position and orientation
-      if (isPrimary()) {
-        nav().pos(al::Vec3d(35, 0.000000, 49));
-        nav().quat(al::Quatd(1.0, 0.000000, 0.325568, 0.000000));
-      }
-    // }
+    // prepare audio engine
+    mManager.prepare(audioIO());
+
+    // Set camera position and orientation
+    if (isPrimary()) {
+      nav().pos(al::Vec3d(35, 0.000000, 49));
+      nav().quat(al::Quatd(1.0, 0.000000, 0.325568, 0.000000));
+    }
     
   }
 
@@ -132,7 +136,6 @@ public:
   }
 
   void onAnimate(double dt) override {
-    // Update the video sphere loader with the elapsed time
     mManager.update(dt);
   }
 
@@ -143,22 +146,26 @@ public:
         mManager.scene()->triggerOff(activeVoiceId);
         switch (phase) {
           case 0: {
-            activeVoiceId = mManager.scene()->triggerOn(voices[0]);
+            auto* freeVoice = mManager.scene()->getVoice<ImageSphereLoader>();
+            activeVoiceId = mManager.scene()->triggerOn(freeVoice);
             phase++;
             break;
           }
           case 1: {
-            activeVoiceId = mManager.scene()->triggerOn(voices[1]);
+            auto* freeVoice = mManager.scene()->getVoice<AssetEngine>();
+            activeVoiceId = mManager.scene()->triggerOn(freeVoice);
             phase++;
             break;
           }
           case 2: {
-            activeVoiceId = mManager.scene()->triggerOn(voices[2]);
+            auto* freeVoice = mManager.scene()->getVoice<ShaderEngine>();
+            activeVoiceId = mManager.scene()->triggerOn(freeVoice);
             phase++;
             break;
           }
           case 3: {
-            activeVoiceId = mManager.scene()->triggerOn(voices[3]);
+            auto* freeVoice = mManager.scene()->getVoice<VideoSphereLoaderCV>();
+            activeVoiceId = mManager.scene()->triggerOn(freeVoice);
             phase++;
             break;
           }
@@ -168,12 +175,16 @@ public:
         }
       }
 
-      if (k.key() == 'm') {
+      else if (k.key() == 'm') {
         mMute = !mMute;
       }
 
-      if (k.key() == 'g') {
+      else if (k.key() == 'g') {
         mAudioMode = !mAudioMode;
+      }
+
+      else if (k.key() ==  's') {
+        mManager.storePresets();
       }
     }
     return true;
