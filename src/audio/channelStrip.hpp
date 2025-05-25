@@ -24,10 +24,12 @@ public:
   al::Parameter mGain { "Gain", "", 0.f, -96.f, 12.f };
   al::Parameter mVolume { "Volume", "", 0.f, -96.f, 12.f };
   al::ParameterBundle mBasics { "Basics" }; 
+  giml::CircularBuffer<float> mBuffer; // store some signal history 
   
 public:
 
   void init() {
+    mBuffer.allocate(1024);
     mBasics << enabled << mInputChannel << mGain << mVolume;
     mGui << mBasics;
     this->registerParameters(enabled, mInputChannel, mGain, mVolume);
@@ -65,8 +67,13 @@ public:
     for (auto sample = 0; sample < io.framesPerBuffer(); sample++) {
       float input = io.in(mInputChannel, sample) * giml::dBtoA(mGain); 
       float output = this->processSample(input) * giml::dBtoA(mVolume);
-      io.out(0, sample) = output;
+      mBuffer.writeSample(output);
+      io.out(0, sample) = mBuffer.readSample(0); // read last in
     }
+  }
+
+  giml::CircularBuffer<float>& buffer() {
+    return mBuffer;
   }
 
 };
