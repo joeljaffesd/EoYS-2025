@@ -118,6 +118,7 @@ public:
   PickableMesh mPickableMesh;
   giml::OnePole<float> airFilter;
   al::FontRenderer mFontRenderer;
+  std::string mName;
 
   al::Parameter mAzimuth{ "Azimuth", "", 0.0, "", -180.0, 180.0 };
   al::Parameter mElevation{ "Elevation", "", 0.0, "", -90.0, 90.0 };
@@ -129,11 +130,17 @@ public:
   SpatialAgent(const char channelName[] = "No Name") {
     this->color = al::HSV(al::rnd::uniform(), 1.0, 1.0);
     mFontRenderer.load(al::Font::defaultFont().c_str(), 64, 2048);
+    mName = channelName;
   }
 
   void setName(const char name[]) {
     mFontRenderer.write(name);
     mGui.setTitle(name);
+    mName = name;
+  }
+
+  std::string& name() {
+    return mName;
   }
 
   void init() {

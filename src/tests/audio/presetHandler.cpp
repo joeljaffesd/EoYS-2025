@@ -41,8 +41,6 @@ public:
   al::ParameterBool mMute {"mMute", "", false};
   gam::SamplePlayer<float, gam::ipl::Cubic, gam::phsInc::Loop> player;
 
-  al::PresetHandler mPresetHandler{"presets", true};
-
   void onInit() override {
 
     al::imguiInit();
@@ -63,8 +61,8 @@ public:
 
     // todo make this not suck
     mManager.agents()->at(0)->set(0.0, 90.0, 7.5, 1.0, SAMPLE_RATE);
-    mManager.registerPresetHandler(mPresetHandler);
-    mPresetHandler.recallPreset("Bass");
+    mManager.initPresetHandlers();
+    mManager.recallPresets();
 
     // TODO: encapsulate this in a function
     auto speakers = SPEAKER_LAYOUT; 
@@ -110,7 +108,7 @@ public:
         mAudioMode = !mAudioMode;
         break;
       case ' ':
-        mPresetHandler.storePreset("Bass");
+        mManager.storePresets();
         break;
       default:
         break;  

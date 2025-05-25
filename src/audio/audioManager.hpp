@@ -30,6 +30,7 @@ class AudioManager {
 private:
   DistributedSceneWithInput mDistributedScene;
   al::PickableManager mPickableManager;
+  std::vector<al::PresetHandler*> mPresetHandlers;
   std::vector<TSynthVoice*> mAgents;
   bool pickablesUpdatingParameters = false;
   al::Pose fixedListenerPose;
@@ -50,27 +51,48 @@ public:
     return &mAgents;
   }
 
-  /**
-   * @brief Register a PresetHandler to handle the parameters of the agents.
-   * Call after adding all agents.
-   */
-  void registerPresetHandler(al::PresetHandler& presetHandler) {
-    for (auto agent : mAgents) {
-      for (auto paramPtr : agent->parameters()) {
-        presetHandler.registerParameter(*paramPtr);  // Dereference the pointer
-      }
-    }
-  }
-
   void setListenerPose(const al::Pose& pose) {
     fixedListenerPose = pose;
   }
 
   void addAgent(const char name[]) {
+    // add agent
     auto* newAgent = mDistributedScene.getVoice<TSynthVoice>();
     newAgent->setName(name); 
     mAgents.push_back(newAgent);
-    mPickableManager << newAgent->mPickableMesh; // add pickable to manager
+
+    // add preset handler
+    auto* presetHandler = new al::PresetHandler("presets", true);
+    mPresetHandlers.push_back(presetHandler); // Add the preset handler to the vector
+
+    // feed pickable manager
+    mPickableManager << newAgent->mPickableMesh; // Add pickable to manager
+  }
+
+  void initPresetHandlers() {
+    std::cout << "Initializing preset handlers..." << std::endl;
+    for (auto i = 0; i < mAgents.size(); i++) {
+      auto handlerPtr = mPresetHandlers[i];
+      for (auto paramPtr : mAgents[i]->parameters()) {
+        handlerPtr->registerParameter(*paramPtr);
+      }
+    }
+  }
+
+  void recallPresets() {
+    std::cout << "Recalling presets for agents..." << std::endl;
+    for (auto i = 0; i < mAgents.size(); i++) {
+      auto handlerPtr = mPresetHandlers[i];
+      handlerPtr->recallPresetSynchronous(mAgents[i]->name());
+    }
+  }
+
+  void storePresets() {
+    std::cout << "Storing presets for agents..." << std::endl;
+    for (auto i = 0; i < mAgents.size(); i++) {
+      auto handlerPtr = mPresetHandlers[i];
+      handlerPtr->storePreset(mAgents[i]->name());
+    }
   }
 
   void prepare(al::AudioIO& audioIO) {
