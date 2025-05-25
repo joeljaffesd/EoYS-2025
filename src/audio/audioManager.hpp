@@ -117,7 +117,7 @@ public:
   void updateAgents() {
     for (auto agent : mAgents) {
       agent->set(agent->mAzimuth.get(), agent->mElevation.get(),
-                 agent->mDistance.get(), agent->size, sampleRate);
+                 agent->mDistance.get(), agent->size);
     }
   }
 

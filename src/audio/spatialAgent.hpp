@@ -114,9 +114,9 @@ class SpatialAgent : public al::PositionedVoice {
 public:
   float distance = 1.0f;
   float size = 1.0f;
+  unsigned int sampleRate;
   al::HSV color = al::HSV(1.0);
   PickableMesh mPickableMesh;
-  giml::OnePole<float> airFilter;
   al::FontRenderer mFontRenderer;
   std::string mName;
 
@@ -126,11 +126,11 @@ public:
   al::ParameterBundle mSpatializationParams{ "Spatialization" };
   TabbedGUI mGui;
 
-  // constructor that takes
   SpatialAgent(const char channelName[] = "No Name") {
     this->color = al::HSV(al::rnd::uniform(), 1.0, 1.0);
     mFontRenderer.load(al::Font::defaultFont().c_str(), 64, 2048);
     mName = channelName;
+    this->registerParameters(mAzimuth, mElevation, mDistance);
   }
 
   void setName(const char name[]) {
@@ -144,7 +144,6 @@ public:
   }
 
   void init() {
-    registerParameters(mAzimuth, mElevation, mDistance);
     mGui.init(5, 5, false);
     mSpatializationParams << mAzimuth << mElevation << mDistance;
     mGui << mSpatializationParams;
@@ -171,18 +170,12 @@ public:
     g.blending(false); // to undo blending call from FontRenderer 
   }
 
-  void set(float azimuthDeg, float elevationDeg, float distanceVal, 
-           float sizeVal, unsigned int sampleRate) {
-            
+  void set(float azimuthDeg, float elevationDeg, float distanceVal, float sizeVal) {
     al::Vec3f position = sphericalToCartesian(azimuthDeg, elevationDeg, distanceVal);
     this->setPose(al::Pose(position));
     mPickableMesh.pose = al::Pose(position);
     distance = distanceVal;
     size = sizeVal;
-
-    float distCutoff = 20000.0f / (1.0f + distance * 0.8f);
-    distCutoff = std::max(distCutoff, 300.0f);
-    airFilter.setCutoff(distCutoff, sampleRate);
   }
 };
 

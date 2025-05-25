@@ -60,7 +60,7 @@ public:
     mManager.agents()->at(0)->mInputChannel = 0;
 
     // todo make this not suck
-    mManager.agents()->at(0)->set(0.0, 90.0, 7.5, 1.0, SAMPLE_RATE);
+    mManager.agents()->at(0)->set(0.0, 90.0, 7.5, 1.0);
     mManager.initPresetHandlers();
     mManager.recallPresets();
 
