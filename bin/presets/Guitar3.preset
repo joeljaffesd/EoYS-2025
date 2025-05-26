@@ -1,0 +1,27 @@
+::Guitar3
+/Amp i 0 
+/Azimuth f -180.000000 
+/Distance f 5.000000 
+/Elevation f 0.000000 
+/Enabled i 1 
+/Gain f 0.000000 
+/Input i 1 
+/Volume f 6.000000 
+/_pose fffffff 0.000000 0.000000 5.000000 1.000000 0.000000 0.000000 0.000000 
+/giml::Delay<float>Enabled i 0 
+/giml::Delay<float>blend f 0.240000 
+/giml::Delay<float>damping f 0.700000 
+/giml::Delay<float>delayTime f 398.000000 
+/giml::Delay<float>feedback f 0.300000 
+/giml::Detune<float>Enabled i 0 
+/giml::Detune<float>blend f 0.500000 
+/giml::Detune<float>pitchRatio f 1.000000 
+/giml::Detune<float>windowSizeMillis f 22.000000 
+/giml::Reverb<float>Enabled i 0 
+/giml::Reverb<float>blend f 0.500000 
+/giml::Reverb<float>damping f 0.500000 
+/giml::Reverb<float>length f 5.000000 
+/giml::Reverb<float>regen f 0.500000 
+/giml::Reverb<float>room i 0 
+/giml::Reverb<float>time f 0.020000 
+::

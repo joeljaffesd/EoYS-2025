@@ -1,5 +1,5 @@
 // Single macro to switch between desktop and Allosphere configurations
-#define DESKTOP
+// #define DESKTOP
 
 #ifdef DESKTOP
   // Desktop configuration
@@ -28,6 +28,9 @@
 #include "al/sound/al_Ambisonics.hpp"
 #include "al/sound/al_Dbap.hpp"
 #include "al/sphere/al_AlloSphereSpeakerLayout.hpp"
+
+#include "../assets/namModels/BassModel.h"
+#include "../assets/namModels/MarshallModel.h"
 
 // Gamma ig for now
 #include "Gamma/SamplePlayer.h"
@@ -99,6 +102,34 @@ public:
     mManager.agents()->at(8)->set(120.0, 30.0, 8.0, 1.0);  // 120 degrees
     mManager.agents()->at(9)->set(240.0, 30.0, 8.0, 1.0);  // 240 degrees
 
+    // vocal fx
+    mManager.agents()->at(0)->addEffect<giml::Compressor<float>, SAMPLE_RATE>();
+    mManager.agents()->at(0)->addEffect<giml::Delay<float>, SAMPLE_RATE>();
+    mManager.agents()->at(0)->addEffect<giml::Reverb<float>, SAMPLE_RATE>();
+    mManager.agents()->at(0)->updateParameters();
+
+    // gtr fx
+    for (auto i = 1; i < 4; i++) {
+      mManager.agents()->at(i)->addAmp<float, MarshallModelLayer1, MarshallModelLayer2, MarshallModelWeights>();
+      mManager.agents()->at(i)->addEffect<giml::Detune<float>, SAMPLE_RATE>();
+      mManager.agents()->at(i)->addEffect<giml::Delay<float>, SAMPLE_RATE>();
+      mManager.agents()->at(i)->addEffect<giml::Reverb<float>, SAMPLE_RATE>();
+      mManager.agents()->at(i)->updateParameters();
+    }
+
+    // bass fx
+    mManager.agents()->at(4)->addAmp<float, BassModelLayer1, BassModelLayer2, BassModelWeights>();
+    mManager.agents()->at(4)->addEffect<giml::Compressor<float>, SAMPLE_RATE>();
+    mManager.agents()->at(4)->updateParameters();
+
+    // drums fx
+    for (auto i = 5; i < 10; i++) {
+      mManager.agents()->at(i)->addEffect<giml::Compressor<float>, SAMPLE_RATE>();
+      mManager.agents()->at(i)->addEffect<giml::Reverb<float>, SAMPLE_RATE>();
+      mManager.agents()->at(i)->updateParameters();
+    }
+
+    // preset handlers
     mManager.initPresetHandlers();
     mManager.recallPresets();
 
@@ -132,6 +163,13 @@ public:
       if (!mMute) {
         mManager.processAudio(io);
       }
+
+      // handy mute
+      // for (auto channel = 0; channel < io.channelsOut(); channel++) {
+      //   for (auto sample = 0; sample < io.framesPerBuffer(); sample++) {
+      //     io.out(channel, sample) = 0.f;
+      //   }
+      // }
 
       // monitor mix
       for (auto sample = 0; sample < io.framesPerBuffer(); sample++) {

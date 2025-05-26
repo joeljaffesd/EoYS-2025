@@ -1,0 +1,24 @@
+::Floor Tom
+/Azimuth f 0.000000 
+/Distance f 8.000000 
+/Elevation f 30.000002 
+/Enabled i 1 
+/Gain f 0.000000 
+/Input i 5 
+/Volume f 0.000000 
+/_pose fffffff 0.000000 4.000000 -6.928203 1.000000 0.000000 0.000000 0.000000 
+/giml::Compressor<float>Enabled i 0 
+/giml::Compressor<float>attackMillis f 3.500000 
+/giml::Compressor<float>knee f 1.000000 
+/giml::Compressor<float>makeupGain f 0.000000 
+/giml::Compressor<float>ratio f 4.000000 
+/giml::Compressor<float>releaseMillis f 100.000000 
+/giml::Compressor<float>threshold f 0.000000 
+/giml::Reverb<float>Enabled i 0 
+/giml::Reverb<float>blend f 0.500000 
+/giml::Reverb<float>damping f 0.500000 
+/giml::Reverb<float>length f 5.000000 
+/giml::Reverb<float>regen f 0.500000 
+/giml::Reverb<float>room i 0 
+/giml::Reverb<float>time f 0.020000 
+::
