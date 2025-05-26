@@ -161,6 +161,8 @@ public:
         }
       }
 
+      mGraphicsManager.render(io);
+
       if (!mMute) {
         mManager.processAudio(io);
       }

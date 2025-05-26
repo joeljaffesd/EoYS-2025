@@ -15,6 +15,7 @@ public:
   inline virtual void update(double dt = 0) {}
   inline virtual void onProcess(al::Graphics& g) {}
   inline virtual void onProcess(al::AudioIOData& io) {}
+  inline virtual al::ParameterBundle& params() {}
 };
 
 #endif
