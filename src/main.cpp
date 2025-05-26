@@ -31,6 +31,7 @@
 
 #include "../assets/namModels/BassModel.h"
 #include "../assets/namModels/MarshallModel.h"
+#include "src/graphics/graphicsManager.hpp"
 
 // Gamma ig for now
 #include "Gamma/SamplePlayer.h"
@@ -39,7 +40,7 @@ class Main : public al::DistributedApp {
 public:
   int activeVoiceId;
   AudioManager<ChannelStrip> mManager;
-  al::PresetHandler mPresetHandler{"presets", true};;
+  GraphicsManager mGraphicsManager;
   al::ParameterBool mAudioMode {"mAudioMode", "", false};
   al::ParameterBool mMute {"mMute", "", false};
 
@@ -51,11 +52,6 @@ public:
     al::imguiInit();
 
     mManager.scene()->verbose(true);
-    mManager.scene()->registerSynthClass<ChannelStrip>();
-    mManager.scene()->registerSynthClass<ImageSphereLoader>();
-    mManager.scene()->registerSynthClass<AssetEngine>();
-    mManager.scene()->registerSynthClass<ShaderEngine>();
-    mManager.scene()->registerSynthClass<VideoSphereLoaderCV>();
     this->registerDynamicScene(*mManager.scene());
 
     player[0].load("../assets/wavFiles/vocals.wav");
@@ -149,6 +145,11 @@ public:
     
   }
 
+  void onCreate() override {
+    mGraphicsManager.init();
+    mGraphicsManager.registerParameters(this->parameterServer());
+  }
+
   void onSound(al::AudioIOData& io) override {
     if (isPrimary()) {
       // for now... write audio files to input to simulate audio input
@@ -201,55 +202,17 @@ public:
 
   void onAnimate(double dt) override {
     mManager.update(dt);
+    mGraphicsManager.update(dt);
   }
 
   int phase = 0;
   bool onKeyDown(const al::Keyboard& k) override {
-  if (isPrimary()) {
-      if (k.key() == ' ') {
-        mManager.scene()->triggerOff(activeVoiceId);
-        switch (phase) {
-          case 0: {
-            auto* freeVoice = mManager.scene()->getVoice<ImageSphereLoader>();
-            activeVoiceId = mManager.scene()->triggerOn(freeVoice);
-            phase++;
-            break;
-          }
-          case 1: {
-            auto* freeVoice = mManager.scene()->getVoice<AssetEngine>();
-            activeVoiceId = mManager.scene()->triggerOn(freeVoice);
-            phase++;
-            break;
-          }
-          case 2: {
-            auto* freeVoice = mManager.scene()->getVoice<ShaderEngine>();
-            activeVoiceId = mManager.scene()->triggerOn(freeVoice);
-            phase++;
-            break;
-          }
-          case 3: {
-            auto* freeVoice = mManager.scene()->getVoice<VideoSphereLoaderCV>();
-            activeVoiceId = mManager.scene()->triggerOn(freeVoice);
-            phase++;
-            break;
-          }
-          default:
-            phase = 0;
-            break;
-        }
-      }
-
-      else if (k.key() == 'm') {
-        mMute = !mMute;
-      }
-
-      else if (k.key() == 'g') {
-        mAudioMode = !mAudioMode;
-      }
-
-      else if (k.key() ==  's') {
-        mManager.storePresets();
-      }
+    if (isPrimary()) {
+      if (k.key() == '[') { mGraphicsManager.prevScene(); }
+      else if (k.key() == ']') { mGraphicsManager.nextScene(); }
+      else if (k.key() == 'm') { mMute = !mMute; }
+      else if (k.key() == 'g') { mAudioMode = !mAudioMode; }
+      else if (k.key() == 's') { mManager.storePresets(); }
     }
     return true;
   }
@@ -257,8 +220,9 @@ public:
   void onDraw(al::Graphics& g) override {
     g.lens().eyeSep(0.0); // disable stereo rendering
     g.clear(0);
-    mManager.draw(g);
+    mGraphicsManager.render(g);
     if (isPrimary()) {
+      mManager.draw(g);
       if (mAudioMode) {
         mManager.drawGUI(g); // disallows access to other GUIs
       }

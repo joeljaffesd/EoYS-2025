@@ -9,7 +9,9 @@
 #include <chrono>
 #include <memory>
 
-class VideoSphereLoaderCV : public al::PositionedVoice {
+#include "graphicsVoice.hpp"
+
+class VideoSphereLoaderCV : public GraphicsVoice {
 private:
   al::Mesh mMesh;
   al::AlloOpenCV mVideo;
@@ -78,22 +80,18 @@ public:
     return this->mParams;
   }
 
-  void init() override {
-    // plz tell me there's a better way to do this
-    for (auto& param : mParams.parameters()) {
-      auto pp = static_cast<al::Parameter*>(param);
-      this->registerParameter(*pp);
-    }
+  void init(bool isReplica = false) override {
+    this->GraphicsVoice::init(isReplica); // call base class init
 
     mGUI.registerParameterBundle(this->params());
-    this->loadVideo("../assets/videos/vid.mp4");
+    this->loadVideo();
 
     if (ImGui::GetCurrentContext() == nullptr) {
       al::imguiInit();
     }
   }
   
-  bool loadVideo(const std::string& videoFilePath) {
+  bool loadVideo(const std::string& videoFilePath = "../assets/videos/vid.mp4") {
     std::cout << "Loading video: " << videoFilePath << std::endl;
     // Create a sphere mesh for rendering
     addTexSphere(mMesh, 15.0, 24, true);
@@ -192,7 +190,9 @@ public:
     return true;
   }
   
-  void update(double dt) override {
+  void update(double dt = 0) override {
+    if (isReplica) { return; }// skip update for replicas
+
     if (mFrames.empty()) {
       std::cerr << "No frames available in update" << std::endl;
       return;
@@ -237,7 +237,7 @@ public:
     }
   }
 
-  void onProcess(al::Graphics& g) {
+  void onProcess(al::Graphics& g) override {
     
     if (!mVideo.videoTexture.created()) {
       std::cerr << "Texture not created in draw" << std::endl;
@@ -250,9 +250,7 @@ public:
     g.draw(mMesh);
     mVideo.videoTexture.unbind(0);
     g.popMatrix();
-    if (!mIsReplica) {
-      mGUI.draw(g);
-    }
+    mGUI.draw(g);
   }
   
   // Play
