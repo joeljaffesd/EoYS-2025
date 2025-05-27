@@ -152,14 +152,14 @@ public:
 
   void onSound(al::AudioIOData& io) override {
     if (isPrimary()) {
-      // for now... write audio files to input to simulate audio input
-      for (auto sample = 0; sample < io.framesPerBuffer(); sample++) {
-        float input[8];
-        for (auto index = 0; index < 8; index++) {
-          input[index] = player[index]();
-          io.inW(index, sample) = input[index];
-        }
-      }
+      // // for now... write audio files to input to simulate audio input
+      // for (auto sample = 0; sample < io.framesPerBuffer(); sample++) {
+      //   float input[8];
+      //   for (auto index = 0; index < 8; index++) {
+      //     input[index] = player[index]();
+      //     io.inW(index, sample) = input[index];
+      //   }
+      // }
 
       mGraphicsManager.render(io);
 
