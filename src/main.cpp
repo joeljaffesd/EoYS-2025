@@ -182,7 +182,7 @@ public:
         int now = int(io.framesPerBuffer()) - sample;
 
         for (auto mon = 12; mon < 16; mon++) {
-          io.out(mon, sample) = io.in(9, sample);
+          io.out(mon, sample) = io.in(8, sample);
         }
 
         // feed sub, bass and kick
