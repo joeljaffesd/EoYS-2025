@@ -23,6 +23,8 @@ private:
   al::ParameterServer* mParameterServer;
   al::ParameterBool animationFlag { "animationFlag", "", false };
   bool localAnimationFlag = false;
+  al::ParameterInt transitionDirectionParam { "transitionDirection", "", 1, -1, 1 };
+  int localTransitionDirection = 1;
   
   // Animation state
   unsigned frameCounter = 0;
@@ -60,7 +62,7 @@ public:
     // Simple ease-in/ease-out function: y = 3*x^2 - 2*x^3
     float easedProgress = 3.0f * progress * progress - 2.0f * progress * progress * progress;
     
-    // Scale based on direction
+    // Scale based on direction (use the synchronized direction)
     animationOffset = transitionDirection * easedProgress * 30.0f;
     
     // Handle transition completion
@@ -73,14 +75,21 @@ public:
       
       // Clean up if needed
       if (prevSceneIndex >= 0 && mGraphicsVoices.size() > 1) {
-        // Remove the old scene (prevSceneIndex) from mGraphicsVoices
-        GraphicsVoice* voiceToRemove = mGraphicsVoices[prevSceneIndex];
-        mGraphicsVoices.erase(mGraphicsVoices.begin() + prevSceneIndex);
-        delete voiceToRemove;
-        
-        // Update current scene index if necessary
-        if (prevSceneIndex < currentSceneIndex) {
-          currentSceneIndex--;
+        try {
+          // Only proceed if prevSceneIndex is valid
+          if (prevSceneIndex < mGraphicsVoices.size()) {
+            // Remove the old scene (prevSceneIndex) from mGraphicsVoices
+            GraphicsVoice* voiceToRemove = mGraphicsVoices[prevSceneIndex];
+            mGraphicsVoices.erase(mGraphicsVoices.begin() + prevSceneIndex);
+            delete voiceToRemove;
+            
+            // Update current scene index if necessary
+            if (prevSceneIndex < currentSceneIndex) {
+              currentSceneIndex--;
+            }
+          }
+        } catch (const std::exception& e) {
+          std::cerr << "Exception during scene cleanup: " << e.what() << std::endl;
         }
         prevSceneIndex = -1;
       }
@@ -108,25 +117,38 @@ public:
    * @param voice Pointer to the GraphicsVoice to register
    */
   void registerVoice(GraphicsVoice* voice) {
-    // Register parameters
-    mParameterServer->registerParameterBundle(voice->params());
-    
-    // Start transition
-    isAnimating = true;
-    frameCounter = 0;
-    currentTransition = TRANSITION_IN;
-    
-    // Store previous scene index for cleanup
-    if (!mGraphicsVoices.empty()) {
-      prevSceneIndex = currentSceneIndex;
+    try {
+      if (!voice) {
+        std::cerr << "Attempted to register null GraphicsVoice" << std::endl;
+        return;
+      }
+      
+      // Register parameters
+      mParameterServer->registerParameterBundle(voice->params());
+      
+      // Start transition
+      isAnimating = true;
+      frameCounter = 0;
+      currentTransition = TRANSITION_IN;
+      
+      // Store previous scene index for cleanup
+      if (!mGraphicsVoices.empty()) {
+        prevSceneIndex = currentSceneIndex;
+      }
+      
+      // Add new voice to the collection
+      mGraphicsVoices.push_back(voice);
+      currentSceneIndex = mGraphicsVoices.size() - 1;
+      
+      // Trigger animation
+      animationFlag = !animationFlag;
+    } catch (const std::length_error& e) {
+      std::cerr << "String length error during voice registration: " << e.what() << std::endl;
+    } catch (const std::exception& e) {
+      std::cerr << "Exception during voice registration: " << e.what() << std::endl;
+    } catch (...) {
+      std::cerr << "Unknown exception during voice registration" << std::endl;
     }
-    
-    // Add new voice to the collection
-    mGraphicsVoices.push_back(voice);
-    currentSceneIndex = mGraphicsVoices.size() - 1;
-    
-    // Trigger animation
-    animationFlag = !animationFlag;
   }
 
   GraphicsManager() {
@@ -186,6 +208,7 @@ public:
     server.registerParameter(index);
     server.registerParameter(updateFlag);
     server.registerParameter(animationFlag);
+    server.registerParameter(transitionDirectionParam);
     this->mParameterServer = &server;
   }
 
@@ -220,12 +243,26 @@ public:
     // Handle scene update requests
     if (updateFlag != localUpdateFlag) {
       localUpdateFlag = !localUpdateFlag;
-      mCallbacks[index]();
+      try {
+        if (index < mCallbacks.size()) {
+          mCallbacks[index]();
+        } else {
+          std::cerr << "Warning: Index " << index << " out of bounds for mCallbacks size " << mCallbacks.size() << std::endl;
+        }
+      } catch (const std::exception& e) {
+        std::cerr << "Exception during scene update: " << e.what() << std::endl;
+      }
     }
 
     // Handle animation updates
     if (animationFlag != localAnimationFlag) {
       this->animationCallback();
+    }
+
+    // Sync transition direction from network parameter
+    if (transitionDirectionParam != localTransitionDirection) {
+      localTransitionDirection = transitionDirectionParam;
+      transitionDirection = localTransitionDirection;
     }
 
     // Update all active voices
@@ -246,26 +283,32 @@ public:
     
     // Always render the current scene
     if (currentSceneIndex >= 0 && currentSceneIndex < mGraphicsVoices.size()) {
-      if (isAnimating) {
-        // During animation, adjust the position based on transition direction and state
-        if (currentTransition == TRANSITION_IN) {
-          // New scene is sliding in from below
-          g.pushMatrix();
-          g.translate(0, -animationOffset + transitionDirection * 30.0f, 0);
-          mGraphicsVoices[currentSceneIndex]->onProcess(g);
-          g.popMatrix();
-          
-          // Old scene is sliding up and out
-          if (prevSceneIndex >= 0 && prevSceneIndex < mGraphicsVoices.size()) {
+      try {
+        if (isAnimating) {
+          // During animation, adjust the position based on transition direction and state
+          if (currentTransition == TRANSITION_IN) {
+            // New scene is sliding in from below
             g.pushMatrix();
-            g.translate(0, -animationOffset, 0);
-            mGraphicsVoices[prevSceneIndex]->onProcess(g);
+            g.translate(0, -animationOffset + transitionDirection * 30.0f, 0);
+            mGraphicsVoices[currentSceneIndex]->onProcess(g);
             g.popMatrix();
+            
+            // Old scene is sliding up and out
+            if (prevSceneIndex >= 0 && prevSceneIndex < mGraphicsVoices.size()) {
+              g.pushMatrix();
+              g.translate(0, -animationOffset, 0);
+              mGraphicsVoices[prevSceneIndex]->onProcess(g);
+              g.popMatrix();
+            }
           }
+        } else {
+          // Normal rendering when not animating
+          mGraphicsVoices[currentSceneIndex]->onProcess(g);
         }
-      } else {
-        // Normal rendering when not animating
-        mGraphicsVoices[currentSceneIndex]->onProcess(g);
+      } catch (const std::exception& e) {
+        std::cerr << "Exception during rendering: " << e.what() << std::endl;
+      } catch (...) {
+        std::cerr << "Unknown exception during rendering" << std::endl;
       }
     }
     
@@ -288,6 +331,8 @@ public:
    */
   void nextScene() {
     transitionDirection = 1; // Moving forward
+    localTransitionDirection = 1;
+    transitionDirectionParam = 1; // Sync with network
     this->index = index + 1;
     updateFlag = !updateFlag;
   } 
@@ -297,6 +342,8 @@ public:
    */
   void prevScene() {
     transitionDirection = -1; // Moving backward
+    localTransitionDirection = -1;
+    transitionDirectionParam = -1; // Sync with network
     this->index = index - 1;
     updateFlag = !updateFlag;
   } 
