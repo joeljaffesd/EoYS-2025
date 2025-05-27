@@ -176,8 +176,8 @@ public:
 
       // monitor mix
       for (auto sample = 0; sample < io.framesPerBuffer(); sample++) {
-        unsigned mon1 = 0, mon2 = 1, mon3 = 2, mon4 = 3;
-        unsigned sub = 48;
+        unsigned mon1 = 15, mon2 = 14, mon3 = 13, mon4 = 12;
+        unsigned sub = 47;
 
         int now = int(io.framesPerBuffer()) - sample;
 
@@ -187,22 +187,22 @@ public:
 
 
         // // vox
-        // io.out(mon1, sample) = mManager.agents()->at(0)->buffer().readSample(now);
+        io.out(mon1, sample) = mManager.agents()->at(0)->buffer().readSample(now);
 
         // // gtr mixdown
-        // io.out(mon2, sample) = mManager.agents()->at(1)->buffer().readSample(now) +
-        //                        mManager.agents()->at(2)->buffer().readSample(now) +
-        //                        mManager.agents()->at(3)->buffer().readSample(now); 
+        io.out(mon2, sample) = mManager.agents()->at(1)->buffer().readSample(now) +
+                               mManager.agents()->at(2)->buffer().readSample(now) +
+                               mManager.agents()->at(3)->buffer().readSample(now); 
 
         // bass
         // io.out(mon3, sample) = mManager.agents()->at(4)->buffer().readSample(now);
 
         // // drums mixdown
-        // io.out(mon4, sample) = mManager.agents()->at(5)->buffer().readSample(now) +
-                              //  mManager.agents()->at(6)->buffer().readSample(now) +
-                              //  mManager.agents()->at(7)->buffer().readSample(now) +
-                              //  mManager.agents()->at(8)->buffer().readSample(now) +
-                              //  mManager.agents()->at(9)->buffer().readSample(now);
+        io.out(mon4, sample) = mManager.agents()->at(5)->buffer().readSample(now) +
+                               mManager.agents()->at(6)->buffer().readSample(now) +
+                               mManager.agents()->at(7)->buffer().readSample(now) +
+                               mManager.agents()->at(8)->buffer().readSample(now) +
+                               mManager.agents()->at(9)->buffer().readSample(now);
       }
 
     }
