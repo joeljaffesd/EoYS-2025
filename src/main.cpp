@@ -177,8 +177,14 @@ public:
       // monitor mix
       for (auto sample = 0; sample < io.framesPerBuffer(); sample++) {
         unsigned mon1 = 0, mon2 = 1, mon3 = 2, mon4 = 3;
+        unsigned sub = 48;
 
         int now = int(io.framesPerBuffer()) - sample;
+
+        // feed sub, bass and kick
+        io.out(sub, sample) = mManager.agents()->at(4)->buffer().readSample(now); // bass
+        io.out(sub, sample) = mManager.agents()->at(5)->buffer().readSample(now); // kick
+
 
         // // vox
         // io.out(mon1, sample) = mManager.agents()->at(0)->buffer().readSample(now);
