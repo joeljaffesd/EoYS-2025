@@ -10,7 +10,7 @@
 #else
   // Allosphere configuration
   #define SAMPLE_RATE 44100
-  #define AUDIO_CONFIG SAMPLE_RATE, 256, 60, 8
+  #define AUDIO_CONFIG SAMPLE_RATE, 256, 60, 9
   #define SPATIALIZER_TYPE al::Dbap
   #define SPEAKER_LAYOUT al::AlloSphereSpeakerLayoutCompensated()
 #endif
@@ -180,6 +180,10 @@ public:
         unsigned sub = 47;
 
         int now = int(io.framesPerBuffer()) - sample;
+
+        for (auto mon = 12; mon < 16; mon++) {
+          io.out(mon, sample) = io.in(9, sample);
+        }
 
         // feed sub, bass and kick
         io.out(sub, sample) = mManager.agents()->at(4)->buffer().readSample(now); // bass
