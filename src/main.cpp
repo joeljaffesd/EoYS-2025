@@ -163,16 +163,15 @@ public:
 
       mGraphicsManager.render(io);
 
-      if (!mMute) {
-        mManager.processAudio(io);
-      }
+      mManager.processAudio(io);
 
-      // handy mute
-      // for (auto channel = 0; channel < io.channelsOut(); channel++) {
-      //   for (auto sample = 0; sample < io.framesPerBuffer(); sample++) {
-      //     io.out(channel, sample) = 0.f;
-      //   }
-      // }
+      if (mMute) {
+        for (auto channel = 0; channel < io.channelsOut(); channel++) {
+          for (auto sample = 0; sample < io.framesPerBuffer(); sample++) {
+            io.out(channel, sample) = 0.f;
+          }
+        }
+      }
 
       // monitor mix
       for (auto sample = 0; sample < io.framesPerBuffer(); sample++) {
@@ -185,16 +184,17 @@ public:
           io.out(mon, sample) = io.in(8, sample);
         }
 
-        // feed sub, bass and kick
-        io.out(sub, sample) = mManager.agents()->at(4)->buffer().readSample(now); // bass
-        io.out(sub, sample) = mManager.agents()->at(5)->buffer().readSample(now); // kick
-
+        if (!mMute) {
+          // feed sub, bass and kick
+          io.out(sub, sample) = mManager.agents()->at(4)->buffer().readSample(now); // bass
+          io.out(sub, sample) = mManager.agents()->at(5)->buffer().readSample(now); // kick
+        }
 
         // // vox
-        io.out(mon1, sample) = mManager.agents()->at(0)->buffer().readSample(now);
+        io.out(mon1, sample) += mManager.agents()->at(0)->buffer().readSample(now);
 
         // // gtr mixdown
-        io.out(mon2, sample) = mManager.agents()->at(1)->buffer().readSample(now) +
+        io.out(mon2, sample) += mManager.agents()->at(1)->buffer().readSample(now) +
                                mManager.agents()->at(2)->buffer().readSample(now) +
                                mManager.agents()->at(3)->buffer().readSample(now); 
 
@@ -202,7 +202,7 @@ public:
         // io.out(mon3, sample) = mManager.agents()->at(4)->buffer().readSample(now);
 
         // // drums mixdown
-        io.out(mon4, sample) = mManager.agents()->at(5)->buffer().readSample(now) +
+        io.out(mon4, sample) += mManager.agents()->at(5)->buffer().readSample(now) +
                                mManager.agents()->at(6)->buffer().readSample(now) +
                                mManager.agents()->at(7)->buffer().readSample(now) +
                                mManager.agents()->at(8)->buffer().readSample(now) +
