@@ -1,12 +1,12 @@
 ::Snare
-/Azimuth f 180.000000 
-/Distance f 3.500000 
-/Elevation f 90.000000 
+/Azimuth f 2.687000 
+/Distance f 3.664000 
+/Elevation f 2.687001 
 /Enabled i 1 
 /Gain f 0.000000 
 /Input i 4 
 /Volume f 0.000000 
-/_pose fffffff 0.000000 3.500000 -0.000000 1.000000 0.000000 0.000000 0.000000 
+/_pose fffffff 0.171579 0.171768 -3.655947 1.000000 0.000000 0.000000 0.000000 
 /giml::Compressor<float>Enabled i 1 
 /giml::Compressor<float>attackMillis f 3.500000 
 /giml::Compressor<float>knee f 4.932000 

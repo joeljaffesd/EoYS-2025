@@ -1,5 +1,5 @@
 ::Bass
-/Amp i 0 
+/Amp i 1 
 /Azimuth f 180.000000 
 /Distance f 5.000000 
 /Elevation f -90.000000 
@@ -11,7 +11,7 @@
 /giml::Compressor<float>Enabled i 1 
 /giml::Compressor<float>attackMillis f 3.500000 
 /giml::Compressor<float>knee f 5.018000 
-/giml::Compressor<float>makeupGain f 4.000000 
+/giml::Compressor<float>makeupGain f 0.000000 
 /giml::Compressor<float>ratio f 4.000000 
 /giml::Compressor<float>releaseMillis f 100.000000 
 /giml::Compressor<float>threshold f -20.000000 

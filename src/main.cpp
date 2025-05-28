@@ -187,7 +187,7 @@ public:
         if (!mMute) {
           // feed sub, bass and kick
           io.out(sub, sample) = mManager.agents()->at(4)->buffer().readSample(now); // bass
-          io.out(sub, sample) = mManager.agents()->at(5)->buffer().readSample(now); // kick
+          io.out(sub, sample) += mManager.agents()->at(5)->buffer().readSample(now); // kick
         }
 
         // // vox
@@ -199,7 +199,7 @@ public:
                                mManager.agents()->at(3)->buffer().readSample(now); 
 
         // bass
-        // io.out(mon3, sample) = mManager.agents()->at(4)->buffer().readSample(now);
+        io.out(mon3, sample) += mManager.agents()->at(4)->buffer().readSample(now);
 
         // // drums mixdown
         io.out(mon4, sample) += mManager.agents()->at(5)->buffer().readSample(now) +
