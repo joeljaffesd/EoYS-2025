@@ -124,7 +124,7 @@ public:
       }
       
       // Register parameters
-      mParameterServer->registerParameterBundle(voice->params());
+      // mParameterServer->registerParameterBundle(voice->params());
       
       // Start transition
       isAnimating = true;
@@ -184,6 +184,18 @@ public:
 
     mCallbacks.push_back([this]() {
       auto* mVideoLoader = this->prepareVoice<VideoSphereLoaderCV>();
+      mVideoLoader->loadVideo("../assets/scenes/redBarchetta/01_intro.mp4");
+      this->registerVoice(mVideoLoader);
+    });    
+
+    mCallbacks.push_back([this]() {
+      auto* mVideoLoader = this->prepareVoice<VideoSphereLoaderCV>();
+      mVideoLoader->loadVideo("../assets/scenes/redBarchetta/02_drive.mp4");
+      this->registerVoice(mVideoLoader);
+    });        
+
+    mCallbacks.push_back([this]() {
+      auto* mVideoLoader = this->prepareVoice<VideoSphereLoaderCV>();
       mVideoLoader->loadVideo("../assets/scenes/manInTheBox/inTheBox.mp4");
       this->registerVoice(mVideoLoader);
     });
@@ -193,6 +205,30 @@ public:
       mVideoLoader->loadVideo("../assets/scenes/manInTheBox/homunculusBG.mp4");
       this->registerVoice(mVideoLoader);
     });
+
+    mCallbacks.push_back([this]() {
+      auto* mVideoLoader = this->prepareVoice<VideoSphereLoaderCV>();
+      mVideoLoader->loadVideo("../assets/scenes/manInTheBox/skullMeltBG.mp4");
+      this->registerVoice(mVideoLoader);
+    });
+
+    mCallbacks.push_back([this]() {
+      auto* mVideoLoader = this->prepareVoice<VideoSphereLoaderCV>();
+      mVideoLoader->loadVideo("../assets/scenes/manInTheBox/fingerFaceBG.mp4");
+      this->registerVoice(mVideoLoader);
+    });    
+
+    mCallbacks.push_back([this]() {
+      auto* mVideoLoader = this->prepareVoice<VideoSphereLoaderCV>();
+      mVideoLoader->loadVideo("../assets/scenes/manInTheBox/wormEaterBG.mp4");
+      this->registerVoice(mVideoLoader);
+    });    
+    
+    mCallbacks.push_back([this]() {
+      auto* mVideoLoader = this->prepareVoice<VideoSphereLoaderCV>();
+      mVideoLoader->loadVideo("../assets/scenes/manInTheBox/faces.mp4");
+      this->registerVoice(mVideoLoader);
+    });     
 
   }
 

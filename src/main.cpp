@@ -42,7 +42,7 @@ public:
   AudioManager<ChannelStrip> mManager;
   GraphicsManager mGraphicsManager;
   al::ParameterBool mAudioMode {"mAudioMode", "", false};
-  al::ParameterBool mMute {"mMute", "", false};
+  al::ParameterBool mMute {"mMute", "", true}; // mute by default
 
   gam::SamplePlayer<float, gam::ipl::Cubic, gam::phsInc::Loop> player[8];
   std::vector<std::string> names;
