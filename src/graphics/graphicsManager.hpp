@@ -50,12 +50,12 @@ public:
     });
 
     mCallbacks.push_back([this]() {
-      mVideoLoader.loadVideo("../assets/scenes/redBarchetta/01_intro.mp4");
+      mVideoLoader.loadVideo("../assets/scenes/redBarchetta/03.mp4");
       type = 3;
     });
 
     mCallbacks.push_back([this]() {
-      mVideoLoader.loadVideo("../assets/scenes/redBarchetta/02_drive.mp4");
+      mVideoLoader.loadVideo("../assets/scenes/redBarchetta/04.mp4");
       type = 3;
     });
 
