@@ -35,12 +35,16 @@ private:
   bool restartFlag = false; // hack for networked restart
   al::Parameter mCurrentTime {"mCurrentTime", "", 0, 0, std::numeric_limits<int>::max()};
   al::ParameterBundle mParams{"VideoSphereLoaderCV"};
+
+  al::ParameterBool networkedInitFlag {"networkedInitFlag", "", true};
   bool initFlag = true;
 
 public:
 
   void setVideoFilePath(const std::string& videoFilePath) {
     mVideoFilePath.set(videoFilePath);
+    // this->initFlag = true;
+    this->networkedInitFlag = !networkedInitFlag;
   }
 
   // Update the displayed frame based on the current frame index
@@ -73,7 +77,11 @@ public:
   }
 
   VideoSphereLoaderCV() {
-    mParams << mPlaying << mLooping << mRestarted << mCurrentTime << mVideoFilePath;
+    mParams << mPlaying << mLooping << mRestarted << mCurrentTime << mVideoFilePath << networkedInitFlag;
+    networkedInitFlag.registerChangeCallback([this](bool value) {
+      this->initFlag = true;
+      std::cout << "NetworkedInitFlag changed, setting initFlag to true" << std::endl;
+    });
   }
 
   ~VideoSphereLoaderCV() {
@@ -240,12 +248,12 @@ public:
   }
 
   void onProcess(al::Graphics& g) {
+
     if (this->initFlag) {
       this->loadVideo();
       this->initFlag = false;
     }
 
-    
     if (!mVideo.videoTexture.created()) {
       std::cerr << "Texture not created in draw" << std::endl;
       return;

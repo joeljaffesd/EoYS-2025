@@ -45,7 +45,7 @@ public:
   gam::SamplePlayer<float, gam::ipl::Cubic, gam::phsInc::Loop> player[8];
   std::vector<std::string> names;
 
-  al::ParameterInt mSceneIndex{"mSceneIndex", "", -1, -1, 3};
+  al::ParameterInt mSceneIndex{"mSceneIndex", "", -1};
   std::vector<std::function<void()>> mCallbacks;
 
   template <class TSynthVoice>
@@ -73,7 +73,53 @@ public:
 
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/manicDepression/01.mp4");
+    });
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/manicDepression/02.mp4");
+    });
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/redBarchetta/01.mp4");
+    });
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/redBarchetta/02.mp4");
+    });
+
+    // Man In The Box scene callbacks
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/manInTheBox/01.mp4");
+    });
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/manInTheBox/02.mp4");
+    });
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/manInTheBox/03.mp4");
+    });
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/manInTheBox/04.mp4");
+    });
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/manInTheBox/05.mp4");
+    });
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/manInTheBox/06.mp4");
     });
 
     al::imguiInit();
@@ -221,18 +267,18 @@ public:
 
         // // gtr mixdown
         io.out(mon2, sample) += mManager.agents()->at(1)->buffer().readSample(now) +
-                               mManager.agents()->at(2)->buffer().readSample(now) +
-                               mManager.agents()->at(3)->buffer().readSample(now); 
+                                mManager.agents()->at(2)->buffer().readSample(now) +
+                                mManager.agents()->at(3)->buffer().readSample(now); 
 
         // bass
         io.out(mon3, sample) += mManager.agents()->at(4)->buffer().readSample(now);
 
         // // drums mixdown
         io.out(mon4, sample) += mManager.agents()->at(5)->buffer().readSample(now) +
-                               mManager.agents()->at(6)->buffer().readSample(now) +
-                               mManager.agents()->at(7)->buffer().readSample(now) +
-                               mManager.agents()->at(8)->buffer().readSample(now) +
-                               mManager.agents()->at(9)->buffer().readSample(now);
+                                mManager.agents()->at(6)->buffer().readSample(now) +
+                                mManager.agents()->at(7)->buffer().readSample(now) +
+                                mManager.agents()->at(8)->buffer().readSample(now) +
+                                mManager.agents()->at(9)->buffer().readSample(now);
       }
 
     }
