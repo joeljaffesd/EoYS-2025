@@ -8,6 +8,8 @@
 #include <iostream>
 #include <chrono>
 #include <memory>
+#include <thread>
+#include <mutex>
 
 class VideoSphereLoaderCV : public al::PositionedVoice {
 private:
@@ -18,6 +20,11 @@ private:
   
   // Vector to store all preloaded frames
   std::vector<cv::Mat> mFrames;
+  
+  // Async loading variables
+  std::thread mLoadingThread;
+  std::mutex mFramesMutex;
+  bool mIsLoading = false;
   
   // Video properties
   int mVideoWidth = 0;
@@ -49,9 +56,19 @@ public:
 
   // Update the displayed frame based on the current frame index
   void updateDisplayFrame() {
-    if (mCurrentFrame < 0 || mCurrentFrame >= mFrames.size()) {
-      std::cerr << "Invalid frame index: " << mCurrentFrame << std::endl;
+    std::lock_guard<std::mutex> lock(mFramesMutex);
+    
+    if (mFrames.empty()) {
+      std::cerr << "No frames available in updateDisplayFrame" << std::endl;
       return;
+    }
+    
+    // If we're still loading and have only the placeholder frame,
+    // or if the requested frame is beyond what we've loaded,
+    // show the first frame (which is our loading placeholder)
+    int frameToShow = 0;
+    if (!mIsLoading && mFrames.size() > 1 && mCurrentFrame < mFrames.size()) {
+      frameToShow = mCurrentFrame;
     }
     
     // Make sure we have a valid texture before continuing
@@ -61,14 +78,14 @@ public:
     }
     
     // Make sure the frame is valid
-    if (mFrames[mCurrentFrame].empty()) {
-      std::cerr << "Empty frame at index " << mCurrentFrame << std::endl;
+    if (mFrames[frameToShow].empty()) {
+      std::cerr << "Empty frame at index " << frameToShow << std::endl;
       return;
     }
     
     try {
-      mVideo.videoImage = mFrames[mCurrentFrame];
-      mVideo.videoTexture.submit(mVideo.videoImage.ptr()); // seg faults here
+      mVideo.videoImage = mFrames[frameToShow];
+      mVideo.videoTexture.submit(mVideo.videoImage.ptr());
     } catch (const std::exception& e) {
       std::cerr << "Exception in updateDisplayFrame: " << e.what() << std::endl;
     } catch (...) {
@@ -105,9 +122,12 @@ public:
   
   bool loadVideo() {
     std::cout << "Loading video: " << mVideoFilePath.get() << std::endl;
+    
+    // Clean up any previous loading
+    cleanup();
+    
     // Create a sphere mesh for rendering
     addTexSphere(mMesh, 15.0, 24, true);
-    //mVideoFilePath = videoFilePath;
     
     // Initialize the video file
     mVideo.initializeVideoCaptureFile(mVideoFilePath, true);
@@ -135,66 +155,37 @@ public:
     mVideo.videoTexture.filter(al::Texture::LINEAR);
     mVideo.videoTexture.wrap(al::Texture::REPEAT, al::Texture::CLAMP_TO_EDGE, al::Texture::CLAMP_TO_EDGE);
     
-    // Preload all frames into memory
-    std::cout << "Preloading all " << mFrameCount << " frames..." << std::endl;
-    mFrames.clear();
-    mFrames.reserve(mFrameCount);
-    
-    // Set to the beginning of the video
-    mVideo.videoCapture->set(cv::CAP_PROP_POS_FRAMES, 0);
-    
-    // Read all frames
-    cv::Mat frame;
-    int frameCount = 0;
-    
+    // Create placeholder frame
+    cv::Mat loadingFrame(mVideoHeight, mVideoWidth, CV_8UC4, cv::Scalar(0, 0, 0, 255));
     try {
-      while (frameCount < mFrameCount && mVideo.videoCapture->isOpened()) {
-        bool success = mVideo.videoCapture->read(frame);
-        if (!success || frame.empty()) {
-          std::cerr << "Warning: Failed to read frame " << frameCount << std::endl;
-          break;
-        }
-        
-        // Create a deep copy of the frame and store it
-        cv::Mat frameCopy = frame.clone();
-        if (frameCopy.empty()) {
-          std::cerr << "Warning: Failed to clone frame " << frameCount << std::endl;
-          break;
-        }
-        
-        mFrames.push_back(frameCopy);
-        frameCount++;
-        
-        // Display progress
-        if (frameCount % 100 == 0 || frameCount == mFrameCount) {
-          std::cout << "  Loaded " << frameCount << " of " << mFrameCount << " frames" << std::endl;
-        }
-      }
+      cv::putText(loadingFrame, "Loading video...", 
+                  cv::Point(mVideoWidth/2 - 100, mVideoHeight/2), 
+                  cv::FONT_HERSHEY_SIMPLEX, 1.0, 
+                  cv::Scalar(255, 255, 255, 255), 2);
     } catch (const cv::Exception& e) {
-      std::cerr << "OpenCV exception while loading frames: " << e.what() << std::endl;
-    } catch (const std::exception& e) {
-      std::cerr << "Exception while loading frames: " << e.what() << std::endl;
-    } catch (...) {
-      std::cerr << "Unknown exception while loading frames" << std::endl;
+      std::cerr << "OpenCV exception creating loading frame: " << e.what() << std::endl;
     }
     
-    std::cout << "Preloaded " << mFrames.size() << " frames" << std::endl;
-    
-    // Verify we got all frames
-    if (mFrames.empty()) {
-      std::cerr << "Failed to preload frames" << std::endl;
-      return false;
+    // Initialize frames vector with placeholder
+    {
+      std::lock_guard<std::mutex> lock(mFramesMutex);
+      mFrames.clear();
+      mFrames.push_back(loadingFrame);
     }
     
-    // We can now close the video file since we have all frames in memory
-    mVideo.cleanupVideoCapture();
+    // Set the initial texture
+    mVideo.videoImage = loadingFrame;
+    mVideo.videoTexture.submit(mVideo.videoImage.ptr());
     
-    // Set the first frame
-    if (!mFrames.empty()) {
-      mVideo.videoImage = mFrames[0];
-      mVideo.videoTexture.submit(mVideo.videoImage.ptr());
-      std::cout << "First frame set: " << mVideo.videoImage.cols << "x" << mVideo.videoImage.rows << std::endl;
+    // Start asynchronous loading
+    if (mLoadingThread.joinable()) {
+      mLoadingThread.join();
     }
+    
+    mIsLoading = true;
+    mLoadingThread = std::thread([this]() {
+      this->loadFramesAsync();
+    });
     
     // Start playback
     mPlaying = true;
@@ -216,6 +207,19 @@ public:
       mCurrentTime = 0.0;
       updateDisplayFrame();
       restartFlag = !restartFlag;
+    }
+    
+    // If we're still loading, just show the loading frame
+    if (mIsLoading) {
+      return;
+    }
+    
+    {
+      std::lock_guard<std::mutex> lock(mFramesMutex);
+      if (mFrames.empty() || mFrames.size() <= 1) {
+        // Still loading or no frames available
+        return;
+      }
     }
     
     // Update current time
@@ -242,7 +246,6 @@ public:
     // If we need to jump to a different frame
     if (targetFrame != mCurrentFrame) {
       mCurrentFrame = targetFrame;
-      //mFrameNumber = targetFrame;
       updateDisplayFrame();
     }
   }
@@ -306,10 +309,78 @@ public:
   int getCurrentFrame() const { return mCurrentFrame; }
   
   void cleanup() {
+    // Stop the loading thread
+    mIsLoading = false;
+    if (mLoadingThread.joinable()) {
+      mLoadingThread.join();
+    }
+    
     // Clear all preloaded frames to free memory
-    mFrames.clear();
+    {
+      std::lock_guard<std::mutex> lock(mFramesMutex);
+      mFrames.clear();
+    }
+    
     mVideo.cleanupVideoCapture();
     mPlaying = false;
+  }
+  
+  // Asynchronous frame loading function
+  void loadFramesAsync() {
+    // Set to the beginning of the video
+    mVideo.videoCapture->set(cv::CAP_PROP_POS_FRAMES, 0);
+    
+    // Create a temporary vector to hold the frames
+    std::vector<cv::Mat> tempFrames;
+    tempFrames.reserve(mFrameCount);
+    
+    // Read all frames
+    cv::Mat frame;
+    int frameCount = 0;
+    
+    try {
+      while (frameCount < mFrameCount && mVideo.videoCapture->isOpened() && mIsLoading) {
+        bool success = mVideo.videoCapture->read(frame);
+        if (!success || frame.empty()) {
+          std::cerr << "Warning: Failed to read frame " << frameCount << std::endl;
+          break;
+        }
+        
+        // Create a deep copy of the frame and store it
+        cv::Mat frameCopy = frame.clone();
+        if (frameCopy.empty()) {
+          std::cerr << "Warning: Failed to clone frame " << frameCount << std::endl;
+          break;
+        }
+        
+        tempFrames.push_back(frameCopy);
+        frameCount++;
+        
+        // Display progress
+        if (frameCount % 100 == 0 || frameCount == mFrameCount) {
+          std::cout << "  Loaded " << frameCount << " of " << mFrameCount << " frames" << std::endl;
+        }
+      }
+    } catch (const cv::Exception& e) {
+      std::cerr << "OpenCV exception while loading frames: " << e.what() << std::endl;
+    } catch (const std::exception& e) {
+      std::cerr << "Exception while loading frames: " << e.what() << std::endl;
+    } catch (...) {
+      std::cerr << "Unknown exception while loading frames" << std::endl;
+    }
+    
+    std::cout << "Loaded " << tempFrames.size() << " frames" << std::endl;
+    
+    // Replace the frames vector with our loaded frames
+    {
+      std::lock_guard<std::mutex> lock(mFramesMutex);
+      mFrames = std::move(tempFrames);
+    }
+    
+    mIsLoading = false;
+    
+    // We can now close the video file since we have all frames in memory
+    mVideo.cleanupVideoCapture();
   }
 };
 
