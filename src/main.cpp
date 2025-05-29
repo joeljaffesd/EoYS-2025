@@ -31,7 +31,6 @@
 
 #include "../assets/namModels/BassModel.h"
 #include "../assets/namModels/MarshallModel.h"
-// #include "src/graphics/graphicsManager.hpp"
 
 // Gamma ig for now
 #include "Gamma/SamplePlayer.h"
@@ -40,7 +39,6 @@ class Main : public al::DistributedApp {
 public:
   int activeVoiceId;
   AudioManager<ChannelStrip> mManager;
-  al::DistributedScene mGraphicsManager;
   al::ParameterBool mAudioMode {"mAudioMode", "", false};
   al::ParameterBool mMute {"mMute", "", true}; // mute by default
 
@@ -50,31 +48,31 @@ public:
   al::ParameterInt mSceneIndex{"mSceneIndex", "", -1, -1, 3};
   std::vector<std::function<void()>> mCallbacks;
 
+  template <class TSynthVoice>
+  TSynthVoice* loadVoice() {
+    mManager.scene()->triggerOff(activeVoiceId);
+    auto* voice = mManager.scene()->getVoice<TSynthVoice>();
+    activeVoiceId = mManager.scene()->triggerOn(voice);
+    return voice;
+  }
+
   void onInit() override {
 
     mCallbacks.push_back([this]() {
-      mManager.scene()->triggerOff(activeVoiceId);
-      auto* voice = mManager.scene()->getVoice<ImageSphereLoader>();
-      activeVoiceId = mManager.scene()->triggerOn(voice);
+      loadVoice<ImageSphereLoader>();
     });
 
     mCallbacks.push_back([this]() {
-      mManager.scene()->triggerOff(activeVoiceId);
-      auto* voice = mManager.scene()->getVoice<AssetEngine>();
-      activeVoiceId = mManager.scene()->triggerOn(voice);
+      loadVoice<AssetEngine>();
     });
 
     mCallbacks.push_back([this]() {
-      mManager.scene()->triggerOff(activeVoiceId);
-      auto* voice = mManager.scene()->getVoice<ShaderEngine>();
-      activeVoiceId = mManager.scene()->triggerOn(voice);
+      auto* voice = loadVoice<ShaderEngine>();
       voice->shaderPath("../src/shaders/Reactive-shaders/Psych1.frag");
     });
 
     mCallbacks.push_back([this]() {
-      mManager.scene()->triggerOff(activeVoiceId);
-      auto* voice = mManager.scene()->getVoice<VideoSphereLoaderCV>();
-      activeVoiceId = mManager.scene()->triggerOn(voice);
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/redBarchetta/02.mp4");
     });
 
@@ -82,9 +80,6 @@ public:
 
     mManager.scene()->verbose(true);
     this->registerDynamicScene(*mManager.scene());
-
-    // mManager.scene()->verbose(true);
-    // this->registerDynamicScene(mGraphicsManager);
 
     mManager.scene()->registerSynthClass<ImageSphereLoader>();
     mManager.scene()->registerSynthClass<AssetEngine>();
@@ -183,11 +178,6 @@ public:
     
   }
 
-  void onCreate() override {
-    // mGraphicsManager.init();
-    // mGraphicsManager.registerParameters(this->parameterServer());
-  }
-
   void onSound(al::AudioIOData& io) override {
     if (isPrimary()) {
       // // for now... write audio files to input to simulate audio input
@@ -198,8 +188,6 @@ public:
       //     io.inW(index, sample) = input[index];
       //   }
       // }
-
-      // mGraphicsManager.render(io);
 
       mManager.processAudio(io);
 
@@ -252,7 +240,6 @@ public:
 
   void onAnimate(double dt) override {
     mManager.update(dt);
-    mGraphicsManager.update(dt);
   }
 
   int phase = 0;
@@ -278,7 +265,6 @@ public:
   void onDraw(al::Graphics& g) override {
     g.lens().eyeSep(0.0); // disable stereo rendering
     g.clear(0);
-    // mGraphicsManager.render(g);
     mManager.draw(g);
     if (isPrimary()) {
       mManager.draw(g);
