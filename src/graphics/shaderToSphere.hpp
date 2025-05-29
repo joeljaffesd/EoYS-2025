@@ -30,7 +30,7 @@ public:
     subdivisions = subdiv;
     this->reset();
     this->primitive(al::Mesh::TRIANGLE_FAN);
-    al::addTexSphere(*this, 15, 250, true);
+    al::addTexSphere(*this, 15, 24, true);
     // this->update(); // 🔥 Push to GPU // seg faults, move to draw
   }
 
@@ -39,9 +39,14 @@ public:
     this->setMatrices(view, proj);
   }
 
+  bool first = true;
   /// Draw the sphere
   void draw(al::Graphics& g) {
-    this->update();
+    if (first) {
+      this->update();
+      first = false;
+    }
+    // this->update();
     this->mShader.use();
     g.pointSize(pointSize);
     // g.depthTesting(true);

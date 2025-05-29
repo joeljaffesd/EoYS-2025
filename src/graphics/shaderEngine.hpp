@@ -125,7 +125,9 @@ public:
     shaderSphere.setUniformFloat("flux", flux);
 
     // draw
-    shaderSphere.draw(g);
+    if (mIsReplica) {
+      shaderSphere.draw(g);
+    }
 
     // draw GUI 
     if (!mIsReplica) {

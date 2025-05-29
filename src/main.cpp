@@ -159,7 +159,7 @@ public:
 
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<VideoSphereLoaderCV>();
-      voice->setVideoFilePath("../assets/scenes/new/06.mp4");
+      voice->setVideoFilePath("../assets/scenes/manInTheBox/06.mp4");
     });
 
     mCallbacks.push_back([this]() {
