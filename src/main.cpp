@@ -68,7 +68,47 @@ public:
 
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<ShaderEngine>();
-      voice->shaderPath("../src/shaders/Reactive-shaders/Psych1.frag");
+      voice->shaderPath("../src/shaders/fractal1.frag");
+    });
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<ShaderEngine>();
+      voice->shaderPath("../src/shaders/fractal2.frag");
+    });    
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<ShaderEngine>();
+      voice->shaderPath("../src/shaders/fractal3.frag");
+    });        
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<ShaderEngine>();
+      voice->shaderPath("../src/shaders/metaBall1.frag");
+    });
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<ShaderEngine>();
+      voice->shaderPath("../src/shaders/FractalNoise1.frag");
+    });
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<ShaderEngine>();
+      voice->shaderPath("../src/shaders/FractalNoise2.frag");
+    });
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<ShaderEngine>();
+      voice->shaderPath("../src/shaders/Psych1.frag");
+    });
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<ShaderEngine>();
+      voice->shaderPath("../src/shaders/Psych2.frag");
+    });
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<ShaderEngine>();
+      voice->shaderPath("../src/shaders/OrganicNoise.frag");
     });
 
     mCallbacks.push_back([this]() {
