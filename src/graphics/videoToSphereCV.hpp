@@ -13,7 +13,7 @@ class VideoSphereLoaderCV : public al::PositionedVoice {
 private:
   al::Mesh mMesh;
   al::AlloOpenCV mVideo;
-  std::string mVideoFilePath;
+  al::ParameterString mVideoFilePath {"mVideoFilePath", "", "../assets/videos/sky.mp4"};
   al::ControlGUI mGUI;
   
   // Vector to store all preloaded frames
@@ -38,6 +38,11 @@ private:
   bool initFlag = true;
 
 public:
+
+  void setVideoFilePath(const std::string& videoFilePath) {
+    mVideoFilePath.set(videoFilePath);
+  }
+
   // Update the displayed frame based on the current frame index
   void updateDisplayFrame() {
     if (mCurrentFrame < 0 || mCurrentFrame >= mFrames.size()) {
@@ -68,7 +73,7 @@ public:
   }
 
   VideoSphereLoaderCV() {
-    mParams << mPlaying << mLooping << mRestarted << mCurrentTime;
+    mParams << mPlaying << mLooping << mRestarted << mCurrentTime << mVideoFilePath;
   }
 
   ~VideoSphereLoaderCV() {
@@ -90,17 +95,17 @@ public:
     //this->loadVideo(); // moved to flag
   }
   
-  bool loadVideo(const std::string& videoFilePath = "../assets/videos/vid.mp4") {
-    std::cout << "Loading video: " << videoFilePath << std::endl;
+  bool loadVideo() {
+    std::cout << "Loading video: " << mVideoFilePath.get() << std::endl;
     // Create a sphere mesh for rendering
     addTexSphere(mMesh, 15.0, 24, true);
-    mVideoFilePath = videoFilePath;
+    //mVideoFilePath = videoFilePath;
     
     // Initialize the video file
     mVideo.initializeVideoCaptureFile(mVideoFilePath, true);
     
     if (!mVideo.videoCapture || !mVideo.videoCapture->isOpened()) {
-      std::cerr << "Error opening video file: " << mVideoFilePath << std::endl;
+      std::cerr << "Error opening video file: " << mVideoFilePath.get() << std::endl;
       return false;
     }
     

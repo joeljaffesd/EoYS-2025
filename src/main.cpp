@@ -31,7 +31,7 @@
 
 #include "../assets/namModels/BassModel.h"
 #include "../assets/namModels/MarshallModel.h"
-#include "src/graphics/graphicsManager.hpp"
+// #include "src/graphics/graphicsManager.hpp"
 
 // Gamma ig for now
 #include "Gamma/SamplePlayer.h"
@@ -40,19 +40,56 @@ class Main : public al::DistributedApp {
 public:
   int activeVoiceId;
   AudioManager<ChannelStrip> mManager;
-  GraphicsManager mGraphicsManager;
+  al::DistributedScene mGraphicsManager;
   al::ParameterBool mAudioMode {"mAudioMode", "", false};
   al::ParameterBool mMute {"mMute", "", true}; // mute by default
 
   gam::SamplePlayer<float, gam::ipl::Cubic, gam::phsInc::Loop> player[8];
   std::vector<std::string> names;
 
+  al::ParameterInt mSceneIndex{"mSceneIndex", "", -1, -1, 3};
+  std::vector<std::function<void()>> mCallbacks;
+
   void onInit() override {
+
+    mCallbacks.push_back([this]() {
+      mManager.scene()->triggerOff(activeVoiceId);
+      auto* voice = mManager.scene()->getVoice<ImageSphereLoader>();
+      activeVoiceId = mManager.scene()->triggerOn(voice);
+    });
+
+    mCallbacks.push_back([this]() {
+      mManager.scene()->triggerOff(activeVoiceId);
+      auto* voice = mManager.scene()->getVoice<AssetEngine>();
+      activeVoiceId = mManager.scene()->triggerOn(voice);
+    });
+
+    mCallbacks.push_back([this]() {
+      mManager.scene()->triggerOff(activeVoiceId);
+      auto* voice = mManager.scene()->getVoice<ShaderEngine>();
+      activeVoiceId = mManager.scene()->triggerOn(voice);
+      voice->shaderPath("../src/shaders/Reactive-shaders/Psych1.frag");
+    });
+
+    mCallbacks.push_back([this]() {
+      mManager.scene()->triggerOff(activeVoiceId);
+      auto* voice = mManager.scene()->getVoice<VideoSphereLoaderCV>();
+      activeVoiceId = mManager.scene()->triggerOn(voice);
+      voice->setVideoFilePath("../assets/scenes/redBarchetta/02.mp4");
+    });
 
     al::imguiInit();
 
     mManager.scene()->verbose(true);
     this->registerDynamicScene(*mManager.scene());
+
+    // mManager.scene()->verbose(true);
+    // this->registerDynamicScene(mGraphicsManager);
+
+    mManager.scene()->registerSynthClass<ImageSphereLoader>();
+    mManager.scene()->registerSynthClass<AssetEngine>();
+    mManager.scene()->registerSynthClass<ShaderEngine>();
+    mManager.scene()->registerSynthClass<VideoSphereLoaderCV>();
 
     player[0].load("../assets/wavFiles/vocals.wav");
     player[1].load("../assets/wavFiles/guitar.wav");
@@ -76,7 +113,8 @@ public:
 
     // Add sound agents
     for (unsigned i = 0; i < 10; i++) {
-      mManager.addAgent(names[i].c_str());
+      if (isPrimary()) { mManager.addAgent(names[i].c_str()); }
+      else { mManager.addAgent(names[i].c_str(), false); } // mark as replica if not primary
       if (i < 2) { 
         mManager.agents()->at(i)->mInputChannel = i; 
       } else if (i == 2) {
@@ -146,8 +184,8 @@ public:
   }
 
   void onCreate() override {
-    mGraphicsManager.init();
-    mGraphicsManager.registerParameters(this->parameterServer());
+    // mGraphicsManager.init();
+    // mGraphicsManager.registerParameters(this->parameterServer());
   }
 
   void onSound(al::AudioIOData& io) override {
@@ -161,7 +199,7 @@ public:
       //   }
       // }
 
-      mGraphicsManager.render(io);
+      // mGraphicsManager.render(io);
 
       mManager.processAudio(io);
 
@@ -220,8 +258,16 @@ public:
   int phase = 0;
   bool onKeyDown(const al::Keyboard& k) override {
     if (isPrimary()) {
-      if (k.key() == '[') { mGraphicsManager.prevScene(); }
-      else if (k.key() == ']') { mGraphicsManager.nextScene(); }
+      if (k.key() == ']') { 
+        mSceneIndex = mSceneIndex + 1; 
+        std::cout << "Scene index: " << mSceneIndex << std::endl;
+        mCallbacks[mSceneIndex]();
+      }
+      else if (k.key() == '[') { 
+        mSceneIndex = mSceneIndex - 1; 
+        std::cout << "Scene index: " << mSceneIndex << std::endl;
+        mCallbacks[mSceneIndex]();
+      }
       else if (k.key() == 'm') { mMute = !mMute; }
       else if (k.key() == 'g') { mAudioMode = !mAudioMode; }
       else if (k.key() == 's') { mManager.storePresets(); }
@@ -232,7 +278,8 @@ public:
   void onDraw(al::Graphics& g) override {
     g.lens().eyeSep(0.0); // disable stereo rendering
     g.clear(0);
-    mGraphicsManager.render(g);
+    // mGraphicsManager.render(g);
+    mManager.draw(g);
     if (isPrimary()) {
       mManager.draw(g);
       if (mAudioMode) {

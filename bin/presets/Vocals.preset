@@ -1,12 +1,12 @@
 ::Vocals
-/Azimuth f 180.000000 
+/Azimuth f 0.000005 
 /Distance f 7.500000 
 /Elevation f 90.000000 
 /Enabled i 1 
 /Gain f 12.000000 
 /Input i 0 
 /Volume f 12.000000 
-/_pose fffffff 0.000000 7.500000 -0.000000 1.000000 0.000000 0.000000 0.000000 
+/_pose fffffff -0.000000 7.500000 0.000000 1.000000 0.000000 0.000000 0.000000 
 /giml::Compressor<float>Enabled i 1 
 /giml::Compressor<float>attackMillis f 3.500000 
 /giml::Compressor<float>knee f 5.000000 

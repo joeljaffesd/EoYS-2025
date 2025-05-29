@@ -55,10 +55,13 @@ public:
     fixedListenerPose = pose;
   }
 
-  void addAgent(const char name[]) {
+  void addAgent(const char name[], bool isPrimary = true) {
     // add agent
     auto* newAgent = mDistributedScene.getVoice<TSynthVoice>();
     newAgent->setName(name); 
+    if  (!isPrimary) {
+      newAgent->markAsReplica(); // mark as replica if not primary
+    }
     mAgents.push_back(newAgent);
 
     // add preset handler

@@ -1,3 +1,6 @@
+#ifndef EOYS_IMAGE_SPHERE
+#define EOYS_IMAGE_SPHERE
+
 #include "al/graphics/al_Graphics.hpp"
 #include "al/graphics/al_Image.hpp"
 #include "al/graphics/al_Mesh.hpp"
@@ -87,3 +90,5 @@ struct ImageSphereLoader : public al::PositionedVoice {
     //g.lighting(false);
   }
 };
+
+#endif // EOYS_IMAGE_SPHERE

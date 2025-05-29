@@ -37,13 +37,15 @@ private:
   giml::OnePole<float> mOnePole;
   giml::OnePole<float> mOnePoleCent;
 
+  al::ParameterString fragPath = {"fragPath", "", "../src/shaders/Reactive-shaders/fractal1.frag"};
+
 public:
 
   // make sure al::imguiInit() is called before this
   void init() override {
     dynListen.setSilenceThresh(0.1);
     mGUI << now << flux << centroid << rms << onsetIncrement << mChannel;
-    mParams << now << flux << centroid << rms << onsetIncrement << mChannel;
+    mParams << now << flux << centroid << rms << onsetIncrement << mChannel << fragPath;
     // plz tell me there's a better way to do this
     for (auto& param : mParams.parameters()) {
       auto pp = static_cast<al::Parameter*>(param);
@@ -53,8 +55,18 @@ public:
     //this->shader(); // moved to draw function, triggered by flag.
   }
 
-  void shader(std::string shaderPath = "../src/shaders/Reactive-shaders/fractal1.frag") {
-    shaderSphere.setShaders("../src/shaders/Reactive-shaders/standard.vert", shaderPath);
+  void shaderPath(std::string path) {
+    fragPath.set(path);
+  }
+
+  void shader() {
+    if (
+      shaderSphere.setShaders("../src/shaders/Reactive-shaders/standard.vert", fragPath)
+    ) { 
+      return; 
+    } 
+    else shaderSphere.setShaders("../src/shaders/Reactive-shaders/standard.frag", 
+                                 "../src/shaders/Reactive-shaders/fractal1.frag");
   }
 
   void update(double dt = 0) override {
