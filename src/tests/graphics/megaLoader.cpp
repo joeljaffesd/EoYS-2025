@@ -8,12 +8,32 @@
 
 class MegaLoader : public al::DistributedApp {
 public:
-  std::vector<al::PositionedVoice*> voices;
   int activeVoiceId;
   DistributedSceneWithInput mDistributedScene;
   al::ParameterBundle mBundle;
+  std::vector<std::function<void()>> loaderCalbacks;
 
   void onInit() override {
+
+    loaderCalbacks.push_back([this]() {
+      auto* voice = mDistributedScene.getVoice<ImageSphereLoader>();
+      activeVoiceId = mDistributedScene.triggerOn(voice);
+    });
+
+    loaderCalbacks.push_back([this]() {
+      auto* voice = mDistributedScene.getVoice<AssetEngine>();
+      activeVoiceId = mDistributedScene.triggerOn(voice);
+    });
+
+    loaderCalbacks.push_back([this]() {
+      auto* voice = mDistributedScene.getVoice<ShaderEngine>();
+      activeVoiceId = mDistributedScene.triggerOn(voice);
+    });
+    
+    loaderCalbacks.push_back([this]() {
+      auto* voice = mDistributedScene.getVoice<VideoSphereLoaderCV>();
+      activeVoiceId = mDistributedScene.triggerOn(voice);
+    });
 
     mDistributedScene.setVoiceMaxInputChannels(8);
 
@@ -23,16 +43,6 @@ public:
     mDistributedScene.registerSynthClass<ShaderEngine>();
     mDistributedScene.registerSynthClass<VideoSphereLoaderCV>();
     this->registerDynamicScene(mDistributedScene);
-    
-    // Setup camera for 3D viewing
-    nav().pos(0, 0, 0);  // Position the camera
-    nav().faceToward(al::Vec3f(0, 0, 0));  // Face toward origin
-
-    voices.push_back(mDistributedScene.getVoice<ImageSphereLoader>());
-    voices.push_back(mDistributedScene.getVoice<AssetEngine>());
-    voices.push_back(mDistributedScene.getVoice<ShaderEngine>());
-    voices.push_back(mDistributedScene.getVoice<VideoSphereLoaderCV>());
-    
   }
 
   void onSound(al::AudioIOData& io) override {
@@ -40,7 +50,6 @@ public:
   }
 
   void onAnimate(double dt) override {
-    // Update the video sphere loader with the elapsed time
     mDistributedScene.update(dt);
   }
 
@@ -48,30 +57,11 @@ public:
   bool onKeyDown(const al::Keyboard& k) override {
     if (k.key() == ' ') {
       mDistributedScene.triggerOff(activeVoiceId);
-      switch (phase) {
-        case 0: {
-          activeVoiceId = mDistributedScene.triggerOn(voices[0]);
-          phase++;
-          break;
-        }
-        case 1: {
-          activeVoiceId = mDistributedScene.triggerOn(voices[1]);
-          phase++;
-          break;
-        }
-        case 2: {
-          activeVoiceId = mDistributedScene.triggerOn(voices[2]);
-          phase++;
-          break;
-        }
-        case 3: {
-          activeVoiceId = mDistributedScene.triggerOn(voices[3]);
-          phase++;
-          break;
-        }
-        default:
-          phase = 0;
-          break;
+      if (phase < loaderCalbacks.size()) {
+        loaderCalbacks[phase]();
+        phase++;
+      } else {
+        phase = 0;
       }
     }
     return true;

@@ -16,25 +16,24 @@ private:
   al::Vec3f scene_min, scene_max, scene_center;
   al::Texture tex;
   std::vector<al::Mesh> meshes;
-  float a = 0.f, b = 0.f, c = 0.f;
+  al::Parameter a = {"a", "", 0.f};
+  al::Parameter b = {"b", "", 0.f};
+  al::Parameter c = {"c", "", 0.f};
   al::ParameterBool assetShow{"assetShow", "", true};
   al::Parameter scale{"scale", "", 1.f, 0.f, 10.f};
   al::ParameterBool rotate{"Rotate", "", true}; // Toggle rotation
   al::ControlGUI gui;
+  bool initFlag = true;
 
 public:
   void init() override {
-    this->loadAsset("../assets/3dModels/eye/eye.obj",
-                    "../assets/3dModels/eye/eye.png");
+    // this->loadAsset(); // moved to flag 
     gui << rotate << scale << assetShow;
-    this->registerParameters(rotate, scale, assetShow);
-
-    if (ImGui::GetCurrentContext() == nullptr) {
-      al::imguiInit();
-    }
+    this->registerParameters(rotate, scale, assetShow, a, b, c);
   }
 
-  void loadAsset(std::string objPath, std::string imagePath) {
+  void loadAsset(std::string objPath = "../assets/3dModels/eye/eye.obj", 
+                 std::string imagePath = "../assets/3dModels/eye/eye.png") {
     ascene = al::Scene::import(objPath);
     if (!ascene) {
       printf("error reading %s\n", objPath.c_str());
@@ -62,29 +61,30 @@ public:
     }
   }
 
-  void update(double dt) override {
-    // Enable or disable rotation based on the GUI toggle
-    if (!this->rotate) {
-      this->a = 0.0f; // Stop rotation
-    }
-  }
-
   void onProcess(al::Graphics& g) {
+
+    if (initFlag) {
+      this->loadAsset();
+      initFlag = false;
+    }
 
     if (!assetShow) {
       if (!mIsReplica) {
-        gui.draw(g); // draw gui regardless
+        //gui.draw(g); // draw gui regardless
       }
     } else {
       al::gl::depthTesting(true);
       g.lighting(true);
       g.pushMatrix();
 
-      // animate rotation
-      g.rotate(a, b, c, 0.f);
-      a -= 0.2f;
-      b += 0.2f;
-      c += 0.2f;
+      if (this->rotate) {
+        // animate rotation
+        // TODO remember where we left off when we toggle rotation
+        g.rotate(a.toFloat(), b.toFloat(), c.toFloat(), 0.f);
+        a = a - 0.2f;
+        b = b + 0.2f;
+        c = c + 0.2f;
+      }
 
       // center and scale the model
       float tmp = std::max({scene_max[0] - scene_min[0], scene_max[1] - scene_min[1], scene_max[2] - scene_min[2]});
@@ -105,7 +105,7 @@ public:
       g.lighting(false);
 
       if (!mIsReplica) {
-        gui.draw(g); // draw gui regardless
+        //gui.draw(g); // draw gui regardless
       }
     }
   }

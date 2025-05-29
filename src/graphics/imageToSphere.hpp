@@ -1,3 +1,6 @@
+#ifndef EOYS_IMAGE_SPHERE
+#define EOYS_IMAGE_SPHERE
+
 #include "al/graphics/al_Graphics.hpp"
 #include "al/graphics/al_Image.hpp"
 #include "al/graphics/al_Mesh.hpp"
@@ -11,14 +14,11 @@ struct ImageSphereLoader : public al::PositionedVoice {
   al::ParameterBool imageShow{"imageShow", "", true};
   al::Parameter sphereRadius = { "sphereRadius", "", 3.f, 0.f,10.f}; 
   al::Parameter pointSize = {"pointSize", "", 10.f, 0.f, 100.f};
+  bool initFlag = true;
 
   void init() override {
     addTexSphere(mMesh, 15, 250, true);
-    this->loadImage();
-    
-    if (ImGui::GetCurrentContext() == nullptr) {
-      al::imguiInit();
-    }
+    // this->loadImage(); // handle in draw w/ flag
   }
 
   void loadImage(std::string imagePath = "../assets/images/imgWrap.png") {
@@ -69,6 +69,10 @@ struct ImageSphereLoader : public al::PositionedVoice {
   } 
 
   void onProcess(al::Graphics &g) {
+    if (initFlag) {
+      this->loadImage();
+      initFlag = false;
+    }
     // this may need to be changed to handle mesh manipulations and shader..
     // manipulations
     if (!imageShow) { return; }
@@ -86,3 +90,5 @@ struct ImageSphereLoader : public al::PositionedVoice {
     //g.lighting(false);
   }
 };
+
+#endif // EOYS_IMAGE_SPHERE

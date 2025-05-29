@@ -31,7 +31,7 @@ public:
     this->reset();
     this->primitive(al::Mesh::TRIANGLE_FAN);
     al::addTexSphere(*this, 15, 250, true);
-    this->update(); // 🔥 Push to GPU
+    // this->update(); // 🔥 Push to GPU // seg faults, move to draw
   }
 
   /// Update view/projection matrices - should leave 
@@ -41,9 +41,11 @@ public:
 
   /// Draw the sphere
   void draw(al::Graphics& g) {
+    this->update();
     this->mShader.use();
     g.pointSize(pointSize);
-    g.depthTesting(true);
+    // g.depthTesting(true);
     g.draw(*this);
+    // g.depthTesting(false);
   }
 };

@@ -30,6 +30,7 @@ class AudioManager {
 private:
   DistributedSceneWithInput mDistributedScene;
   al::PickableManager mPickableManager;
+  std::vector<al::PresetHandler*> mPresetHandlers;
   std::vector<TSynthVoice*> mAgents;
   bool pickablesUpdatingParameters = false;
   al::Pose fixedListenerPose;
@@ -54,11 +55,47 @@ public:
     fixedListenerPose = pose;
   }
 
-  void addAgent(const char name[]) {
+  void addAgent(const char name[], bool isPrimary = true) {
+    // add agent
     auto* newAgent = mDistributedScene.getVoice<TSynthVoice>();
     newAgent->setName(name); 
+    if  (!isPrimary) {
+      newAgent->markAsReplica(); // mark as replica if not primary
+    }
     mAgents.push_back(newAgent);
-    mPickableManager << newAgent->mPickableMesh; // add pickable to manager
+
+    // add preset handler
+    auto* presetHandler = new al::PresetHandler("presets", true);
+    mPresetHandlers.push_back(presetHandler); // Add the preset handler to the vector
+
+    // feed pickable manager
+    mPickableManager << newAgent->mPickableMesh; // Add pickable to manager
+  }
+
+  void initPresetHandlers() {
+    std::cout << "Initializing preset handlers..." << std::endl;
+    for (auto i = 0; i < mAgents.size(); i++) {
+      auto handlerPtr = mPresetHandlers[i];
+      for (auto paramPtr : mAgents[i]->parameters()) {
+        handlerPtr->registerParameter(*paramPtr);
+      }
+    }
+  }
+
+  void recallPresets() {
+    std::cout << "Recalling presets for agents..." << std::endl;
+    for (auto i = 0; i < mAgents.size(); i++) {
+      auto handlerPtr = mPresetHandlers[i];
+      handlerPtr->recallPresetSynchronous(mAgents[i]->name());
+    }
+  }
+
+  void storePresets() {
+    std::cout << "Storing presets for agents..." << std::endl;
+    for (auto i = 0; i < mAgents.size(); i++) {
+      auto handlerPtr = mPresetHandlers[i];
+      handlerPtr->storePreset(mAgents[i]->name());
+    }
   }
 
   void prepare(al::AudioIO& audioIO) {
@@ -83,7 +120,7 @@ public:
   void updateAgents() {
     for (auto agent : mAgents) {
       agent->set(agent->mAzimuth.get(), agent->mElevation.get(),
-                 agent->mDistance.get(), agent->size, sampleRate);
+                 agent->mDistance.get(), agent->size);
     }
   }
 

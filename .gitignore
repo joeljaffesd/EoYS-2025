@@ -1,8 +1,8 @@
 build
 **/build
 
-bin
-**/bin
+bin/*
+!/bin/presets/
 
 .DS_Store
 

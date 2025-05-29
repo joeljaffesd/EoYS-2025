@@ -13,7 +13,7 @@ class VideoSphereLoaderCV : public al::PositionedVoice {
 private:
   al::Mesh mMesh;
   al::AlloOpenCV mVideo;
-  std::string mVideoFilePath;
+  al::ParameterString mVideoFilePath {"mVideoFilePath", "", "../assets/videos/sky.mp4"};
   al::ControlGUI mGUI;
   
   // Vector to store all preloaded frames
@@ -36,7 +36,17 @@ private:
   al::Parameter mCurrentTime {"mCurrentTime", "", 0, 0, std::numeric_limits<int>::max()};
   al::ParameterBundle mParams{"VideoSphereLoaderCV"};
 
+  al::ParameterBool networkedInitFlag {"networkedInitFlag", "", true};
+  bool initFlag = true;
+
 public:
+
+  void setVideoFilePath(const std::string& videoFilePath) {
+    mVideoFilePath.set(videoFilePath);
+    // this->initFlag = true;
+    this->networkedInitFlag = !networkedInitFlag;
+  }
+
   // Update the displayed frame based on the current frame index
   void updateDisplayFrame() {
     if (mCurrentFrame < 0 || mCurrentFrame >= mFrames.size()) {
@@ -67,7 +77,11 @@ public:
   }
 
   VideoSphereLoaderCV() {
-    mParams << mPlaying << mLooping << mRestarted << mCurrentTime;
+    mParams << mPlaying << mLooping << mRestarted << mCurrentTime << mVideoFilePath << networkedInitFlag;
+    networkedInitFlag.registerChangeCallback([this](bool value) {
+      this->initFlag = true;
+      std::cout << "NetworkedInitFlag changed, setting initFlag to true" << std::endl;
+    });
   }
 
   ~VideoSphereLoaderCV() {
@@ -86,24 +100,20 @@ public:
     }
 
     mGUI.registerParameterBundle(this->params());
-    this->loadVideo("../assets/videos/vid.mp4");
-
-    if (ImGui::GetCurrentContext() == nullptr) {
-      al::imguiInit();
-    }
+    //this->loadVideo(); // moved to flag
   }
   
-  bool loadVideo(const std::string& videoFilePath) {
-    std::cout << "Loading video: " << videoFilePath << std::endl;
+  bool loadVideo() {
+    std::cout << "Loading video: " << mVideoFilePath.get() << std::endl;
     // Create a sphere mesh for rendering
     addTexSphere(mMesh, 15.0, 24, true);
-    mVideoFilePath = videoFilePath;
+    //mVideoFilePath = videoFilePath;
     
     // Initialize the video file
     mVideo.initializeVideoCaptureFile(mVideoFilePath, true);
     
     if (!mVideo.videoCapture || !mVideo.videoCapture->isOpened()) {
-      std::cerr << "Error opening video file: " << mVideoFilePath << std::endl;
+      std::cerr << "Error opening video file: " << mVideoFilePath.get() << std::endl;
       return false;
     }
     
@@ -238,7 +248,12 @@ public:
   }
 
   void onProcess(al::Graphics& g) {
-    
+
+    if (this->initFlag) {
+      this->loadVideo();
+      this->initFlag = false;
+    }
+
     if (!mVideo.videoTexture.created()) {
       std::cerr << "Texture not created in draw" << std::endl;
       return;
@@ -251,7 +266,7 @@ public:
     mVideo.videoTexture.unbind(0);
     g.popMatrix();
     if (!mIsReplica) {
-      mGUI.draw(g);
+      //mGUI.draw(g);
     }
   }
   

@@ -1,0 +1,24 @@
+::Kick
+/Azimuth f 0.000005 
+/Distance f 1.000000 
+/Elevation f -90.000000 
+/Enabled i 1 
+/Gain f 0.000000 
+/Input i 3 
+/Volume f 0.000000 
+/_pose fffffff -0.000000 -1.000000 0.000000 1.000000 0.000000 0.000000 0.000000 
+/giml::Compressor<float>Enabled i 1 
+/giml::Compressor<float>attackMillis f 3.500000 
+/giml::Compressor<float>knee f 5.000000 
+/giml::Compressor<float>makeupGain f 12.797000 
+/giml::Compressor<float>ratio f 4.000000 
+/giml::Compressor<float>releaseMillis f 100.000000 
+/giml::Compressor<float>threshold f -20.493000 
+/giml::Reverb<float>Enabled i 0 
+/giml::Reverb<float>blend f 0.500000 
+/giml::Reverb<float>damping f 0.500000 
+/giml::Reverb<float>length f 5.000000 
+/giml::Reverb<float>regen f 0.500000 
+/giml::Reverb<float>room i 0 
+/giml::Reverb<float>time f 0.020000 
+::
