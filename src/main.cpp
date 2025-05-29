@@ -248,12 +248,16 @@ public:
       if (k.key() == ']') { 
         mSceneIndex = mSceneIndex + 1; 
         std::cout << "Scene index: " << mSceneIndex << std::endl;
-        mCallbacks[mSceneIndex]();
+        if (mSceneIndex >= 0 && mSceneIndex < mCallbacks.size()) {
+          mCallbacks[mSceneIndex]();
+        }
       }
       else if (k.key() == '[') { 
         mSceneIndex = mSceneIndex - 1; 
         std::cout << "Scene index: " << mSceneIndex << std::endl;
-        mCallbacks[mSceneIndex]();
+        if (mSceneIndex >= 0 && mSceneIndex < mCallbacks.size()) {
+          mCallbacks[mSceneIndex]();
+        }
       }
       else if (k.key() == 'm') { mMute = !mMute; }
       else if (k.key() == 'g') { mAudioMode = !mAudioMode; }
