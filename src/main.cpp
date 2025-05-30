@@ -345,7 +345,11 @@ public:
   }
 
   void onAnimate(double dt) override {
-    mManager.update(dt);
+    if (mAudioMode) {
+      mManager.update(dt);
+    } else {
+      mManager.scene()->update(dt);
+    }
   }
 
   int phase = 0;
