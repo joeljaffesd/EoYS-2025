@@ -101,6 +101,7 @@ public:
 
   VideoSphereLoaderCV() {
     mParams << mPlaying << mLooping << mRestarted << mCurrentTime << mVideoFilePath << networkedInitFlag;
+    mParams << mPose;
     networkedInitFlag.registerChangeCallback([this](bool value) {
       this->initFlag = true;
       std::cout << "NetworkedInitFlag changed, setting initFlag to true" << std::endl;

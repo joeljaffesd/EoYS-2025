@@ -37,7 +37,7 @@
 
 class Main : public al::DistributedApp {
 public:
-  int activeVoiceId;
+  int prevVoiceId, newVoiceId;
   AudioManager<ChannelStrip> mManager;
   al::ParameterBool mAudioMode {"mAudioMode", "", false};
   al::ParameterBool mMute {"mMute", "", true}; // mute by default
@@ -50,9 +50,24 @@ public:
 
   template <class TSynthVoice>
   TSynthVoice* loadVoice() {
-    mManager.scene()->triggerOff(activeVoiceId);
+    mManager.scene()->triggerOff(prevVoiceId);
+    auto* oldVoice = dynamic_cast<al::PositionedVoice*>(mManager.scene()->getActiveVoices());
+    oldVoice->setPose(al::Pose(al::Vec3d(0, 0, 0)));
+
+    // if shader, reset it
+    if (auto* shaderVoice = dynamic_cast<ShaderEngine*>(oldVoice)) {
+      shaderVoice->reset();
+    }
+
+    // if video, restart it
+    if (auto* videoVoice = dynamic_cast<VideoSphereLoaderCV*>(oldVoice)) {
+      videoVoice->restart();
+    }
+
     auto* voice = mManager.scene()->getVoice<TSynthVoice>();
-    activeVoiceId = mManager.scene()->triggerOn(voice);
+    voice->setPose(al::Pose(al::Vec3d(0, 30, 0)));
+    prevVoiceId = newVoiceId;
+    newVoiceId = mManager.scene()->triggerOn(voice);
     return voice;
   }
 
@@ -88,27 +103,12 @@ public:
 
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<ShaderEngine>();
-      voice->shaderPath("../src/shaders/FractalNoise1.frag");
-    });
-
-    mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<ShaderEngine>();
-      voice->shaderPath("../src/shaders/FractalNoise2.frag");
-    });
-
-    mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<ShaderEngine>();
       voice->shaderPath("../src/shaders/Psych1.frag");
     });
 
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<ShaderEngine>();
       voice->shaderPath("../src/shaders/Psych2.frag");
-    });
-
-    mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<ShaderEngine>();
-      voice->shaderPath("../src/shaders/OrganicNoise.frag");
     });
 
     mCallbacks.push_back([this]() {

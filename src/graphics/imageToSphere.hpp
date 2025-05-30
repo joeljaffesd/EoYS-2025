@@ -16,6 +16,10 @@ struct ImageSphereLoader : public al::PositionedVoice {
   al::Parameter pointSize = {"pointSize", "", 10.f, 0.f, 100.f};
   bool initFlag = true;
 
+  ImageSphereLoader() {
+    this->registerParameter(mPose);
+  }
+
   void init() override {
     addTexSphere(mMesh, 15, 250, true);
     // this->loadImage(); // handle in draw w/ flag

@@ -29,7 +29,7 @@ public:
   void init() override {
     // this->loadAsset(); // moved to flag 
     gui << rotate << scale << assetShow;
-    this->registerParameters(rotate, scale, assetShow, a, b, c);
+    this->registerParameters(rotate, scale, assetShow, a, b, c, mPose);
   }
 
   void loadAsset(std::string objPath = "../assets/3dModels/eye/eye.obj", 

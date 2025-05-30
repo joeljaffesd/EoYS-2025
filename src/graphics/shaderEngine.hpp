@@ -43,11 +43,16 @@ private:
 
 public:
 
+  void reset() {
+    this->now = 0.f;
+  }
+
   // make sure al::imguiInit() is called before this
   void init() override {
     dynListen.setSilenceThresh(0.1);
     mGUI << now << flux << centroid << rms << onsetIncrement << mChannel;
     mParams << now << flux << centroid << rms << onsetIncrement << mChannel << fragPath << networkedInitFlag;
+    mParams << mPose;
     // plz tell me there's a better way to do this
     for (auto& param : mParams.parameters()) {
       auto pp = static_cast<al::Parameter*>(param);
