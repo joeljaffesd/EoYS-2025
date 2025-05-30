@@ -155,6 +155,7 @@ public:
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/manInTheBox/05.mp4");
+      voice->setSpeed(0.5);
     });
 
     mCallbacks.push_back([this]() {

@@ -46,7 +46,13 @@ private:
   al::ParameterBool networkedInitFlag {"networkedInitFlag", "", true};
   bool initFlag = true;
 
+  float speed = 1.f;
+
 public:
+
+  void setSpeed(float newSpeed) {
+    this->speed = newSpeed;
+  }
 
   void setVideoFilePath(const std::string& videoFilePath) {
     mVideoFilePath.set(videoFilePath);
@@ -223,7 +229,7 @@ public:
     }
     
     // Update current time
-    mCurrentTime = mCurrentTime + dt;
+    mCurrentTime = mCurrentTime + (dt * speed);
     
     // Calculate the frame to display based on current time
     int targetFrame = mCurrentTime * mFrameRate;
