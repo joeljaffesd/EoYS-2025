@@ -280,7 +280,7 @@ public:
 
     if (this->initFlag) {
       this->loadVideo();
-      this->resetRotation();
+      // this->resetRotation();
       this->initFlag = false;
     }
 

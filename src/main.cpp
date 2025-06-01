@@ -63,6 +63,7 @@ public:
     // if video, restart it
     if (auto* videoVoice = dynamic_cast<VideoSphereLoaderCV*>(oldVoice)) {
       videoVoice->restart();
+      videoVoice->resetRotation();
     }
 
     auto* voice = mManager.scene()->getVoice<TSynthVoice>();
@@ -201,31 +202,31 @@ public:
       voice->setVideoFilePath("../assets/scenes/redBarchetta/02.mp4");
     });         
 
-    // buggy drive sequence 
-    mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<AssetEngine>();
-      voice->toggleRotation(false);
-      voice->setAssetFilePath("../assets/3dModels/car");
-    });  
+    // // buggy drive sequence 
+    // mCallbacks.push_back([this]() {
+    //   auto* voice = loadVoice<AssetEngine>();
+    //   voice->toggleRotation(false);
+    //   voice->setAssetFilePath("../assets/3dModels/car");
+    // });  
     
-    mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<AssetEngine>();
-      voice->toggleRotation(false);
-      voice->setPose(al::Pose(voice->pose().vec() + al::Vec3d(0, -0.3, -0.2)));
-      voice->setAssetFilePath("../assets/3dModels/car");
-    });  
+    // mCallbacks.push_back([this]() {
+    //   auto* voice = loadVoice<AssetEngine>();
+    //   voice->toggleRotation(false);
+    //   voice->setPose(al::Pose(voice->pose().vec() + al::Vec3d(0, -0.3, -0.2)));
+    //   voice->setAssetFilePath("../assets/3dModels/car");
+    // });  
     
-    mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<ShaderEngine>(false);
-      voice->setInputChannel(1);
-      voice->shaderPath("../src/shaders/julia.frag");
-    });  
+    // mCallbacks.push_back([this]() {
+    //   auto* voice = loadVoice<ShaderEngine>(false);
+    //   voice->setInputChannel(1);
+    //   voice->shaderPath("../src/shaders/julia.frag");
+    // });  
 
-    mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<AssetEngine>();
-      voice->toggleRotation(false);
-      voice->setAssetFilePath("../assets/3dModels/car");
-    });     
+    // mCallbacks.push_back([this]() {
+    //   auto* voice = loadVoice<AssetEngine>();
+    //   voice->toggleRotation(false);
+    //   voice->setAssetFilePath("../assets/3dModels/car");
+    // });     
 
 
     // TODO whipping post 
