@@ -26,7 +26,7 @@ struct MyApp : al::DistributedApp {
     if (isPrimary() && k.key() == ' ') {
       mScene.triggerOff(activeVoiceId);
       auto* voice = mScene.getVoice<ShaderEngine>();
-      voice->shaderPath("../src/shaders/julia.frag");
+      voice->shaderPath("../src/shaders/SunExplode.frag");
       activeVoiceId = mScene.triggerOn(voice);
     }
     return true;
