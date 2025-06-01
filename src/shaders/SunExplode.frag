@@ -34,8 +34,10 @@ void main() {
     vec3 from = vec3(1.0, 0.5, 0.5) + vec3(time * 2.0, time, -2.0);
 
     float a1 = 0.1 * (u_time / 2.0);
-    float a2 = vPos.x/vPos.y;
-    mat2 rot1 = mat2(cos(a1), sin(a1/2.0), -sin(a1), cos(vPos.y));
+    // Prevent division by zero
+    float a2 = vPos.y != 0.0 ? vPos.x/vPos.y : vPos.x;
+    // Use stable value for rotation instead of directly using vPos.y
+    mat2 rot1 = mat2(cos(a1), sin(a1/2.0), -sin(a1), cos(a1));
     mat2 rot2 = mat2(cos(vPos.x), sin(a2*2.0), -sin(a2), abs(a2));
     dir.xz *= rot1; dir.xy *= rot2;
     from.xz *= rot1; from.xy *= rot2;
@@ -50,8 +52,8 @@ void main() {
         float pa = 0.0, a = 0.0;
         for (int i = 0; i < iterations; i++) {
             p = abs(p) / dot(p, p) - formuparam;
-            a += abs(length(p) - pa / (0.08 * vPos.y / ((u_time / songLength+ 0.1)))); // remove vPos for stability
-            pa = length(p) + (vPos.x / a); // remove vPos for stability
+            a += abs(length(p) - pa / (0.08 + abs(vPos.y) / ((u_time / songLength + 0.1)))); // add abs() to prevent negative values
+            pa = length(p) + (abs(vPos.x) / (a + 0.001)); // add safety factor to prevent division by zero
         }
 
         float dm = max(0.0, darkmatter - a * a * 0.001);

@@ -118,6 +118,13 @@ public:
     });  
 
 
+    // loading screen ig
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<ShaderEngine>();
+      voice->shaderPath("../src/shaders/SunExplode.frag");
+    });   
+
+    
     // xanadu
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<ImageSphereLoader>();
@@ -268,7 +275,7 @@ public:
 
     // TODO dazed and confused       
 
-    
+
     // the pot
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<VideoSphereLoaderCV>();
