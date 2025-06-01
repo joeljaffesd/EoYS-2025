@@ -115,7 +115,7 @@ public:
 
   void resetRotation() {
     rotation.set(0.f);
-    rotation.set(false);
+    rotate.set(false);
   }
 
   VideoSphereLoaderCV() {
