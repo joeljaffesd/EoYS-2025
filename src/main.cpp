@@ -157,7 +157,7 @@ public:
     // eruption 
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<ShaderEngine>();
-      // todo set to guitar input
+      voice->setInputChannel(1);
       voice->shaderPath("../src/shaders/julia.frag");
     });    
 
@@ -218,6 +218,7 @@ public:
     
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<ShaderEngine>(false);
+      voice->setInputChannel(1);
       voice->shaderPath("../src/shaders/julia.frag");
     });  
 

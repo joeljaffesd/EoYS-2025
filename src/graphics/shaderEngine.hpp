@@ -43,6 +43,10 @@ private:
 
 public:
 
+  void setInputChannel(unsigned channel) {
+    this->mChannel.set(channel);
+  }
+
   void reset() {
     this->now = 0.f;
   }
