@@ -6,13 +6,10 @@
 
 struct MyApp : al::DistributedApp {
   al::DistributedScene mScene;
-  ShaderEngine* mShaderEngine = nullptr;
 
   void onInit() override {
     al::imguiInit();
-
     mScene.prepare(this->audioIO());
-
     mScene.verbose(true);
     mScene.registerSynthClass<ShaderEngine>();
     registerDynamicScene(mScene);
@@ -24,12 +21,13 @@ struct MyApp : al::DistributedApp {
     }
   }
 
+  int activeVoiceId = -1;
   bool onKeyDown(const al::Keyboard& k) override {
     if (isPrimary() && k.key() == ' ') {
-      if (mShaderEngine == nullptr) {
-        mShaderEngine = mScene.getVoice<ShaderEngine>();
-        mScene.triggerOn(mShaderEngine);
-      }
+      mScene.triggerOff(activeVoiceId);
+      auto* voice = mScene.getVoice<ShaderEngine>();
+      voice->shaderPath("../src/shaders/SunExplode.frag");
+      activeVoiceId = mScene.triggerOn(voice);
     }
     return true;
   }

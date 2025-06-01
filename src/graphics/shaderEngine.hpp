@@ -39,7 +39,7 @@ private:
   giml::OnePole<float> mOnePole;
   giml::OnePole<float> mOnePoleCent;
 
-  al::ParameterString fragPath = {"fragPath", "", "../src/shaders/fractal1.frag"};
+  al::ParameterString fragPath = {"fragPath", "", "../src/shaders/julia.frag"};
 
 public:
 
