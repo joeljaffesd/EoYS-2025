@@ -76,55 +76,17 @@ public:
 
   void onInit() override {
 
-    // misc
-    mCallbacks.push_back([this]() {
-      loadVoice<ImageSphereLoader>();
-    });
-
-    mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<AssetEngine>();
-    });      
-
-    mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
-      voice->setVideoFilePath("../assets/scenes/misc/eye.mp4");
-    }); 
-
-    mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
-      voice->setVideoFilePath("../assets/scenes/misc/charcoal.mp4");
-      voice->setSpeed(0.5f);
-      voice->toggleRotation(true);
-    });      
     
-    mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<ShaderEngine>();
-      voice->shaderPath("../src/shaders/fractal3.frag");
-    });        
-
-    mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<ShaderEngine>();
-      voice->shaderPath("../src/shaders/metaBall1.frag");
-    });
-
-    mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<ShaderEngine>();
-      voice->shaderPath("../src/shaders/Psych1.frag");
-    });
-
-    mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<ShaderEngine>();
-      voice->shaderPath("../src/shaders/Psych2.frag");
-    });  
+    // SCENE CALLBACKS:
 
 
-    // loading screen ig
-    mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<ShaderEngine>();
-      voice->shaderPath("../src/shaders/SunExplode.frag");
-    });   
+    // BREAKS OTHER SHADERS
+    // // loading screen ig
+    // mCallbacks.push_back([this]() {
+    //   auto* voice = loadVoice<ShaderEngine>();
+    //   voice->shaderPath("../src/shaders/SunExplode.frag");
+    // });  
 
-    
     // xanadu
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<ImageSphereLoader>();
@@ -169,7 +131,11 @@ public:
     });    
 
 
-    // TODO you really got me
+    // you really got me
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<ShaderEngine>();
+      voice->shaderPath("../src/shaders/fractal3.frag");
+    });       
 
 
     // manic depression 
@@ -273,7 +239,16 @@ public:
     });  
 
 
-    // TODO dazed and confused       
+    // dazed and confused       
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<ShaderEngine>();
+      voice->shaderPath("../src/shaders/Psych1.frag");
+    });
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<ShaderEngine>();
+      voice->shaderPath("../src/shaders/Psych2.frag");
+    });      
 
 
     // the pot
@@ -302,8 +277,40 @@ public:
       voice->setVideoFilePath("../assets/scenes/thePot/05.mp4");
     });        
 
+    // last scene needs to be called twice
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/thePot/05.mp4");
+    });   
+
     // TODO thank you slide
 
+
+    // // misc scenes
+    // mCallbacks.push_back([this]() {
+    //   loadVoice<ImageSphereLoader>();
+    // });
+
+    // mCallbacks.push_back([this]() {
+    //   auto* voice = loadVoice<AssetEngine>();
+    // });      
+
+    // mCallbacks.push_back([this]() {
+    //   auto* voice = loadVoice<VideoSphereLoaderCV>();
+    //   voice->setVideoFilePath("../assets/scenes/misc/eye.mp4");
+    // }); 
+
+    // mCallbacks.push_back([this]() {
+    //   auto* voice = loadVoice<VideoSphereLoaderCV>();
+    //   voice->setVideoFilePath("../assets/scenes/misc/charcoal.mp4");
+    //   voice->setSpeed(0.5f);
+    //   voice->toggleRotation(true);
+    // });           
+
+    // mCallbacks.push_back([this]() {
+    //   auto* voice = loadVoice<ShaderEngine>();
+    //   voice->shaderPath("../src/shaders/metaBall1.frag");
+    // });
 
     al::imguiInit();
 
