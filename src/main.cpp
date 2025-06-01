@@ -107,12 +107,12 @@ public:
     });    
 
 
-    // BREAKS OTHER SHADERS
-    // // loading screen ig
-    // mCallbacks.push_back([this]() {
-    //   auto* voice = loadVoice<ShaderEngine>();
-    //   voice->shaderPath("../src/shaders/SunExplode.frag");
-    // });  
+    // BREAKS OTHER SHADERS?
+    // loading screen ig
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<ShaderEngine>();
+      voice->shaderPath("../src/shaders/SunExplode.frag");
+    });  
 
     // xanadu
     mCallbacks.push_back([this]() {
@@ -189,6 +189,26 @@ public:
 
 
     // TODO texas flood 
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/texasFlood/01.mp4");
+      voice->toggleRotation(true);
+    });
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/texasFlood/02.mp4");
+    });
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/texasFlood/03.mp4");
+    });
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/texasFlood/04.mp4");
+    });     
 
     
     // red barchetta 
