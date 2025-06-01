@@ -290,6 +290,13 @@ public:
       voice->setVideoFilePath("../assets/scenes/thePot/04.mp4");
     });       
 
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/thePot/05.mp4");
+    });        
+
+    // TODO thank you slide
+
 
     al::imguiInit();
 
