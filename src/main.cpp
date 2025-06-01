@@ -92,7 +92,7 @@ public:
       auto* voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/misc/charcoal.mp4");
       voice->setSpeed(0.5f);
-      // voice->toggleRotation(true);
+      voice->toggleRotation(true);
     });     
 
     mCallbacks.push_back([this]() {
@@ -120,7 +120,7 @@ public:
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<ImageSphereLoader>();
       voice->setImageFilePath("../assets/scenes/xanadu/01.png");
-      // voice->toggleRotation(true);
+      voice->toggleRotation(true);
     }); 
 
     mCallbacks.push_back([this]() {
@@ -131,7 +131,7 @@ public:
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<ImageSphereLoader>();
       voice->setImageFilePath("../assets/scenes/xanadu/03.png");
-      // voice->toggleRotation(true);
+      voice->toggleRotation(true);
     });    
 
     mCallbacks.push_back([this]() {
@@ -167,7 +167,7 @@ public:
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/manicDepression/01.mp4");
-      // voice->toggleRotation(true);
+      voice->toggleRotation(true);
     });
 
     mCallbacks.push_back([this]() {
@@ -229,7 +229,7 @@ public:
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/manInTheBox/03.mp4");
-      // voice->toggleRotation(true);
+      voice->toggleRotation(true);
     });
 
     mCallbacks.push_back([this]() {
