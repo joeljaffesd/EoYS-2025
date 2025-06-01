@@ -2,32 +2,31 @@
 // #define DESKTOP
 
 #ifdef DESKTOP
-  // Desktop configuration
-  #define SAMPLE_RATE 48000
-  #define AUDIO_CONFIG SAMPLE_RATE, 128, 2, 8
-  #define SPATIALIZER_TYPE al::AmbisonicsSpatializer
-  #define SPEAKER_LAYOUT al::StereoSpeakerLayout()
+// Desktop configuration
+#define SAMPLE_RATE 48000
+#define AUDIO_CONFIG SAMPLE_RATE, 128, 2, 8
+#define SPATIALIZER_TYPE al::AmbisonicsSpatializer
+#define SPEAKER_LAYOUT al::StereoSpeakerLayout()
 #else
-  // Allosphere configuration
-  #define SAMPLE_RATE 44100
-  #define AUDIO_CONFIG SAMPLE_RATE, 256, 60, 9
-  #define SPATIALIZER_TYPE al::Dbap
-  #define SPEAKER_LAYOUT al::AlloSphereSpeakerLayoutCompensated()
+// Allosphere configuration
+#define SAMPLE_RATE 44100
+#define AUDIO_CONFIG SAMPLE_RATE, 256, 60, 9
+#define SPATIALIZER_TYPE al::Dbap
+#define SPEAKER_LAYOUT al::AlloSphereSpeakerLayoutCompensated()
 #endif
 
-
 #include "al/app/al_DistributedApp.hpp"
-#include "src/graphics/videoToSphereCV.hpp"
-#include "src/graphics/imageToSphere.hpp"
-#include "src/graphics/assetEngine.hpp"
-#include "src/graphics/shaderEngine.hpp"
-#include "al/ui/al_ControlGUI.hpp"
-#include "src/audio/audioManager.hpp"
-#include "al/sound/al_Speaker.hpp"
-#include "al/sound/al_Spatializer.hpp"
 #include "al/sound/al_Ambisonics.hpp"
 #include "al/sound/al_Dbap.hpp"
+#include "al/sound/al_Spatializer.hpp"
+#include "al/sound/al_Speaker.hpp"
 #include "al/sphere/al_AlloSphereSpeakerLayout.hpp"
+#include "al/ui/al_ControlGUI.hpp"
+#include "src/audio/audioManager.hpp"
+#include "src/graphics/assetEngine.hpp"
+#include "src/graphics/imageToSphere.hpp"
+#include "src/graphics/shaderEngine.hpp"
+#include "src/graphics/videoToSphereCV.hpp"
 
 #include "../assets/namModels/BassModel.h"
 #include "../assets/namModels/MarshallModel.h"
@@ -39,8 +38,8 @@ class Main : public al::DistributedApp {
 public:
   int prevVoiceId, newVoiceId;
   AudioManager<ChannelStrip> mManager;
-  al::ParameterBool mAudioMode {"mAudioMode", "", false};
-  al::ParameterBool mMute {"mMute", "", true}; // mute by default
+  al::ParameterBool mAudioMode{"mAudioMode", "", false};
+  al::ParameterBool mMute{"mMute", "", true}; // mute by default
 
   gam::SamplePlayer<float, gam::ipl::Cubic, gam::phsInc::Loop> player[8];
   std::vector<std::string> names;
@@ -48,24 +47,24 @@ public:
   al::ParameterInt mSceneIndex{"mSceneIndex", "", -1};
   std::vector<std::function<void()>> mCallbacks;
 
-  template <class TSynthVoice>
-  TSynthVoice* loadVoice(bool offset = true) {
+  template <class TSynthVoice> TSynthVoice *loadVoice(bool offset = true) {
     mManager.scene()->triggerOff(prevVoiceId);
-    auto* oldVoice = dynamic_cast<al::PositionedVoice*>(mManager.scene()->getActiveVoices());
+    auto *oldVoice = dynamic_cast<al::PositionedVoice *>(
+        mManager.scene()->getActiveVoices());
     // oldVoice->setPose(al::Pose(al::Vec3d(0, 0, 0)));
-    oldVoice->setPose( al::Pose( oldVoice->pose().vec() - al::Vec3d(0, 30, 0) ) );
+    oldVoice->setPose(al::Pose(oldVoice->pose().vec() - al::Vec3d(0, 30, 0)));
 
     // if shader, reset it
-    if (auto* shaderVoice = dynamic_cast<ShaderEngine*>(oldVoice)) {
+    if (auto *shaderVoice = dynamic_cast<ShaderEngine *>(oldVoice)) {
       shaderVoice->reset();
     }
 
     // if video, restart it
-    if (auto* videoVoice = dynamic_cast<VideoSphereLoaderCV*>(oldVoice)) {
+    if (auto *videoVoice = dynamic_cast<VideoSphereLoaderCV *>(oldVoice)) {
       videoVoice->restart();
     }
 
-    auto* voice = mManager.scene()->getVoice<TSynthVoice>();
+    auto *voice = mManager.scene()->getVoice<TSynthVoice>();
     if (offset) {
       voice->setPose(al::Pose(al::Vec3d(0, 30, 0)));
     }
@@ -77,219 +76,208 @@ public:
   void onInit() override {
 
     // misc
+    mCallbacks.push_back([this]() { loadVoice<ImageSphereLoader>(); });
+
+    mCallbacks.push_back([this]() { auto *voice = loadVoice<AssetEngine>(); });
+
     mCallbacks.push_back([this]() {
-      loadVoice<ImageSphereLoader>();
+      auto *voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/misc/eye.mp4");
     });
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<AssetEngine>();
-    });      
-
-    mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
-      voice->setVideoFilePath("../assets/scenes/misc/eye.mp4");
-    }); 
-
-    mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      auto *voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/misc/charcoal.mp4");
       voice->setSpeed(0.5f);
       voice->toggleRotation(true);
-    });      
-    
-    mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<ShaderEngine>();
-      voice->shaderPath("../src/shaders/fractal3.frag");
-    });        
+    });
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<ShaderEngine>();
+      auto *voice = loadVoice<ShaderEngine>();
+      voice->shaderPath("../src/shaders/SunExplode.frag");
+    });
+
+    mCallbacks.push_back([this]() {
+      auto *voice = loadVoice<ShaderEngine>();
+      voice->shaderPath("../src/shaders/fractal3.frag");
+    });
+
+    mCallbacks.push_back([this]() {
+      auto *voice = loadVoice<ShaderEngine>();
       voice->shaderPath("../src/shaders/metaBall1.frag");
     });
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<ShaderEngine>();
+      auto *voice = loadVoice<ShaderEngine>();
       voice->shaderPath("../src/shaders/Psych1.frag");
     });
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<ShaderEngine>();
+      auto *voice = loadVoice<ShaderEngine>();
       voice->shaderPath("../src/shaders/Psych2.frag");
-    });  
-
+    });
 
     // xanadu
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<ImageSphereLoader>();
+      auto *voice = loadVoice<ImageSphereLoader>();
       voice->setImageFilePath("../assets/scenes/xanadu/01.png");
       voice->toggleRotation(true);
-    }); 
+    });
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      auto *voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/xanadu/02.mp4");
     });
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<ImageSphereLoader>();
+      auto *voice = loadVoice<ImageSphereLoader>();
       voice->setImageFilePath("../assets/scenes/xanadu/03.png");
       voice->toggleRotation(true);
-    });    
+    });
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      auto *voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/xanadu/04.mp4");
     });
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      auto *voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/xanadu/05.mp4");
-    });   
+    });
 
-
-    // runnin w/ the devil 
+    // runnin w/ the devil
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<ShaderEngine>();
+      auto *voice = loadVoice<ShaderEngine>();
       voice->shaderPath("../src/shaders/flame.frag");
     });
 
-
-    // eruption 
+    // eruption
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<ShaderEngine>();
+      auto *voice = loadVoice<ShaderEngine>();
       voice->setInputChannel(1);
       voice->shaderPath("../src/shaders/julia.frag");
-    });    
-
+    });
 
     // TODO you really got me
 
-
-    // manic depression 
+    // manic depression
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      auto *voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/manicDepression/01.mp4");
       voice->toggleRotation(true);
     });
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      auto *voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/manicDepression/02.mp4");
     });
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      auto *voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/manicDepression/03.mp4");
     });
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      auto *voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/manicDepression/04.mp4");
-    });    
+    });
 
+    // TODO texas flood
 
-    // TODO texas flood 
-
-    
-    // red barchetta 
+    // red barchetta
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      auto *voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/redBarchetta/01.mp4");
     });
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      auto *voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/redBarchetta/02.mp4");
-    });         
+    });
 
-    // buggy drive sequence 
+    // buggy drive sequence
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<AssetEngine>();
+      auto *voice = loadVoice<AssetEngine>();
       voice->toggleRotation(false);
       voice->setAssetFilePath("../assets/3dModels/car");
-    });  
-    
+    });
+
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<AssetEngine>();
+      auto *voice = loadVoice<AssetEngine>();
       voice->toggleRotation(false);
       voice->setPose(al::Pose(voice->pose().vec() + al::Vec3d(0, -0.3, -0.2)));
       voice->setAssetFilePath("../assets/3dModels/car");
-    });  
-    
+    });
+
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<ShaderEngine>(false);
+      auto *voice = loadVoice<ShaderEngine>(false);
       voice->setInputChannel(1);
       voice->shaderPath("../src/shaders/julia.frag");
-    });  
+    });
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<AssetEngine>();
+      auto *voice = loadVoice<AssetEngine>();
       voice->toggleRotation(false);
       voice->setAssetFilePath("../assets/3dModels/car");
-    });     
+    });
 
-
-    // TODO whipping post 
-
+    // TODO whipping post
 
     // TODO dazed and confused
 
-
     // man in the box
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      auto *voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/manInTheBox/01.mp4");
     });
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      auto *voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/manInTheBox/02.mp4");
     });
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      auto *voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/manInTheBox/03.mp4");
       voice->toggleRotation(true);
     });
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      auto *voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/manInTheBox/04.mp4");
     });
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      auto *voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/manInTheBox/05.mp4");
       voice->setSpeed(0.5);
     });
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      auto *voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/manInTheBox/06.mp4");
-    });  
-
+    });
 
     // the pot
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      auto *voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/thePot/01.mp4");
     });
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      auto *voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/thePot/02.mp4");
     });
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      auto *voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/thePot/03.mp4");
     });
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      auto *voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/thePot/04.mp4");
-    });       
-
+    });
 
     al::imguiInit();
 
@@ -323,10 +311,13 @@ public:
 
     // Add sound agents
     for (unsigned i = 0; i < 10; i++) {
-      if (isPrimary()) { mManager.addAgent(names[i].c_str()); }
-      else { mManager.addAgent(names[i].c_str(), false); } // mark as replica if not primary
-      if (i < 2) { 
-        mManager.agents()->at(i)->mInputChannel = i; 
+      if (isPrimary()) {
+        mManager.addAgent(names[i].c_str());
+      } else {
+        mManager.addAgent(names[i].c_str(), false);
+      } // mark as replica if not primary
+      if (i < 2) {
+        mManager.agents()->at(i)->mInputChannel = i;
       } else if (i == 2) {
         mManager.agents()->at(i)->mInputChannel = i - 1;
       } else {
@@ -337,14 +328,14 @@ public:
     // todo make this not suck
     mManager.agents()->at(0)->set(0.0, 90.0, 7.5, 1.0);
     mManager.agents()->at(1)->set(-60, 0.0, 5.0, 1.0);
-    mManager.agents()->at(2)->set(60, 0.0, 5.0, 1.0); 
-    mManager.agents()->at(3)->set(180, 0.0, 5.0, 1.0);  
+    mManager.agents()->at(2)->set(60, 0.0, 5.0, 1.0);
+    mManager.agents()->at(3)->set(180, 0.0, 5.0, 1.0);
     mManager.agents()->at(4)->set(0.0, -90.0, 5.0, 1.0);
     mManager.agents()->at(5)->set(0.0, -90.0, 1.0, 1.0);
     mManager.agents()->at(6)->set(0.0, 90.0, 3.5, 1.0);
-    mManager.agents()->at(7)->set(0.0, 30.0, 8.0, 1.0);    // 0 degrees
-    mManager.agents()->at(8)->set(120.0, 30.0, 8.0, 1.0);  // 120 degrees
-    mManager.agents()->at(9)->set(240.0, 30.0, 8.0, 1.0);  // 240 degrees
+    mManager.agents()->at(7)->set(0.0, 30.0, 8.0, 1.0);   // 0 degrees
+    mManager.agents()->at(8)->set(120.0, 30.0, 8.0, 1.0); // 120 degrees
+    mManager.agents()->at(9)->set(240.0, 30.0, 8.0, 1.0); // 240 degrees
 
     // vocal fx
     mManager.agents()->at(0)->addEffect<giml::Compressor<float>, SAMPLE_RATE>();
@@ -354,7 +345,10 @@ public:
 
     // gtr fx
     for (auto i = 1; i < 4; i++) {
-      mManager.agents()->at(i)->addAmp<float, MarshallModelLayer1, MarshallModelLayer2, MarshallModelWeights>();
+      mManager.agents()
+          ->at(i)
+          ->addAmp<float, MarshallModelLayer1, MarshallModelLayer2,
+                   MarshallModelWeights>();
       mManager.agents()->at(i)->addEffect<giml::Detune<float>, SAMPLE_RATE>();
       mManager.agents()->at(i)->addEffect<giml::Delay<float>, SAMPLE_RATE>();
       mManager.agents()->at(i)->addEffect<giml::Reverb<float>, SAMPLE_RATE>();
@@ -362,13 +356,17 @@ public:
     }
 
     // bass fx
-    mManager.agents()->at(4)->addAmp<float, BassModelLayer1, BassModelLayer2, BassModelWeights>();
+    mManager.agents()
+        ->at(4)
+        ->addAmp<float, BassModelLayer1, BassModelLayer2, BassModelWeights>();
     mManager.agents()->at(4)->addEffect<giml::Compressor<float>, SAMPLE_RATE>();
     mManager.agents()->at(4)->updateParameters();
 
     // drums fx
     for (auto i = 5; i < 10; i++) {
-      mManager.agents()->at(i)->addEffect<giml::Compressor<float>, SAMPLE_RATE>();
+      mManager.agents()
+          ->at(i)
+          ->addEffect<giml::Compressor<float>, SAMPLE_RATE>();
       mManager.agents()->at(i)->addEffect<giml::Reverb<float>, SAMPLE_RATE>();
       mManager.agents()->at(i)->updateParameters();
     }
@@ -378,7 +376,7 @@ public:
     mManager.recallPresets();
 
     // TODO: encapsulate this in a function
-    auto speakers = SPEAKER_LAYOUT; 
+    auto speakers = SPEAKER_LAYOUT;
     mManager.scene()->setSpatializer<SPATIALIZER_TYPE>(speakers);
     mManager.scene()->distanceAttenuation().law(al::ATTEN_NONE);
 
@@ -390,10 +388,9 @@ public:
       nav().pos(al::Vec3d(35, 0.000000, 49));
       nav().quat(al::Quatd(1.0, 0.000000, 0.325568, 0.000000));
     }
-    
   }
 
-  void onSound(al::AudioIOData& io) override {
+  void onSound(al::AudioIOData &io) override {
     if (isPrimary()) {
       // // for now... write audio files to input to simulate audio input
       // for (auto sample = 0; sample < io.framesPerBuffer(); sample++) {
@@ -427,29 +424,34 @@ public:
 
         if (!mMute) {
           // feed sub, bass and kick
-          io.out(sub, sample) = mManager.agents()->at(4)->buffer().readSample(now); // bass
-          io.out(sub, sample) += mManager.agents()->at(5)->buffer().readSample(now); // kick
+          io.out(sub, sample) =
+              mManager.agents()->at(4)->buffer().readSample(now); // bass
+          io.out(sub, sample) +=
+              mManager.agents()->at(5)->buffer().readSample(now); // kick
         }
 
         // // vox
-        io.out(mon1, sample) += mManager.agents()->at(0)->buffer().readSample(now);
+        io.out(mon1, sample) +=
+            mManager.agents()->at(0)->buffer().readSample(now);
 
         // // gtr mixdown
-        io.out(mon2, sample) += mManager.agents()->at(1)->buffer().readSample(now) +
-                                mManager.agents()->at(2)->buffer().readSample(now) +
-                                mManager.agents()->at(3)->buffer().readSample(now); 
+        io.out(mon2, sample) +=
+            mManager.agents()->at(1)->buffer().readSample(now) +
+            mManager.agents()->at(2)->buffer().readSample(now) +
+            mManager.agents()->at(3)->buffer().readSample(now);
 
         // bass
-        io.out(mon3, sample) += mManager.agents()->at(4)->buffer().readSample(now);
+        io.out(mon3, sample) +=
+            mManager.agents()->at(4)->buffer().readSample(now);
 
         // // drums mixdown
-        io.out(mon4, sample) += mManager.agents()->at(5)->buffer().readSample(now) +
-                                mManager.agents()->at(6)->buffer().readSample(now) +
-                                mManager.agents()->at(7)->buffer().readSample(now) +
-                                mManager.agents()->at(8)->buffer().readSample(now) +
-                                mManager.agents()->at(9)->buffer().readSample(now);
+        io.out(mon4, sample) +=
+            mManager.agents()->at(5)->buffer().readSample(now) +
+            mManager.agents()->at(6)->buffer().readSample(now) +
+            mManager.agents()->at(7)->buffer().readSample(now) +
+            mManager.agents()->at(8)->buffer().readSample(now) +
+            mManager.agents()->at(9)->buffer().readSample(now);
       }
-
     }
   }
 
@@ -462,30 +464,32 @@ public:
   }
 
   int phase = 0;
-  bool onKeyDown(const al::Keyboard& k) override {
+  bool onKeyDown(const al::Keyboard &k) override {
     if (isPrimary()) {
-      if (k.key() == ']') { 
-        mSceneIndex = mSceneIndex + 1; 
+      if (k.key() == ']') {
+        mSceneIndex = mSceneIndex + 1;
         std::cout << "Scene index: " << mSceneIndex << std::endl;
         if (mSceneIndex >= 0 && mSceneIndex < mCallbacks.size()) {
           mCallbacks[mSceneIndex]();
         }
-      }
-      else if (k.key() == '[') { 
-        mSceneIndex = mSceneIndex - 1; 
+      } else if (k.key() == '[') {
+        mSceneIndex = mSceneIndex - 1;
         std::cout << "Scene index: " << mSceneIndex << std::endl;
         if (mSceneIndex >= 0 && mSceneIndex < mCallbacks.size()) {
           mCallbacks[mSceneIndex]();
         }
+      } else if (k.key() == 'm') {
+        mMute = !mMute;
+      } else if (k.key() == 'g') {
+        mAudioMode = !mAudioMode;
+      } else if (k.key() == 's') {
+        mManager.storePresets();
       }
-      else if (k.key() == 'm') { mMute = !mMute; }
-      else if (k.key() == 'g') { mAudioMode = !mAudioMode; }
-      else if (k.key() == 's') { mManager.storePresets(); }
     }
     return true;
   }
 
-  void onDraw(al::Graphics& g) override {
+  void onDraw(al::Graphics &g) override {
     g.lens().eyeSep(0.0); // disable stereo rendering
     g.clear(0);
     mManager.draw(g);
@@ -498,22 +502,22 @@ public:
   }
 
   // Mouse event handling
-  bool onMouseMove(const al::Mouse& m) override {
+  bool onMouseMove(const al::Mouse &m) override {
     mManager.onMouseMove(graphics(), m, width(), height());
     return true;
   }
-  
-  bool onMouseDown(const al::Mouse& m) override {
+
+  bool onMouseDown(const al::Mouse &m) override {
     mManager.onMouseDown(graphics(), m, width(), height());
     return true;
   }
-  
-  bool onMouseDrag(const al::Mouse& m) override {
+
+  bool onMouseDrag(const al::Mouse &m) override {
     mManager.onMouseDrag(graphics(), m, width(), height());
     return true;
   }
-  
-  bool onMouseUp(const al::Mouse& m) override {
+
+  bool onMouseUp(const al::Mouse &m) override {
     mManager.onMouseUp(graphics(), m, width(), height());
     return true;
   }
