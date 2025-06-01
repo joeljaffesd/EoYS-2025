@@ -79,6 +79,32 @@ public:
     
     // SCENE CALLBACKS:
 
+    // // misc scenes
+    mCallbacks.push_back([this]() {
+      loadVoice<ImageSphereLoader>();
+    });
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<AssetEngine>();
+    });      
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/misc/eye.mp4");
+    }); 
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/misc/charcoal.mp4");
+      voice->setSpeed(0.5f);
+      voice->toggleRotation(true);
+    });      
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<ShaderEngine>();
+      voice->shaderPath("../src/shaders/metaBall1.frag");
+    });    
+
 
     // BREAKS OTHER SHADERS
     // // loading screen ig
@@ -283,34 +309,7 @@ public:
       voice->setVideoFilePath("../assets/scenes/thePot/05.mp4");
     });   
 
-    // TODO thank you slide
-
-
-    // // misc scenes
-    // mCallbacks.push_back([this]() {
-    //   loadVoice<ImageSphereLoader>();
-    // });
-
-    // mCallbacks.push_back([this]() {
-    //   auto* voice = loadVoice<AssetEngine>();
-    // });      
-
-    // mCallbacks.push_back([this]() {
-    //   auto* voice = loadVoice<VideoSphereLoaderCV>();
-    //   voice->setVideoFilePath("../assets/scenes/misc/eye.mp4");
-    // }); 
-
-    // mCallbacks.push_back([this]() {
-    //   auto* voice = loadVoice<VideoSphereLoaderCV>();
-    //   voice->setVideoFilePath("../assets/scenes/misc/charcoal.mp4");
-    //   voice->setSpeed(0.5f);
-    //   voice->toggleRotation(true);
-    // });           
-
-    // mCallbacks.push_back([this]() {
-    //   auto* voice = loadVoice<ShaderEngine>();
-    //   voice->shaderPath("../src/shaders/metaBall1.frag");
-    // });
+    // TODO thank you slide         
 
     al::imguiInit();
 
