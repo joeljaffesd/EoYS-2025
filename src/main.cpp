@@ -107,12 +107,12 @@ public:
     });    
 
 
-    // BREAKS OTHER SHADERS?
+    // BREAKS OTHER SHADERS.
     // loading screen ig
-    mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<ShaderEngine>();
-      voice->shaderPath("../src/shaders/SunExplode.frag");
-    });  
+    // mCallbacks.push_back([this]() {
+    //   auto* voice = loadVoice<ShaderEngine>();
+    //   voice->shaderPath("../src/shaders/SunExplode.frag");
+    // });  
 
     // xanadu
     mCallbacks.push_back([this]() {
