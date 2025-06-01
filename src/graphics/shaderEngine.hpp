@@ -79,7 +79,7 @@ public:
       return; 
     } 
     else shaderSphere.setShaders("../src/shaders/standard.frag", 
-                                 "../src/shaders/fractal1.frag");
+                                 "../src/shaders/julia.frag");
   }
 
   void update(double dt = 0) override {

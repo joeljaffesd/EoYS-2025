@@ -23,17 +23,41 @@ private:
   al::Parameter scale{"scale", "", 1.f, 0.f, 10.f};
   al::ParameterBool rotate{"Rotate", "", true}; // Toggle rotation
   al::ControlGUI gui;
+
+  al::ParameterString mAssetFilePath {"mAssetFilePath", "", "../assets/3dModels/eye"};
+  al::ParameterBool networkedInitFlag {"networkedInitFlag", "", true};
   bool initFlag = true;
 
 public:
+
   void init() override {
     // this->loadAsset(); // moved to flag 
     gui << rotate << scale << assetShow;
-    this->registerParameters(rotate, scale, assetShow, a, b, c, mPose);
+    this->registerParameters(rotate, scale, assetShow, a, b, c, mPose, networkedInitFlag, mAssetFilePath);
+    networkedInitFlag.registerChangeCallback([this](bool value) {
+      this->initFlag = true;
+      std::cout << "NetworkedInitFlag changed, setting initFlag to true" << std::endl;
+    });
   }
 
-  void loadAsset(std::string objPath = "../assets/3dModels/eye/eye.obj", 
-                 std::string imagePath = "../assets/3dModels/eye/eye.png") {
+  void setAssetFilePath(const std::string& path) {
+    mAssetFilePath.set(path);
+    networkedInitFlag = !networkedInitFlag; // Trigger reloading of asset
+  }
+
+  void toggleRotation(bool desiredState) {
+    rotate.set(desiredState);
+  }
+
+  void loadAsset(std::string path) {
+    // Extract the basename from the path (remove directories)
+    std::string basename = path;
+    size_t lastSlash = basename.find_last_of("/\\");
+    if (lastSlash != std::string::npos) {
+      basename = basename.substr(lastSlash + 1);
+    }
+    std::string objPath = path + "/" + basename + ".obj"; // Ensure the file has the correct extension
+    std::cout << "Loading asset from: " << objPath << std::endl;
     ascene = al::Scene::import(objPath);
     if (!ascene) {
       printf("error reading %s\n", objPath.c_str());
@@ -51,6 +75,8 @@ public:
     }
 
     // load texture
+    std::string imagePath = path + "/" + basename + ".png"; // Ensure the file has the correct extension
+    std::cout << "Loading texture from: " << imagePath << std::endl;
     al::Image img;
     if (img.load(imagePath)) {
       tex.create2D(img.width(), img.height());
@@ -64,7 +90,7 @@ public:
   void onProcess(al::Graphics& g) {
 
     if (initFlag) {
-      this->loadAsset();
+      this->loadAsset(mAssetFilePath.get());
       initFlag = false;
     }
 
@@ -81,9 +107,11 @@ public:
         // animate rotation
         // TODO remember where we left off when we toggle rotation
         g.rotate(a.toFloat(), b.toFloat(), c.toFloat(), 0.f);
-        a = a - 0.2f;
-        b = b + 0.2f;
-        c = c + 0.2f;
+        if (isPrimary()) {
+          a = a - 0.2f;
+          b = b + 0.2f;
+          c = c + 0.2f;          
+        }
       }
 
       // center and scale the model

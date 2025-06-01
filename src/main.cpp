@@ -53,6 +53,7 @@ public:
     mManager.scene()->triggerOff(prevVoiceId);
     auto* oldVoice = dynamic_cast<al::PositionedVoice*>(mManager.scene()->getActiveVoices());
     oldVoice->setPose(al::Pose(al::Vec3d(0, 0, 0)));
+    // oldVoice->setPose( al::Pose( oldVoice->pose().vec() - al::Vec3d(0, 30, 0) ) );
 
     // if shader, reset it
     if (auto* shaderVoice = dynamic_cast<ShaderEngine*>(oldVoice)) {
@@ -73,23 +74,26 @@ public:
 
   void onInit() override {
 
+    // misc
     mCallbacks.push_back([this]() {
       loadVoice<ImageSphereLoader>();
     });
 
     mCallbacks.push_back([this]() {
-      loadVoice<AssetEngine>();
-    });
+      auto* voice = loadVoice<AssetEngine>();
+    });      
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<ShaderEngine>();
-      voice->shaderPath("../src/shaders/fractal1.frag");
-    });
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/misc/eye.mp4");
+    }); 
 
     mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<ShaderEngine>();
-      voice->shaderPath("../src/shaders/fractal2.frag");
-    });    
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/misc/charcoal.mp4");
+      voice->setSpeed(0.5f);
+      // voice->toggleRotation(true);
+    });     
 
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<ShaderEngine>();
@@ -109,11 +113,61 @@ public:
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<ShaderEngine>();
       voice->shaderPath("../src/shaders/Psych2.frag");
+    });  
+
+
+    // xanadu
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<ImageSphereLoader>();
+      voice->setImageFilePath("../assets/scenes/xanadu/01.png");
+      // voice->toggleRotation(true);
+    }); 
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/xanadu/02.mp4");
+    });
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<ImageSphereLoader>();
+      voice->setImageFilePath("../assets/scenes/xanadu/03.png");
+      // voice->toggleRotation(true);
+    });    
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/xanadu/04.mp4");
     });
 
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/xanadu/05.mp4");
+    });   
+
+
+    // runnin w/ the devil 
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<ShaderEngine>();
+      voice->shaderPath("../src/shaders/flame.frag");
+    });
+
+
+    // eruption 
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<ShaderEngine>();
+      // todo set to guitar input
+      voice->shaderPath("../src/shaders/julia.frag");
+    });    
+
+
+    // TODO you really got me
+
+
+    // manic depression 
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/manicDepression/01.mp4");
+      // voice->toggleRotation(true);
     });
 
     mCallbacks.push_back([this]() {
@@ -123,15 +177,45 @@ public:
 
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/manicDepression/03.mp4");
+    });
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/manicDepression/04.mp4");
+    });    
+
+
+    // TODO texas flood 
+
+    
+    // red barchetta 
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/redBarchetta/01.mp4");
     });
 
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/redBarchetta/02.mp4");
-    });
+    });         
 
-    // Man In The Box scene callbacks
+    // TODO drive thru shader
+    // mCallbacks.push_back([this]() {
+    //   auto* voice = loadVoice<AssetEngine>();
+    //   voice->toggleRotation(false);
+    //   voice->setPose(al::Pose(voice->pose().vec() + al::Vec3d(0, -0.3, -0.2)));
+    //   voice->setAssetFilePath("../assets/3dModels/car");
+    // });    
+
+
+    // TODO whipping post 
+
+
+    // TODO dazed and confused
+
+
+    // man in the box
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/manInTheBox/01.mp4");
@@ -145,6 +229,7 @@ public:
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/manInTheBox/03.mp4");
+      // voice->toggleRotation(true);
     });
 
     mCallbacks.push_back([this]() {
@@ -161,27 +246,30 @@ public:
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/manInTheBox/06.mp4");
+    });  
+
+
+    // the pot
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/thePot/01.mp4");
     });
 
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<VideoSphereLoaderCV>();
-      voice->setVideoFilePath("../assets/scenes/new/eye.mp4");
+      voice->setVideoFilePath("../assets/scenes/thePot/02.mp4");
     });
 
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<VideoSphereLoaderCV>();
-      voice->setVideoFilePath("../assets/scenes/new/xan1.mp4");
+      voice->setVideoFilePath("../assets/scenes/thePot/03.mp4");
     });
 
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<VideoSphereLoaderCV>();
-      voice->setVideoFilePath("../assets/scenes/new/xan2.mp4");
-    });
+      voice->setVideoFilePath("../assets/scenes/thePot/04.mp4");
+    });       
 
-    mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
-      voice->setVideoFilePath("../assets/scenes/new/xan3.mp4");
-    });    
 
     al::imguiInit();
 

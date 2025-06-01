@@ -48,10 +48,24 @@ private:
 
   float speed = 1.f;
 
+  al::ParameterBool rotate{"rotate", "", false};
+  al::Parameter rotation{"rotation", "", 0.f, 0.f, 360.f};
+  al::Parameter rotationSpeed{"rotationSpeed", "", 0.01f, 0.f, 1.f}; 
+
 public:
 
   void setSpeed(float newSpeed) {
     this->speed = newSpeed;
+  }
+
+  void toggleRotation(bool value) {
+    rotate.set(value);
+    std::cout << "Rotation toggled to: " << (value ? "true" : "false") << std::endl;
+  }
+
+  void setRotationSpeed(float speed) {
+    rotationSpeed.set(speed);
+    std::cout << "Rotation speed set to: " << speed << std::endl;
   }
 
   void setVideoFilePath(const std::string& videoFilePath) {
@@ -101,7 +115,7 @@ public:
 
   VideoSphereLoaderCV() {
     mParams << mPlaying << mLooping << mRestarted << mCurrentTime << mVideoFilePath << networkedInitFlag;
-    mParams << mPose;
+    mParams << mPose << rotate << rotation << rotationSpeed;
     networkedInitFlag.registerChangeCallback([this](bool value) {
       this->initFlag = true;
       std::cout << "NetworkedInitFlag changed, setting initFlag to true" << std::endl;
@@ -270,6 +284,17 @@ public:
     }
 
     g.pushMatrix();
+
+    if (rotate) {
+      g.rotate(rotation.get(), 0, 1, 0);
+      if (isPrimary()) {
+        rotation = rotation + rotationSpeed; // Increment rotation
+        if (rotation.get() > 360.f) {
+          rotation.set(0.f); // Reset rotation after a full circle
+        }        
+      }
+    }    
+
     mVideo.videoTexture.bind(0);
     g.texture();
     g.draw(mMesh);

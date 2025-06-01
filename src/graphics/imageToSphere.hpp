@@ -16,8 +16,30 @@ struct ImageSphereLoader : public al::PositionedVoice {
   al::Parameter pointSize = {"pointSize", "", 10.f, 0.f, 100.f};
   bool initFlag = true;
 
+  al::ParameterBool networkedInitFlag {"networkedInitFlag", "", true};
+  al::ParameterString mImageFilePath {"mImageFilePath", "", "../assets/images/imgWrap.png"};
+
+  al::ParameterBool rotate{"rotate", "", false};
+  al::Parameter rotation{"rotation", "", 0.f, 0.f, 360.f};
+  al::Parameter rotationSpeed{"rotationSpeed", "", 0.01f, 0.f, 1.f}; 
+
   ImageSphereLoader() {
-    this->registerParameter(mPose);
+    this->registerParameters(mPose, mImageFilePath, rotate, rotation, rotationSpeed);
+    this->registerParameters(networkedInitFlag, imageShow, sphereRadius, pointSize);
+    networkedInitFlag.registerChangeCallback([this](bool value) {
+      this->initFlag = true;
+      std::cout << "NetworkedInitFlag changed, setting initFlag to true" << std::endl;
+    });    
+  }
+
+  void toggleRotation(bool value) {
+    rotate.set(value);
+    std::cout << "Rotation toggled to: " << (value ? "true" : "false") << std::endl;
+  }
+
+  void setRotationSpeed(float speed) {
+    rotationSpeed.set(speed);
+    std::cout << "Rotation speed set to: " << speed << std::endl;
   }
 
   void init() override {
@@ -25,8 +47,14 @@ struct ImageSphereLoader : public al::PositionedVoice {
     // this->loadImage(); // handle in draw w/ flag
   }
 
+  void setImageFilePath(const std::string& imageFilePath) {
+    mImageFilePath.set(imageFilePath);
+    this->networkedInitFlag = !networkedInitFlag;
+  }
+
   void loadImage(std::string imagePath = "../assets/images/imgWrap.png") {
     // load texture
+    std::cout << "Loading image from: " << imagePath << std::endl;
     al::Image image;
     if (image.load(imagePath)) {
       tex.create2D(image.width(), image.height());
@@ -74,7 +102,7 @@ struct ImageSphereLoader : public al::PositionedVoice {
 
   void onProcess(al::Graphics &g) {
     if (initFlag) {
-      this->loadImage();
+      this->loadImage(mImageFilePath);
       initFlag = false;
     }
     // this may need to be changed to handle mesh manipulations and shader..
@@ -84,6 +112,17 @@ struct ImageSphereLoader : public al::PositionedVoice {
     al::gl::depthTesting(true);
     //g.lighting(true);
     g.pushMatrix();
+
+    if (rotate) {
+      g.rotate(rotation.get(), 0, 1, 0);
+      if (isPrimary()) {
+        rotation = rotation + rotationSpeed; // Increment rotation
+        if (rotation.get() > 360.f) {
+          rotation.set(0.f); // Reset rotation after a full circle
+        }        
+      }
+    }    
+    
 
     tex.bind(0);
     g.texture();
