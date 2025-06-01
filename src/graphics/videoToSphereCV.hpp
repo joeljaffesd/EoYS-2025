@@ -113,6 +113,11 @@ public:
     }
   }
 
+  void resetRotation() {
+    rotation.set(0.f);
+    rotation.set(false);
+  }
+
   VideoSphereLoaderCV() {
     mParams << mPlaying << mLooping << mRestarted << mCurrentTime << mVideoFilePath << networkedInitFlag;
     mParams << mPose << rotate << rotation << rotationSpeed;
@@ -275,6 +280,7 @@ public:
 
     if (this->initFlag) {
       this->loadVideo();
+      this->resetRotation();
       this->initFlag = false;
     }
 
