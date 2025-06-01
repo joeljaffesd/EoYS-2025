@@ -49,11 +49,11 @@ public:
   std::vector<std::function<void()>> mCallbacks;
 
   template <class TSynthVoice>
-  TSynthVoice* loadVoice() {
+  TSynthVoice* loadVoice(bool offset = true) {
     mManager.scene()->triggerOff(prevVoiceId);
     auto* oldVoice = dynamic_cast<al::PositionedVoice*>(mManager.scene()->getActiveVoices());
-    oldVoice->setPose(al::Pose(al::Vec3d(0, 0, 0)));
-    // oldVoice->setPose( al::Pose( oldVoice->pose().vec() - al::Vec3d(0, 30, 0) ) );
+    // oldVoice->setPose(al::Pose(al::Vec3d(0, 0, 0)));
+    oldVoice->setPose( al::Pose( oldVoice->pose().vec() - al::Vec3d(0, 30, 0) ) );
 
     // if shader, reset it
     if (auto* shaderVoice = dynamic_cast<ShaderEngine*>(oldVoice)) {
@@ -66,7 +66,9 @@ public:
     }
 
     auto* voice = mManager.scene()->getVoice<TSynthVoice>();
-    voice->setPose(al::Pose(al::Vec3d(0, 30, 0)));
+    if (offset) {
+      voice->setPose(al::Pose(al::Vec3d(0, 30, 0)));
+    }
     prevVoiceId = newVoiceId;
     newVoiceId = mManager.scene()->triggerOn(voice);
     return voice;
@@ -93,8 +95,8 @@ public:
       voice->setVideoFilePath("../assets/scenes/misc/charcoal.mp4");
       voice->setSpeed(0.5f);
       voice->toggleRotation(true);
-    });     
-
+    });      
+    
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<ShaderEngine>();
       voice->shaderPath("../src/shaders/fractal3.frag");
@@ -200,13 +202,30 @@ public:
       voice->setVideoFilePath("../assets/scenes/redBarchetta/02.mp4");
     });         
 
-    // TODO drive thru shader
-    // mCallbacks.push_back([this]() {
-    //   auto* voice = loadVoice<AssetEngine>();
-    //   voice->toggleRotation(false);
-    //   voice->setPose(al::Pose(voice->pose().vec() + al::Vec3d(0, -0.3, -0.2)));
-    //   voice->setAssetFilePath("../assets/3dModels/car");
-    // });    
+    // buggy drive sequence 
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<AssetEngine>();
+      voice->toggleRotation(false);
+      voice->setAssetFilePath("../assets/3dModels/car");
+    });  
+    
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<AssetEngine>();
+      voice->toggleRotation(false);
+      voice->setPose(al::Pose(voice->pose().vec() + al::Vec3d(0, -0.3, -0.2)));
+      voice->setAssetFilePath("../assets/3dModels/car");
+    });  
+    
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<ShaderEngine>(false);
+      voice->shaderPath("../src/shaders/julia.frag");
+    });  
+
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<AssetEngine>();
+      voice->toggleRotation(false);
+      voice->setAssetFilePath("../assets/3dModels/car");
+    });     
 
 
     // TODO whipping post 
