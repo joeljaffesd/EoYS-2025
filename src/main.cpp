@@ -53,7 +53,7 @@ public:
     mManager.scene()->triggerOff(prevVoiceId);
     auto* oldVoice = dynamic_cast<al::PositionedVoice*>(mManager.scene()->getActiveVoices());
     // oldVoice->setPose(al::Pose(al::Vec3d(0, 0, 0)));
-    oldVoice->setPose( al::Pose( oldVoice->pose().vec() - al::Vec3d(0, 30, 0) ) );
+    oldVoice->setPose( al::Pose( oldVoice->pose().vec() - al::Vec3d(0, 31, 0) ) );
 
     // if shader, reset it
     if (auto* shaderVoice = dynamic_cast<ShaderEngine*>(oldVoice)) {
@@ -67,7 +67,7 @@ public:
 
     auto* voice = mManager.scene()->getVoice<TSynthVoice>();
     if (offset) {
-      voice->setPose(al::Pose(al::Vec3d(0, 30, 0)));
+      voice->setPose(al::Pose(al::Vec3d(0, 31, 0)));
     }
     prevVoiceId = newVoiceId;
     newVoiceId = mManager.scene()->triggerOn(voice);
