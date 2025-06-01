@@ -232,9 +232,6 @@ public:
     // TODO whipping post 
 
 
-    // TODO dazed and confused
-
-
     // man in the box
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<VideoSphereLoaderCV>();
@@ -269,6 +266,9 @@ public:
     });  
 
 
+    // TODO dazed and confused       
+
+    
     // the pot
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<VideoSphereLoaderCV>();
