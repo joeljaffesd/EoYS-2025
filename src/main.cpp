@@ -91,11 +91,6 @@ public:
 
     mCallbacks.push_back([this]() {
       auto* voice = loadVoice<VideoSphereLoaderCV>();
-      voice->setVideoFilePath("../assets/scenes/misc/eye.mp4");
-    }); 
-
-    mCallbacks.push_back([this]() {
-      auto* voice = loadVoice<VideoSphereLoaderCV>();
       voice->setVideoFilePath("../assets/scenes/misc/charcoal.mp4");
       voice->setSpeed(0.5f);
       voice->toggleRotation(true);
@@ -106,13 +101,20 @@ public:
       voice->shaderPath("../src/shaders/metaBall1.frag");
     });    
 
-
     // BREAKS OTHER SHADERS.
     // loading screen ig
     // mCallbacks.push_back([this]() {
     //   auto* voice = loadVoice<ShaderEngine>();
     //   voice->shaderPath("../src/shaders/SunExplode.frag");
     // });  
+
+    // eye as loading screen
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<VideoSphereLoaderCV>();
+      voice->setVideoFilePath("../assets/scenes/misc/eye.mp4");
+    });  
+
+    // SHOW STARTS
 
     // xanadu
     mCallbacks.push_back([this]() {
