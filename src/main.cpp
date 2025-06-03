@@ -315,7 +315,16 @@ public:
       voice->setVideoFilePath("../assets/scenes/thePot/05.mp4");
     });   
 
-    // TODO thank you slide         
+    // TODO thank you slide   
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<ImageSphereLoader>();
+      voice->setImageFilePath("../assets/images/thankYou.png");
+    });        
+    
+    mCallbacks.push_back([this]() {
+      auto* voice = loadVoice<ImageSphereLoader>();
+      voice->setImageFilePath("../assets/images/thankYou.png");
+    });      
 
     al::imguiInit();
 
